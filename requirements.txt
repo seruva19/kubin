@@ -1,0 +1,9 @@
+--extra-index-url https://download.pytorch.org/whl/cu117
+
+git+https://github.com/ai-forever/Kandinsky-2.git@c9ec0dd
+git+https://github.com/openai/CLIP.git@a9b1bf5
+opencv-python==4.7.0.72
+gradio==3.24.1
+
+# uncomment if you get cpu version of torch
+# torch==2.0.0+cu117
