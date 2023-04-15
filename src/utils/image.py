@@ -7,10 +7,9 @@ from PIL import Image
 from io import BytesIO
 import cv2
 
-def imagePathToPil(image):
-  res = requests.get(image)
-  uri = f"data:{res.headers['Content-Type']};base64,{base64.b64encode(res.content).decode('utf-8')}"
-  pil_img = decode_base64_to_image(uri)
+def imagePathToPil(image_url):
+  response = requests.get(image_url)
+  pil_img = Image.open(BytesIO(response.content))
 
   return pil_img
 
