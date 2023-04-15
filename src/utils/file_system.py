@@ -1,15 +1,14 @@
 import os
 import uuid
+from datetime import datetime
 
-from model import Model
-
-def save(model: Model, images):
+def saveOutput(output_dir, task_type, images, seed):
   output = []
   for img in images:
-    path = f'{model.output_dir}/{model.task_type}'
+    path = f'{output_dir}/{task_type}'
     if not os.path.exists(path): os.makedirs(path)
   
-    name = f'{path}/{uuid.uuid4()}.png'
+    name = f'{path}/{seed}-{uuid.uuid4()}.png'
     img.save(name, 'PNG')
     output.append(name)
 

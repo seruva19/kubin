@@ -14,9 +14,9 @@ Currently only basic functions implemented (nothing new compared to [official no
 * img2img
 * mixing
 * inpainting 
-<br>
 
-## Screenshots
+
+## Screenshots (outdated)
 <details> 
 <summary>Expand</summary>
 
@@ -25,20 +25,17 @@ Currently only basic functions implemented (nothing new compared to [official no
 ![img](/sshots/t2i.png)
 	
 <br>
-<br>
 
 ### img2img
 	
 ![img](/sshots/i2i.png)
 
 <br>
-<br>
 
 ### mixing
 	
-![img](/sshots/fuse.png)
+![img](/sshots/mix.png)
 
-<br>
 <br>
 	
 ### inpainting
@@ -78,6 +75,13 @@ py -m venv venv
 ./venv/Scripts/Activate.ps1
 pip install -r requirements.txt
 py src/kubin.py
+```
+GUI then should be available at http://127.0.0.1:7860/
+<br>
+To update to latest version, use
+```
+git pull
+
 ```
 
 ## Documentation
