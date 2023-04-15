@@ -1,206 +1,60 @@
 import gradio as gr
-from k2_modules.fuse import fuse
-from k2_modules.img2img import i2i
-from k2_modules.inpaint import inpaint
-from k2_modules.txt2img import t2i
+from env import Kubin
+from ui_blocks.extensions import extensions_ui
+from ui_blocks.i2i import i2i_ui
+from ui_blocks.inpaint import inpaint_ui
+from ui_blocks.mix import mix_ui
+from ui_blocks.outpaint import outpaint_ui
+from ui_blocks.settings import settings_ui
+from ui_blocks.t2i import t2i_ui
 
-def launch(model):
-  # text2image UI
-  with gr.Blocks() as t2i_ui:
-    with gr.Row():
-      with gr.Column(scale=2):
-        prompt = gr.Textbox('bunny, 4K photo', label='Prompt')
-        negative_prompt = gr.Textbox('bad anatomy, deformed, blurry, depth of field', label='Negative prompt')
-        with gr.Row():
-          steps = gr.Slider(0, 200, 100, step=1, label='Steps')
-          guidance_scale = gr.Slider(0, 30, 4, step=1, label='Guidance scale')
-        with gr.Row():
-          batch_count = gr.Slider(0, 16, 4, step=1, label='Batch count')
-          batch_size = gr.Slider(0, 16, 1, step=1, label='Batch size')
-        with gr.Row():
-          width = gr.Slider(0, 1024, 768, step=1, label='Width')
-          height = gr.Slider(0, 1024, 768, step=1, label='Height')
-        with gr.Row():
-          sampler = gr.Radio(['ddim_sampler', 'p_sampler', 'plms_sampler'], value='p_sampler', label='Sampler')
-          seed = gr.Number(-1, label='Seed')
-        with gr.Row():
-          prior_scale = gr.Slider(0, 100, 4, step=1, label='Prior scale')
-          prior_steps = gr.Slider(0, 100, 5, step=1, label='Prior steps')
-      with gr.Column(scale=1):
-        generate_t2i = gr.Button('Generate', variant='primary')
-        t2i_output = gr.Gallery(label='Generated Images').style(grid=[2], preview=True)
+def gradio_ui(kubin: Kubin):
+  input_i2i_image = gr.Image(type='pil') 
+  input_mix_image_1 = gr.Image(type='pil') 
+  input_mix_image_2 = gr.Image(type='pil') 
+  input_inpaint_image = gr.ImageMask(type='pil')
 
-        generate_t2i.click(fn=lambda *p: t2i(model, *p), inputs=[
-          prompt,
-          negative_prompt,
-          steps,
-          batch_count,
-          batch_size,
-          guidance_scale,
-          width,
-          height,
-          sampler,
-          prior_scale,
-          prior_steps,
-          seed
-        ], outputs=t2i_output)
+  with gr.Blocks(title='Kubin: Kandinsky 2.1 WebGUI', theme=gr.themes.Default()) as ui:
+    with gr.Tabs() as ui_tabs:
+      with gr.TabItem('Text To Image', id=0):
+        t2i_ui(generate_fn=lambda *p: kubin.model.t2i(*p),
+          input_i2i_image=input_i2i_image, 
+          input_mix_image_1=input_mix_image_1, input_mix_image_2=input_mix_image_2,
+          input_inpaint_image=input_inpaint_image,
+          tabs=ui_tabs
+        )
+      
+      with gr.TabItem('Image To Image', id=1):
+        i2i_ui(generate_fn=lambda *p: kubin.model.i2i(*p),
+          input_i2i_image=input_i2i_image,
+          input_mix_image_1=input_mix_image_1, input_mix_image_2=input_mix_image_2,
+          input_inpaint_image=input_inpaint_image,
+          tabs=ui_tabs
+        ) 
+       
+      with gr.TabItem('Mix Images', id=2):
+        mix_ui(generate_fn=lambda *p: kubin.model.mix(*p),
+          input_mix_image_1=input_mix_image_1, input_mix_image_2=input_mix_image_2,
+          input_i2i_image=input_i2i_image, 
+          input_inpaint_image=input_inpaint_image,
+          tabs=ui_tabs
+        )
+       
+      with gr.TabItem('Inpaint Image', id=3):
+        inpaint_ui(generate_fn=lambda *p: kubin.model.inpaint(*p),
+          input_i2i_image=input_i2i_image, 
+          input_mix_image_1=input_mix_image_1, input_mix_image_2=input_mix_image_2,
+          input_inpaint_image=input_inpaint_image,
+          tabs=ui_tabs
+        )
 
-  # image2image UI
-  with gr.Blocks() as i2i_ui:
-    with gr.Row():
-      with gr.Column(scale=2):
-        input_image = gr.Image(type='pil')
-        prompt = gr.Textbox('bunny', label='Prompt')
-        with gr.Row():
-          steps = gr.Slider(0, 200, 100, step=1, label='Steps')
-          guidance_scale = gr.Slider(0, 30, 7, step=1, label='Guidance scale')
-          strength = gr.Slider(0, 1, 0.7, step=0.05, label='Strength')
-        with gr.Row():
-          batch_count = gr.Slider(0, 16, 4, step=1, label='Batch count')
-          batch_size = gr.Slider(0, 16, 1, step=1, label='Batch size')
-        with gr.Row():
-          width = gr.Slider(0, 1024, 512, step=1, label='Width')
-          height = gr.Slider(0, 1024, 512, step=1, label='Height')
-        with gr.Row():
-          sampler = gr.Radio(['ddim_sampler', 'p_sampler', 'plms_sampler'], value='ddim_sampler', label='Sampler')
-          seed = gr.Number(-1, label='Seed')
-        with gr.Row():
-          prior_scale = gr.Slider(0, 100, 4, step=1, label='Prior scale')
-          prior_steps = gr.Slider(0, 100, 5, step=1, label='Prior steps')
-      with gr.Column(scale=1):
-        generate_i2i = gr.Button('Generate', variant='primary')
-        i2i_output = gr.Gallery(label='Generated Images').style(grid=[2], preview=True)
+      # with gr.TabItem('Outpaint Image', id=4):
+      #   outpaint_ui()
 
-        generate_i2i.click(fn=lambda *p: i2i(model, *p), inputs=[
-          input_image,
-          prompt,
-          strength,
-          steps,
-          batch_count,
-          batch_size,
-          guidance_scale,
-          width,
-          height,
-          sampler,
-          prior_scale,
-          prior_steps,
-          seed
-        ], outputs=i2i_output)
+      # with gr.TabItem('Extensions', id=5):
+      #   extensions_ui()
 
-  # TODO: add mixing for images > 2
-  # image fuse UI
-  def update(image):
-    no_image = image == None
-    return gr.update(label='Prompt' if no_image else 'Prompt (ignored, using image instead)', interactive=no_image)
+      # with gr.TabItem('Settings', id=6):
+      #   settings_ui()
 
-  with gr.Blocks() as fuse_ui:
-    with gr.Row():
-      with gr.Column(scale=2):
-        with gr.Row():
-          with gr.Column(scale=1):
-            image_1 = gr.Image(type='pil', label='Image')
-            text_1 = gr.Textbox('bunny', label='Prompt')
-            image_1.change(fn=update, inputs=image_1, outputs=text_1)
-            weight_1 = gr.Slider(0, 1, 0.5, step=0.05, label='Weight')
-          with gr.Column(scale=1):
-            image_2 = gr.Image(type='pil', label='Image')
-            text_2 = gr.Textbox('bunny', label='Prompt')
-            image_2.change(fn=update, inputs=image_2, outputs=text_2)
-            weight_2 = gr.Slider(0, 1, 0.5, step=0.05, label='Weight')
-        add_btn = gr.Button('Add another image', interactive=False)
-        negative_prompt = gr.Textbox('', label='Negative prompt')
-        with gr.Row():
-          steps = gr.Slider(0, 200, 100, step=1, label='Steps')
-          guidance_scale = gr.Slider(0, 30, 4, step=1, label='Guidance scale')
-        with gr.Row():
-          batch_count = gr.Slider(0, 16, 4, step=1, label='Batch count')
-          batch_size = gr.Slider(0, 16, 1, step=1, label='Batch size')
-        with gr.Row():
-          width = gr.Slider(0, 1024, 768, step=1, label='Width')
-          height = gr.Slider(0, 1024, 768, step=1, label='Height')
-        with gr.Row():
-          sampler = gr.Radio(['ddim_sampler', 'p_sampler', 'plms_sampler'], value='p_sampler', label='Sampler')
-          seed = gr.Number(-1, label='Seed')
-        with gr.Row():
-          prior_scale = gr.Slider(0, 100, 4, step=1, label='Prior scale')
-          prior_steps = gr.Slider(0, 100, 5, step=1, label='Prior steps')
-      with gr.Column(scale=1):
-        generate_fuse = gr.Button('Generate', variant='primary')
-        fuse_output = gr.Gallery(label='Generated Images').style(grid=[2], preview=True)
-
-        generate_fuse.click(fn=lambda *p: fuse(model, *p), inputs=[
-          image_1,
-          image_2,
-          text_1,
-          text_2,
-          weight_1,
-          weight_2,
-          negative_prompt,
-          steps,
-          batch_count,
-          batch_size,
-          guidance_scale,
-          width,
-          height,
-          sampler,
-          prior_scale,
-          prior_steps,
-          seed
-        ], outputs=fuse_output)
-
-  # TODO: implement region of inpainting
-  # inpaint UI
-  with gr.Blocks() as inpaint_ui:
-    with gr.Row():
-      with gr.Column(scale=2):
-        image_with_mask = gr.ImageMask(type='pil')
-        prompt = gr.Textbox('bunny, 4K photo', label='Prompt')
-        negative_prompt = gr.Textbox('bad anatomy, deformed, blurry, depth of field', label='Negative prompt')
-        with gr.Row():
-          inpainting_target = gr.Radio(['only mask', 'all but mask'], value='only mask', label='Inpainting target')
-          inpainting_region = gr.Radio(['whole', 'mask'], value='whole', label='Inpainting region', interactive=False)
-        with gr.Row():
-          steps = gr.Slider(0, 200, 100, step=1, label='Steps')
-          guidance_scale = gr.Slider(0, 30, 10, step=1, label='Guidance scale')
-        with gr.Row():
-          batch_count = gr.Slider(0, 16, 4, step=1, label='Batch count')
-          batch_size = gr.Slider(0, 16, 1, step=1, label='Batch size')
-        with gr.Row():
-          width = gr.Slider(0, 1024, 768, step=1, label='Width')
-          height = gr.Slider(0, 1024, 768, step=1, label='Height')
-        with gr.Row():
-          sampler = gr.Radio(['ddim_sampler', 'p_sampler', 'plms_sampler'], value='ddim_sampler', label='Sampler')
-          seed = gr.Number(-1, label='Seed')
-        with gr.Row():
-          prior_scale = gr.Slider(0, 100, 4, step=1, label='Prior scale')
-          prior_steps = gr.Slider(0, 100, 5, step=1, label='Prior steps')
-      with gr.Column(scale=1):
-        generate_inpaint = gr.Button('Generate', variant='primary')
-        inpaint_output = gr.Gallery(label='Generated Images').style(grid=[2], preview=True)
-
-        generate_inpaint.click(fn=lambda *p: inpaint(model, *p), inputs=[
-          image_with_mask,
-          prompt,
-          negative_prompt,
-          inpainting_target,
-          inpainting_region,
-          steps,
-          batch_count,
-          batch_size,
-          guidance_scale,
-          width,
-          height,
-          sampler,
-          prior_scale,
-          prior_steps,
-          seed
-        ], outputs=inpaint_output)
-
-  ui = gr.TabbedInterface(
-    [t2i_ui, i2i_ui, fuse_ui, inpaint_ui],
-    ['Text To Image', 'Image To Image', 'Mix Images', 'Inpaint Image'],
-    title='Kubin: Kandinsky 2.1 WebGUI',
-    css='html {min-height: 101%} .prose {display: none}'
-  )
-  
   return ui
