@@ -33,8 +33,5 @@ class DummyModel:
     return self.dummyImages()
   
   def dummyImages(self):
-    white_image = Image.open(BytesIO(base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAQAAABpN6lAAAAAqklEQVR42u3QMQEAAAgDINc/9IzhIUQg7bwWAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAg4N4C6z7/gQlsSUcAAAAASUVORK5CYII=')))
-    black_image = Image.open(BytesIO(base64.b64decode('R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=')))
-
-    return [white_image, black_image, white_image, black_image]
+    return [Image.open("sshots/t2i.png"), Image.open("sshots/i2i.png"), Image.open("sshots/mix.png"), Image.open("sshots/inpaint.png")]
     

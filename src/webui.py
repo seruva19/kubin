@@ -14,7 +14,7 @@ def gradio_ui(kubin: Kubin):
   input_mix_image_2 = gr.Image(type='pil') 
   input_inpaint_image = gr.ImageMask(type='pil')
 
-  with gr.Blocks(title='Kubin: Kandinsky 2.1 WebGUI') as ui:
+  with gr.Blocks(title='Kubin: Kandinsky 2.1 WebGUI', theme=gr.themes.Default()) as ui:
     with gr.Tabs() as ui_tabs:
       with gr.TabItem('Text To Image', id=0):
         t2i_ui(generate_fn=lambda *p: kubin.model.t2i(*p),

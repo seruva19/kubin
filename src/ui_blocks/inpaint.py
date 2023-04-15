@@ -6,7 +6,7 @@ def inpaint_gallery_select(evt: gr.SelectData):
 
 # TODO: implement region of inpainting
 def inpaint_ui(generate_fn, input_i2i_image, input_mix_image_1,  input_mix_image_2, input_inpaint_image, tabs):
-  selected_image_index = gr.State(-1) # type: ignore
+  selected_inpaint_image_index = gr.State(None) # type: ignore
 
   with gr.Row() as inpaint_block:
     with gr.Column(scale=2):
@@ -37,17 +37,17 @@ def inpaint_ui(generate_fn, input_i2i_image, input_mix_image_1,  input_mix_image
     with gr.Column(scale=1):
       generate_inpaint = gr.Button('Generate', variant='primary')
       inpaint_output = gr.Gallery(label='Generated Images').style(grid=2, preview=True)
-      inpaint_output.select(fn=inpaint_gallery_select, outputs=[selected_image_index])
+      inpaint_output.select(fn=inpaint_gallery_select, outputs=[selected_inpaint_image_index])
 
       send_i2i_btn = gr.Button('Send to img2img', variant='secondary')
-      send_i2i_btn.click(fn=send_gallery_image_to_another_tab, inputs=[inpaint_output, selected_image_index, gr.State(1)], outputs=[tabs, input_i2i_image]) # type: ignore
+      send_i2i_btn.click(fn=send_gallery_image_to_another_tab, inputs=[inpaint_output, selected_inpaint_image_index, gr.State(1)], outputs=[tabs, input_i2i_image]) # type: ignore
 
       with gr.Row():
         send_mix_1_btn = gr.Button('Send to mix (1)', variant='secondary')
-        send_mix_1_btn.click(fn=send_gallery_image_to_another_tab, inputs=[inpaint_output, selected_image_index, gr.State(2)], outputs=[tabs, input_mix_image_1]) # type: ignore
+        send_mix_1_btn.click(fn=send_gallery_image_to_another_tab, inputs=[inpaint_output, selected_inpaint_image_index, gr.State(2)], outputs=[tabs, input_mix_image_1]) # type: ignore
 
         send_mix_2_btn = gr.Button('Send to mix (2)', variant='secondary')
-        send_mix_2_btn.click(fn=send_gallery_image_to_another_tab, inputs=[inpaint_output, selected_image_index, gr.State(2)], outputs=[tabs, input_mix_image_2]) # type: ignore
+        send_mix_2_btn.click(fn=send_gallery_image_to_another_tab, inputs=[inpaint_output, selected_inpaint_image_index, gr.State(2)], outputs=[tabs, input_mix_image_2]) # type: ignore
       
     generate_inpaint.click(generate_fn, inputs=[
       input_inpaint_image,

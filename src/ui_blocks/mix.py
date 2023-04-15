@@ -10,7 +10,7 @@ def update(image):
 
 # TODO: add mixing for images > 2
 def mix_ui(generate_fn, input_i2i_image, input_inpaint_image, input_mix_image_1, input_mix_image_2, tabs):
-  selected_image_index = gr.State(-1) # type: ignore
+  selected_mix_image_index = gr.State(None) # type: ignore
 
   with gr.Row() as mix_block:
     with gr.Column(scale=2):
@@ -46,13 +46,13 @@ def mix_ui(generate_fn, input_i2i_image, input_inpaint_image, input_mix_image_1,
     with gr.Column(scale=1):
       generate_mix = gr.Button('Generate', variant='primary')
       mix_output = gr.Gallery(label='Generated Images').style(grid=2, preview=True)
-      mix_output.select(fn=mix_gallery_select, outputs=[selected_image_index])
+      mix_output.select(fn=mix_gallery_select, outputs=[selected_mix_image_index])
 
       send_i2i_btn = gr.Button('Send to img2img', variant='secondary')
-      send_i2i_btn.click(fn=send_gallery_image_to_another_tab, inputs=[mix_output, selected_image_index, gr.State(1)], outputs=[tabs, input_i2i_image]) # type: ignore
+      send_i2i_btn.click(fn=send_gallery_image_to_another_tab, inputs=[mix_output, selected_mix_image_index, gr.State(1)], outputs=[tabs, input_i2i_image]) # type: ignore
 
       send_inpaint_btn = gr.Button('Send to inpaint', variant='secondary')
-      send_inpaint_btn.click(fn=send_gallery_image_to_another_tab, inputs=[mix_output, selected_image_index, gr.State(3)], outputs=[tabs, input_inpaint_image]) # type: ignore
+      send_inpaint_btn.click(fn=send_gallery_image_to_another_tab, inputs=[mix_output, selected_mix_image_index, gr.State(3)], outputs=[tabs, input_inpaint_image]) # type: ignore
 
     generate_mix.click(generate_fn, inputs=[
       input_mix_image_1,
