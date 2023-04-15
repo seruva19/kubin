@@ -75,7 +75,7 @@ class Model_KD2:
     
     images = []
     for _ in itertools.repeat(None, batch_count):
-      image = self.kandinsky.generate_text2img(
+      images = images + self.kandinsky.generate_text2img(
         prompt=prompt,
         num_steps=num_steps,
         batch_size=batch_size, 
@@ -93,8 +93,7 @@ class Model_KD2:
         negative_decoder_prompt=negative_decoder_prompt # type: ignore
       )
 
-      images = images + saveOutput(self.output_dir, 'text2img', [image], seed)
-    return images
+    return saveOutput(self.output_dir, 'text2img', images, seed)
   
   def i2i(self, init_image, prompt, strength, num_steps, batch_count, batch_size, guidance_scale, w, h, sampler, prior_cf_scale, prior_steps, input_seed):
     seed = self.prepare('img2img').withSeed(input_seed)
@@ -105,30 +104,29 @@ class Model_KD2:
 
     images = []    
     for _ in itertools.repeat(None, batch_count):
-      image = self.kandinsky.generate_img2img(
-        prompt=prompt,
-        pil_img=pil_img,
-        strength=strength,
-        num_steps=num_steps,
-        batch_size=batch_size,  # type: ignore
-        guidance_scale=guidance_scale,
-        h=h,  # type: ignore
-        w=w,  # type: ignore
-        sampler=sampler, 
-        prior_cf_scale=prior_cf_scale,  # type: ignore
-        prior_steps=str(prior_steps)  # type: ignore
-      )
+      images = images + self.kandinsky.generate_img2img(
+      prompt=prompt,
+      pil_img=pil_img,
+      strength=strength,
+      num_steps=num_steps,
+      batch_size=batch_size,  # type: ignore
+      guidance_scale=guidance_scale,
+      h=h,  # type: ignore
+      w=w,  # type: ignore
+      sampler=sampler, 
+      prior_cf_scale=prior_cf_scale,  # type: ignore
+      prior_steps=str(prior_steps)  # type: ignore
+    )
 
-      images = images + saveOutput(self.output_dir, 'img2img', [image], seed)
-    return images
-
+    return saveOutput(self.output_dir, 'img2img', images, seed)
+    
   def mix(self, image_1, image_2, text_1, text_2, weight_1, weight_2, negative_decoder_prompt, num_steps, batch_count, batch_size, guidance_scale, w, h, sampler, prior_cf_scale, prior_steps, negative_prior_prompt, input_seed):
     seed = self.prepare('mix').withSeed(input_seed)
     assert self.kandinsky is not None    
 
     images = []
     for _ in itertools.repeat(None, batch_count):
-      image = self.kandinsky.mix_images( # type: ignore
+      images = images + self.kandinsky.mix_images( # type: ignore
         images_texts=[text_1 if image_1 is None else image_1, text_2 if image_2 is None else image_2],
         weights=[weight_1, weight_2], 
         num_steps=num_steps, 
@@ -143,8 +141,7 @@ class Model_KD2:
         negative_decoder_prompt=negative_decoder_prompt
       )
 
-      images = images + saveOutput(self.output_dir, 'mix', [image], seed)
-    return images
+    return saveOutput(self.output_dir, 'mix', images, seed)
   
   def inpaint(self, image_mask, prompt, negative_decoder_prompt, target, region, num_steps, batch_count, batch_size, guidance_scale, w, h, sampler, prior_cf_scale, prior_steps, negative_prior_prompt, input_seed):
     seed = self.prepare('inpainting').withSeed(input_seed)
@@ -161,21 +158,21 @@ class Model_KD2:
       
     images = []
     for _ in itertools.repeat(None, batch_count):
-      image = self.kandinsky.generate_inpainting(
-        prompt=prompt,
-        pil_img=pil_img,
-        img_mask=mask,
-        num_steps=num_steps,
-        batch_size=batch_size,  # type: ignore
-        guidance_scale=guidance_scale,
-        h=h,  # type: ignore
-        w=w,  # type: ignore
-        sampler=sampler, 
-        prior_cf_scale=prior_cf_scale,  # type: ignore
-        prior_steps=str(prior_steps),  # type: ignore
-        negative_prior_prompt=negative_prior_prompt,  # type: ignore
-        negative_decoder_prompt=negative_decoder_prompt  # type: ignore
-      )
-      
-      images = images + saveOutput(self.output_dir, 'inpainting', [image], seed)
-    return images
+      images = images + self.kandinsky.generate_inpainting(
+      prompt=prompt,
+      pil_img=pil_img,
+      img_mask=mask,
+      num_steps=num_steps,
+      batch_size=batch_size,  # type: ignore
+      guidance_scale=guidance_scale,
+      h=h,  # type: ignore
+      w=w,  # type: ignore
+      sampler=sampler, 
+      prior_cf_scale=prior_cf_scale,  # type: ignore
+      prior_steps=str(prior_steps),  # type: ignore
+      negative_prior_prompt=negative_prior_prompt,  # type: ignore
+      negative_decoder_prompt=negative_decoder_prompt  # type: ignore
+    )
+
+    return saveOutput(self.output_dir, 'inpainting', images, seed)
+  
