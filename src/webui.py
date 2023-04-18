@@ -54,7 +54,7 @@ def gradio_ui(kubin: Kubin):
       # with gr.TabItem('Extensions', id=5):
       #   extensions_ui()
 
-      # with gr.TabItem('Settings', id=6):
-      #   settings_ui()
-
+      with gr.TabItem('Settings', id=4):
+        settings_ui(kubin)
+  
   return ui
