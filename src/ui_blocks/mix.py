@@ -1,8 +1,8 @@
 import gradio as gr
-from utils.gradio_ui import send_gallery_image_to_another_tab
+from utils.gradio_ui import send_gallery_image_to_another_tab, open_another_tab
 
 def mix_gallery_select(evt: gr.SelectData):
-  return evt.index
+  return [evt.index, f'Selected image index: {evt.index}']
 
 def update(image):
   no_image = image == None
@@ -17,12 +17,12 @@ def mix_ui(generate_fn, input_i2i_image, input_inpaint_image, input_mix_image_1,
       with gr.Row():
         with gr.Column(scale=1):
           input_mix_image_1.render()
-          text_1 = gr.Textbox('bunny', label='Prompt')
+          text_1 = gr.Textbox('hare', label='Prompt')
           input_mix_image_1.change(fn=update, inputs=input_mix_image_1, outputs=text_1)
           weight_1 = gr.Slider(0, 1, 0.5, step=0.05, label='Weight')
         with gr.Column(scale=1):
           input_mix_image_2.render()
-          text_2 = gr.Textbox('bunny', label='Prompt')
+          text_2 = gr.Textbox('hare', label='Prompt')
           input_mix_image_2.change(fn=update, inputs=input_mix_image_2, outputs=text_2)
           weight_2 = gr.Slider(0, 1, 0.5, step=0.05, label='Weight')
       add_btn = gr.Button('Add another image', interactive=False)
@@ -38,7 +38,7 @@ def mix_ui(generate_fn, input_i2i_image, input_inpaint_image, input_mix_image_1,
         height = gr.Slider(0, 1024, 768, step=1, label='Height')
       with gr.Row():
         sampler = gr.Radio(['ddim_sampler', 'p_sampler', 'plms_sampler'], value='p_sampler', label='Sampler')
-        seed = gr.Number(-1, label='Seed')
+        seed = gr.Number(-1, label='Seed', precision=0)
       with gr.Row():
         prior_scale = gr.Slider(0, 100, 4, step=1, label='Prior scale')
         prior_steps = gr.Slider(0, 100, 5, step=1, label='Prior steps')
@@ -46,14 +46,21 @@ def mix_ui(generate_fn, input_i2i_image, input_inpaint_image, input_mix_image_1,
     with gr.Column(scale=1):
       generate_mix = gr.Button('Generate', variant='primary')
       mix_output = gr.Gallery(label='Generated Images').style(grid=2, preview=True)
-      mix_output.select(fn=mix_gallery_select, outputs=[selected_mix_image_index])
+      selected_image_info = gr.HTML(value='')
+      mix_output.select(fn=mix_gallery_select, outputs=[selected_mix_image_index, selected_image_info])
 
       send_i2i_btn = gr.Button('Send to img2img', variant='secondary')
-      send_i2i_btn.click(fn=send_gallery_image_to_another_tab, inputs=[mix_output, selected_mix_image_index, gr.State(1)], outputs=[tabs, input_i2i_image]) # type: ignore
+      send_i2i_btn.click(fn=open_another_tab, inputs=[gr.State(1)], outputs=tabs, # type: ignore
+        queue=False).then( 
+          send_gallery_image_to_another_tab, inputs=[mix_output, selected_mix_image_index], outputs=[input_i2i_image] # type: ignore
+        )
 
       send_inpaint_btn = gr.Button('Send to inpaint', variant='secondary')
-      send_inpaint_btn.click(fn=send_gallery_image_to_another_tab, inputs=[mix_output, selected_mix_image_index, gr.State(3)], outputs=[tabs, input_inpaint_image]) # type: ignore
-
+      send_inpaint_btn.click(fn=open_another_tab, inputs=[gr.State(3)], outputs=tabs, # type: ignore
+        queue=False).then( 
+          send_gallery_image_to_another_tab, inputs=[mix_output, selected_mix_image_index], outputs=[input_inpaint_image] # type: ignore
+        )
+      
     generate_mix.click(generate_fn, inputs=[
       input_mix_image_1,
       input_mix_image_2,

@@ -4,5 +4,5 @@ class Localizer:
   def __init__(self, locale) -> None:
     pass   
   
-  def string_for(self, phrase):
+  def str(self, phrase):
     return phrase
