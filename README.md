@@ -1,5 +1,5 @@
 
-# Kubin: Web-GUI for [Kandinsky 2.1](https://github.com/ai-forever/Kandinsky-2/)
+<span style="font-size: 2em">Kubin: Web-GUI for [Kandinsky 2.1](https://github.com/ai-forever/Kandinsky-2/)</span>
 
 ## Disclaimer
 
@@ -41,6 +41,7 @@ Currently only basic functions implemented (nothing new compared to [official no
 ![img](/sshots/inpaint.png)
 	
 </details>
+<br>
 
 ## Google Colab
 
@@ -93,10 +94,8 @@ Building flash-attn from source might take a while (20-40 mins) and requires ins
 
 In colab precompiled wheels are used.
 
-.markdown-body table tr:nth-child(2n){     background-color:#f6f8fa }
-
 I made some rough measurements (768x768, 100 steps, p_sampler):
-|                 |T4              |T4+f/a           |V100             |V100+f/a         |RTX5000          |RTX5000+f/a      |A4000            |A4000+f/a        | 
+|                 |T4              |T4+f/a           |V100             |V100+f/a         |RTX5000          |RTX5000+f/a      |A4000            |A4000+f/a     | 
 |:----------------|:--------------:|:---------------:|:---------------:|:---------------:|:---------------:|:---------------:|:---------------:|:---------------:|
 | it/s            | 1.71           |3.24             |12.67            |15.97            |4.41             |6.38             |4.61             |6.61             |
 | VRAM usage (Gb) | 8.6            |9.4              |9.5              |9.7              |11.36            |9.76             |12.48            |10.56            |
