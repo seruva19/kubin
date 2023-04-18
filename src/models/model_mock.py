@@ -2,7 +2,7 @@ import base64
 from PIL import Image
 from io import BytesIO
 
-class DummyModel:
+class Model_Mock:
   def __init__(self):
     print(f'setting dummy model params')
 

@@ -1,6 +1,5 @@
 import numpy
 import requests
-import base64
 from gradio.processing_utils import decode_base64_to_image
 import base64
 from PIL import Image
