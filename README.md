@@ -41,7 +41,6 @@ Currently only basic functions implemented (nothing new compared to [official no
 ![img](/sshots/inpaint.png)
 	
 </details>
-<br>
 
 ## Google Colab
 
@@ -87,7 +86,7 @@ pip install -r requirements.txt
 To enable [FlashAttention](https://github.com/HazyResearch/flash-attention), which should speed up inference and (theoretically) lower VRAM consumption, you may try:
 ```
 pip install flash-attn
-py src/kubin.py --enable-flash-attention
+py src/kubin.py --use-flash-attention
 ```
 
 Building flash-attn from source might take a while (20-40 mins) and requires installation of CUDA Toolkit and VS Build Tools.
