@@ -80,7 +80,6 @@ To update to latest version, use:
 git pull
 pip install -r requirements.txt
 ```
-
 ## FlashAttention
 
 To enable [FlashAttention](https://github.com/HazyResearch/flash-attention), which should speed up inference and (theoretically) lower VRAM consumption, you may try:
@@ -94,7 +93,7 @@ Building flash-attn from source might take a while (20-40 mins) and requires ins
 In colab precompiled wheels are used.
 
 I made some rough measurements (768x768, 100 steps, p_sampler):
-|                 |T4              |T4+f/a           |V100             |V100+f/a         |RTX5000          |RTX5000+f/a      |A4000            |A4000+f/a     | 
+|                 |T4              |T4+f/a           |A100             |A100+f/a         |RTX5000          |RTX5000+f/a      |A4000            |A4000+f/a     | 
 |:----------------|:--------------:|:---------------:|:---------------:|:---------------:|:---------------:|:---------------:|:---------------:|:---------------:|
 | it/s            | 1.71           |3.24             |12.67            |15.97            |4.41             |6.38             |4.61             |6.61             |
 | VRAM usage (Gb) | 8.6            |9.4              |9.5              |9.7              |11.36            |9.76             |12.48            |10.56            |
