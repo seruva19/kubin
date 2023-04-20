@@ -17,7 +17,7 @@ def inpaint_ui(generate_fn, input_i2i_image, input_mix_image_1,  input_mix_image
           negative_prompt = gr.Textbox('bad anatomy, deformed, blurry, depth of field', label='Negative prompt')
       with gr.Row():
         inpainting_target = gr.Radio(['only mask', 'all but mask'], value='only mask', label='Inpainting target')
-        inpainting_region = gr.Radio(['whole', 'mask'], value='whole', label='Inpainting region', interactive=False)
+        inpainting_region = gr.Radio(['whole', 'mask'], value='whole', label='Inpainting region', visible=False)
       with gr.Row():
         steps = gr.Slider(0, 200, 100, step=1, label='Steps')
         guidance_scale = gr.Slider(0, 30, 10, step=1, label='Guidance scale')
@@ -28,7 +28,7 @@ def inpaint_ui(generate_fn, input_i2i_image, input_mix_image_1,  input_mix_image
         width = gr.Slider(0, 1024, 768, step=1, label='Width')
         height = gr.Slider(0, 1024, 768, step=1, label='Height')
       with gr.Row():
-        sampler = gr.Radio(['ddim_sampler', 'p_sampler', 'plms_sampler'], value='ddim_sampler', label='Sampler')
+        sampler = gr.Radio(['ddim_sampler', 'p_sampler', 'plms_sampler'], value='p_sampler', label='Sampler')
         seed = gr.Number(-1, label='Seed', precision=0)
       with gr.Row():
         prior_scale = gr.Slider(0, 100, 4, step=1, label='Prior scale')
@@ -43,21 +43,27 @@ def inpaint_ui(generate_fn, input_i2i_image, input_mix_image_1,  input_mix_image
       send_i2i_btn = gr.Button('Send to img2img', variant='secondary')
       send_i2i_btn.click(fn=open_another_tab, inputs=[gr.State(1)], outputs=tabs, # type: ignore
         queue=False).then( 
-          send_gallery_image_to_another_tab, inputs=[inpaint_output, selected_inpaint_image_index], outputs=[input_i2i_image] # type: ignore
+          send_gallery_image_to_another_tab, inputs=[inpaint_output, selected_inpaint_image_index], outputs=[input_i2i_image] 
         )
 
       with gr.Row():
         send_mix_1_btn = gr.Button('Send to mix (1)', variant='secondary')
         send_mix_1_btn.click(fn=open_another_tab, inputs=[gr.State(2)], outputs=tabs, # type: ignore
           queue=False).then( 
-            send_gallery_image_to_another_tab, inputs=[inpaint_output, selected_inpaint_image_index], outputs=[input_mix_image_1] # type: ignore
+            send_gallery_image_to_another_tab, inputs=[inpaint_output, selected_inpaint_image_index], outputs=[input_mix_image_1] 
           )
         
         send_mix_2_btn = gr.Button('Send to mix (2)', variant='secondary')
         send_mix_2_btn.click(fn=open_another_tab, inputs=[gr.State(2)], outputs=tabs, # type: ignore
           queue=False).then( 
-            send_gallery_image_to_another_tab, inputs=[inpaint_output, selected_inpaint_image_index], outputs=[input_mix_image_2] # type: ignore
+            send_gallery_image_to_another_tab, inputs=[inpaint_output, selected_inpaint_image_index], outputs=[input_mix_image_2] 
           )
+            
+      send_inpaint_btn = gr.Button('Send to inpaint', variant='secondary')
+      send_inpaint_btn.click(fn=open_another_tab, inputs=[gr.State(3)], outputs=tabs, # type: ignore
+        queue=False).then( 
+          send_gallery_image_to_another_tab, inputs=[inpaint_output, selected_inpaint_image_index], outputs=[input_inpaint_image] 
+        )
       
     generate_inpaint.click(generate_fn, inputs=[
       input_inpaint_image,
