@@ -34,23 +34,29 @@ def i2i_ui(generate_fn, input_i2i_image, input_mix_image_1, input_mix_image_2, i
       selected_image_info = gr.HTML(value='')
       i2i_output.select(fn=i2i_gallery_select, outputs=[selected_i2i_image_index, selected_image_info])
 
-      with gr.Row():
+      send_i2i_btn = gr.Button('Send to img2img', variant='secondary')
+      send_i2i_btn.click(fn=open_another_tab, inputs=[gr.State(1)], outputs=tabs, # type: ignore
+        queue=False).then(
+          send_gallery_image_to_another_tab, inputs=[i2i_output, selected_i2i_image_index], outputs=[input_i2i_image] 
+        )
+
+      with gr.Row():    
         send_mix_1_btn = gr.Button('Send to mix (1)', variant='secondary')
         send_mix_1_btn.click(fn=open_another_tab, inputs=[gr.State(2)], outputs=tabs, # type: ignore
           queue=False).then( 
-            send_gallery_image_to_another_tab, inputs=[i2i_output, selected_i2i_image_index], outputs=[input_mix_image_1] # type: ignore
+            send_gallery_image_to_another_tab, inputs=[i2i_output, selected_i2i_image_index], outputs=[input_mix_image_1] 
           )
         
         send_mix_2_btn = gr.Button('Send to mix (2)', variant='secondary')
         send_mix_2_btn.click(fn=open_another_tab, inputs=[gr.State(2)], outputs=tabs, # type: ignore
           queue=False).then( 
-            send_gallery_image_to_another_tab, inputs=[i2i_output, selected_i2i_image_index], outputs=[input_mix_image_2] # type: ignore
+            send_gallery_image_to_another_tab, inputs=[i2i_output, selected_i2i_image_index], outputs=[input_mix_image_2] 
           )
         
       send_inpaint_btn = gr.Button('Send to inpaint', variant='secondary')
       send_inpaint_btn.click(fn=open_another_tab, inputs=[gr.State(3)], outputs=tabs, # type: ignore
         queue=False).then( 
-          send_gallery_image_to_another_tab, inputs=[i2i_output, selected_i2i_image_index], outputs=[input_inpaint_image] # type: ignore
+          send_gallery_image_to_another_tab, inputs=[i2i_output, selected_i2i_image_index], outputs=[input_inpaint_image] 
         )
       
     generate_i2i.click(generate_fn, inputs=[
