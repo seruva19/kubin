@@ -106,7 +106,7 @@ class Model_KD2:
 
     images = []    
     for _ in itertools.repeat(None, batch_count):
-      current_batch = images + self.kandinsky.generate_img2img(
+      current_batch = self.kandinsky.generate_img2img(
         prompt=prompt,
         pil_img=pil_img,
         strength=strength,
@@ -171,8 +171,8 @@ class Model_KD2:
         num_steps=num_steps,
         batch_size=batch_size,  # type: ignore
         guidance_scale=guidance_scale,
-        h=h,  # type: ignore
-        w=w,  # type: ignore
+        h=h, # type: ignore
+        w=w, # type: ignore
         sampler=sampler, 
         prior_cf_scale=prior_cf_scale,  # type: ignore
         prior_steps=str(prior_steps),  # type: ignore
