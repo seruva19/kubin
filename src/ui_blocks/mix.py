@@ -7,9 +7,10 @@ def mix_gallery_select(evt: gr.SelectData):
 
 def update(image):
   no_image = image == None
-  return gr.update(label='Prompt' if no_image else 'Prompt (ignored, using image instead)', interactive=no_image)
+  return gr.update(label='Prompt' if no_image else 'Prompt (ignored, using image instead)', visible=no_image, interactive=no_image)
 
 # TODO: add mixing for images > 2
+# gradio does not support it https://github.com/gradio-app/gradio/issues/2680
 def mix_ui(generate_fn, shared: SharedUI, tabs):
   selected_mix_image_index = gr.State(None) # type: ignore
 
@@ -26,7 +27,8 @@ def mix_ui(generate_fn, shared: SharedUI, tabs):
           text_2 = gr.Textbox('hare', label='Prompt')
           shared.input_mix_image_2.change(fn=update, inputs=shared.input_mix_image_2, outputs=text_2)
           weight_2 = gr.Slider(0, 1, 0.5, step=0.05, label='Weight')
-      add_btn = gr.Button('Add another image', interactive=False)
+      add_btn = gr.Button('Add another mix image', interactive=False)
+      remove_btn = gr.Button('Remove last mix image', interactive=False)
       negative_prompt = gr.Textbox('', label='Negative prompt')
       with gr.Row():
         steps = gr.Slider(0, 200, 100, step=1, label='Steps')
