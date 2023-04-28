@@ -1,10 +1,11 @@
 import gradio as gr
+from ui_blocks.shared.ui_shared import SharedUI
 from utils.gradio_ui import send_gallery_image_to_another_tab, open_another_tab
 
 def t2i_gallery_select(evt: gr.SelectData):
   return [evt.index, f'Selected image index: {evt.index}']
 
-def t2i_ui(generate_fn, input_i2i_image, input_mix_image_1, input_mix_image_2, input_inpaint_image, tabs):
+def t2i_ui(generate_fn, shared: SharedUI, tabs):
   selected_t2i_image_index = gr.State(None) # type: ignore
   
   with gr.Row() as t2i_block:
@@ -36,26 +37,26 @@ def t2i_ui(generate_fn, input_i2i_image, input_mix_image_1, input_mix_image_2, i
       send_i2i_btn = gr.Button('Send to img2img', variant='secondary')
       send_i2i_btn.click(fn=open_another_tab, inputs=[gr.State(1)], outputs=tabs, # type: ignore
         queue=False).then(
-          send_gallery_image_to_another_tab, inputs=[t2i_output, selected_t2i_image_index], outputs=[input_i2i_image] 
+          send_gallery_image_to_another_tab, inputs=[t2i_output, selected_t2i_image_index], outputs=[shared.input_i2i_image] 
         )
 
       with gr.Row():
         send_mix_1_btn = gr.Button('Send to mix (1)', variant='secondary')
         send_mix_1_btn.click(fn=open_another_tab, inputs=[gr.State(2)], outputs=tabs, # type: ignore
           queue=False).then( 
-            send_gallery_image_to_another_tab, inputs=[t2i_output, selected_t2i_image_index], outputs=[input_mix_image_1] 
+            send_gallery_image_to_another_tab, inputs=[t2i_output, selected_t2i_image_index], outputs=[shared.input_mix_image_1] 
           )
 
         send_mix_2_btn = gr.Button('Send to mix (2)', variant='secondary')
         send_mix_2_btn.click(fn=open_another_tab, inputs=[gr.State(2)], outputs=tabs, # type: ignore
           queue=False).then( 
-            send_gallery_image_to_another_tab, inputs=[t2i_output, selected_t2i_image_index], outputs=[input_mix_image_2] 
+            send_gallery_image_to_another_tab, inputs=[t2i_output, selected_t2i_image_index], outputs=[shared.input_mix_image_2] 
           )
 
       send_inpaint_btn = gr.Button('Send to inpaint', variant='secondary')
       send_inpaint_btn.click(fn=open_another_tab, inputs=[gr.State(3)], outputs=tabs, # type: ignore
         queue=False).then( 
-          send_gallery_image_to_another_tab, inputs=[t2i_output, selected_t2i_image_index], outputs=[input_inpaint_image] 
+          send_gallery_image_to_another_tab, inputs=[t2i_output, selected_t2i_image_index], outputs=[shared.input_inpaint_image] 
         )
 
       generate_t2i.click(generate_fn, inputs=[

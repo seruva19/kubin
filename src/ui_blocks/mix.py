@@ -1,4 +1,5 @@
 import gradio as gr
+from ui_blocks.shared.ui_shared import SharedUI
 from utils.gradio_ui import send_gallery_image_to_another_tab, open_another_tab
 
 def mix_gallery_select(evt: gr.SelectData):
@@ -6,26 +7,28 @@ def mix_gallery_select(evt: gr.SelectData):
 
 def update(image):
   no_image = image == None
-  return gr.update(label='Prompt' if no_image else 'Prompt (ignored, using image instead)', interactive=no_image)
+  return gr.update(label='Prompt' if no_image else 'Prompt (ignored, using image instead)', visible=no_image, interactive=no_image)
 
 # TODO: add mixing for images > 2
-def mix_ui(generate_fn, input_i2i_image, input_inpaint_image, input_mix_image_1, input_mix_image_2, tabs):
+# gradio does not support it https://github.com/gradio-app/gradio/issues/2680
+def mix_ui(generate_fn, shared: SharedUI, tabs):
   selected_mix_image_index = gr.State(None) # type: ignore
 
   with gr.Row() as mix_block:
     with gr.Column(scale=2):
       with gr.Row():
         with gr.Column(scale=1):
-          input_mix_image_1.render()
+          shared.input_mix_image_1.render()
           text_1 = gr.Textbox('hare', label='Prompt')
-          input_mix_image_1.change(fn=update, inputs=input_mix_image_1, outputs=text_1)
+          shared.input_mix_image_1.change(fn=update, inputs=shared.input_mix_image_1, outputs=text_1)
           weight_1 = gr.Slider(0, 1, 0.5, step=0.05, label='Weight')
         with gr.Column(scale=1):
-          input_mix_image_2.render()
+          shared.input_mix_image_2.render()
           text_2 = gr.Textbox('hare', label='Prompt')
-          input_mix_image_2.change(fn=update, inputs=input_mix_image_2, outputs=text_2)
+          shared.input_mix_image_2.change(fn=update, inputs=shared.input_mix_image_2, outputs=text_2)
           weight_2 = gr.Slider(0, 1, 0.5, step=0.05, label='Weight')
-      add_btn = gr.Button('Add another image', interactive=False)
+      add_btn = gr.Button('Add another mix image', interactive=False)
+      remove_btn = gr.Button('Remove last mix image', interactive=False)
       negative_prompt = gr.Textbox('', label='Negative prompt')
       with gr.Row():
         steps = gr.Slider(0, 200, 100, step=1, label='Steps')
@@ -52,31 +55,31 @@ def mix_ui(generate_fn, input_i2i_image, input_inpaint_image, input_mix_image_1,
       send_i2i_btn = gr.Button('Send to img2img', variant='secondary')
       send_i2i_btn.click(fn=open_another_tab, inputs=[gr.State(1)], outputs=tabs, # type: ignore
         queue=False).then( 
-          send_gallery_image_to_another_tab, inputs=[mix_output, selected_mix_image_index], outputs=[input_i2i_image] 
+          send_gallery_image_to_another_tab, inputs=[mix_output, selected_mix_image_index], outputs=[shared.input_i2i_image] 
         )
       
       with gr.Row():    
         send_mix_1_btn = gr.Button('Send to mix (1)', variant='secondary')
         send_mix_1_btn.click(fn=open_another_tab, inputs=[gr.State(2)], outputs=tabs, # type: ignore
           queue=False).then( 
-            send_gallery_image_to_another_tab, inputs=[mix_output, selected_mix_image_index], outputs=[input_mix_image_1]
+            send_gallery_image_to_another_tab, inputs=[mix_output, selected_mix_image_index], outputs=[shared.input_mix_image_1]
           )
         
         send_mix_2_btn = gr.Button('Send to mix (2)', variant='secondary')
         send_mix_2_btn.click(fn=open_another_tab, inputs=[gr.State(2)], outputs=tabs, # type: ignore
           queue=False).then( 
-            send_gallery_image_to_another_tab, inputs=[mix_output, selected_mix_image_index], outputs=[input_mix_image_2] 
+            send_gallery_image_to_another_tab, inputs=[mix_output, selected_mix_image_index], outputs=[shared.input_mix_image_2] 
           )
       
       send_inpaint_btn = gr.Button('Send to inpaint', variant='secondary')
       send_inpaint_btn.click(fn=open_another_tab, inputs=[gr.State(3)], outputs=tabs, # type: ignore
         queue=False).then( 
-          send_gallery_image_to_another_tab, inputs=[mix_output, selected_mix_image_index], outputs=[input_inpaint_image] 
+          send_gallery_image_to_another_tab, inputs=[mix_output, selected_mix_image_index], outputs=[shared.input_inpaint_image] 
         )
       
     generate_mix.click(generate_fn, inputs=[
-      input_mix_image_1,
-      input_mix_image_2,
+      shared.input_mix_image_1,
+      shared.input_mix_image_2,
       text_1,
       text_2,
       weight_1,
