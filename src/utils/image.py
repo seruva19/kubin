@@ -6,13 +6,13 @@ from PIL import Image
 from io import BytesIO
 import cv2
 
-def imagePathToPil(image_url):
+def image_path_to_pil(image_url):
   response = requests.get(image_url)
   pil_img = Image.open(BytesIO(response.content))
 
   return pil_img
 
-def resizePilImg(pil_img, size):
+def resize_pil_img(pil_img, size):
   numpy_image = numpy.array(pil_img)  
   cv_img = cv2.cvtColor(numpy_image, cv2.COLOR_RGB2BGR)
 
