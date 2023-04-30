@@ -1,5 +1,6 @@
 import gradio as gr
 from ui_blocks.shared.ui_shared import SharedUI
+from shared import params
 
 def mix_gallery_select(evt: gr.SelectData):
   return [evt.index, f'Selected image index: {evt.index}']
@@ -28,8 +29,9 @@ def mix_ui(generate_fn, shared: SharedUI, tabs):
           shared.input_mix_image_2.change(fn=update, inputs=shared.input_mix_image_2, outputs=text_2)
           weight_2 = gr.Slider(0, 1, 0.5, step=0.05, label='Weight')
       with gr.Column(scale=1):
-        add_btn = gr.Button('Add another mix image', interactive=False)
-        remove_btn = gr.Button('Remove last mix image', interactive=False)
+        with gr.Row():
+          add_btn = gr.Button('Add another mix image', interactive=False)
+          remove_btn = gr.Button('Remove last mix image', interactive=False)
       negative_prompt = gr.Textbox('', label='Negative prompt')
       with gr.Row():
         steps = gr.Slider(0, 200, 100, step=1, label='Steps')
@@ -38,8 +40,8 @@ def mix_ui(generate_fn, shared: SharedUI, tabs):
         batch_count = gr.Slider(0, 16, 4, step=1, label='Batch count')
         batch_size = gr.Slider(0, 16, 1, step=1, label='Batch size')
       with gr.Row():
-        width = gr.Slider(0, 1024, 768, step=1, label='Width')
-        height = gr.Slider(0, 1024, 768, step=1, label='Height')
+        width = gr.Slider(params.image_width_min, params.image_width_max, 768, step=params.image_width_step, label='Width')
+        height = gr.Slider(params.image_height_min, params.image_height_max, 768, step=params.image_height_step, label='Height')
       with gr.Row():
         sampler = gr.Radio(['ddim_sampler', 'p_sampler', 'plms_sampler'], value='p_sampler', label='Sampler')
         seed = gr.Number(-1, label='Seed', precision=0)
