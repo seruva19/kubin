@@ -1,6 +1,7 @@
 .vscode
 /venv
 **/__pycache__
+**/.installed
 /flagged
 /models
 /output

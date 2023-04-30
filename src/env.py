@@ -16,7 +16,7 @@ class Kubin:
       self.args.output_dir
     )
 
-    self.ext_registry = ExtensionRegistry(self.args.extensions_path, self.args.disabled_extensions, self.args.skip_install)
+    self.ext_registry = ExtensionRegistry(self.args.extensions_path, self.args.enabled_extensions, self.args.disabled_extensions, self.args.skip_install)
     self.localizer = Localizer(self.args.locale)
 
   def with_utils(self):
@@ -26,8 +26,8 @@ class Kubin:
     self.fs_utils = fs_utils
     self.img_utils = img_utils   
 
-  def init_ext(self, disabled):
-    if not disabled:
+  def init_extensions(self):
+    if not self.args.safe_mode:
       self.ext_registry.register(self)
     else:
       print('safe mode was initiated, skipping extension init phase')

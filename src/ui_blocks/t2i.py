@@ -1,5 +1,6 @@
 import gradio as gr
 from ui_blocks.shared.ui_shared import SharedUI
+from shared import params
 
 def t2i_gallery_select(evt: gr.SelectData):
   return [evt.index, f'Selected image index: {evt.index}']
@@ -19,8 +20,8 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
         batch_count = gr.Slider(0, 16, 4, step=1, label='Batch count')
         batch_size = gr.Slider(0, 16, 1, step=1, label='Batch size')
       with gr.Row():
-        width = gr.Slider(0, 1024, 768, step=1, label='Width')
-        height = gr.Slider(0, 1024, 768, step=1, label='Height')
+        width = gr.Slider(params.image_width_min, params.image_width_max, 768, step=params.image_width_step, label='Width')
+        height = gr.Slider(params.image_height_min, params.image_height_max, 768, step=params.image_height_step, label='Height')
       with gr.Row():
         sampler = gr.Radio(['ddim_sampler', 'p_sampler', 'plms_sampler'], value='p_sampler', label='Sampler')
         seed = gr.Number(-1, label='Seed', precision=0)

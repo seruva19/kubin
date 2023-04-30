@@ -6,19 +6,31 @@ import importlib.util
 import sys
 
 class ExtensionRegistry:
-  def __init__(self, ext_path, disabled_exts, skip_install):
+  def __init__(self, ext_path, enabled_exts, disabled_exts, skip_install):
+    self.enabled = enabled_exts
     self.disabled = disabled_exts
     self.skip_install = skip_install
     self.root = ext_path
 
     self.extensions = {}
 
+  def get_ext_folders(self):
+    return [entry.name for entry in os.scandir(self.root) if entry.is_dir()]
+
+  def get_enabled_extensions(self):
+    return [] if self.enabled is None else [x.strip() for x in self.enabled.split(',')]
+  
   def get_disabled_extensions(self):
     return [] if self.disabled is None else [x.strip() for x in self.disabled.split(',')]
 
   def register(self, kubin):
-    ext_folders = [entry.name for entry in os.scandir(self.root) if entry.is_dir()]
+    ext_folders = self.get_ext_folders()
     print(f'found {len(ext_folders)} extensions')
+
+    enabled_exts = self.get_enabled_extensions()
+    if len(enabled_exts) > 0:
+      ext_folders = filter(lambda ext: ext in enabled_exts, ext_folders)
+      print(f'only following extensions are enabled: {self.enabled}')
 
     disabled_exts = self.get_disabled_extensions()
 
@@ -28,10 +40,15 @@ class ExtensionRegistry:
       else:
         print(f'{i+1}: extension \'{extension}\' found')
         extension_reqs_path = f'{self.root}/{extension}/requirements.txt'
+        extension_installed = f'{self.root}/{extension}/.installed'
 
         if not self.skip_install and os.path.isfile(extension_reqs_path):
-          print(f'{i+1}: extension \'{extension}\' has requirements.txt, installing')
-          self.install_ext_reqs(extension_reqs_path)
+          if os.path.exists(extension_installed):
+            print(f'{i+1}: extension \'{extension}\' has requirements.txt, but was already installed, skipping')
+          else:
+            print(f'{i+1}: extension \'{extension}\' has requirements.txt, installing')
+            self.install_ext_reqs(extension_reqs_path)
+            open(extension_installed, 'a').close()
 
         extension_py_path = f'{self.root}/{extension}/setup.py'
         spec = importlib.util.spec_from_file_location(f'{self.root}/{extension}', extension_py_path)
@@ -52,3 +69,11 @@ class ExtensionRegistry:
 
   def augment(self): # extensions for augmentation generation params
     return list({key: value for key, value in self.extensions.items() if value['type'] == 'augment'}.values())
+  
+  def force_reinstall(self):
+    ext_folders = self.get_ext_folders()
+    for i, extension in enumerate(ext_folders):
+      extension_installed = f'{self.root}/{extension}/.installed'
+      if os.path.exists(extension_installed):
+        os.remove(extension_installed)
+        print(f'{i+1}: extension \'{extension}\' will be reinstalled on next run')
