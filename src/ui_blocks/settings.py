@@ -48,7 +48,7 @@ def settings_ui(kubin: Kubin):
       update_btn = gr.Button(value='Update system info')
       update_btn.click(update_info, outputs=system_info)
       unload_model = gr.Button(value='Unload model')
-      unload_model.click(lambda: kubin.model.memGC())
+      unload_model.click(lambda: kubin.model.flush())
 
     with gr.Accordion('Model params', open=False):
       values = []

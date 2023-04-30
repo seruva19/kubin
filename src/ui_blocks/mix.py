@@ -1,6 +1,5 @@
 import gradio as gr
 from ui_blocks.shared.ui_shared import SharedUI
-from utils.gradio_ui import send_gallery_image_to_another_tab, open_another_tab
 
 def mix_gallery_select(evt: gr.SelectData):
   return [evt.index, f'Selected image index: {evt.index}']
@@ -10,25 +9,27 @@ def update(image):
   return gr.update(label='Prompt' if no_image else 'Prompt (ignored, using image instead)', visible=no_image, interactive=no_image)
 
 # TODO: add mixing for images > 2
-# gradio does not support it https://github.com/gradio-app/gradio/issues/2680
+# gradio does not support dynamic elements https://github.com/gradio-app/gradio/issues/2680
 def mix_ui(generate_fn, shared: SharedUI, tabs):
   selected_mix_image_index = gr.State(None) # type: ignore
+  augmentations = shared.create_ext_augment_blocks('mix')
 
   with gr.Row() as mix_block:
     with gr.Column(scale=2):
       with gr.Row():
         with gr.Column(scale=1):
           shared.input_mix_image_1.render()
-          text_1 = gr.Textbox('hare', label='Prompt')
+          text_1 = gr.Textbox('', placeholder='', label='Prompt')
           shared.input_mix_image_1.change(fn=update, inputs=shared.input_mix_image_1, outputs=text_1)
           weight_1 = gr.Slider(0, 1, 0.5, step=0.05, label='Weight')
         with gr.Column(scale=1):
           shared.input_mix_image_2.render()
-          text_2 = gr.Textbox('hare', label='Prompt')
+          text_2 = gr.Textbox('', placeholder='', label='Prompt')
           shared.input_mix_image_2.change(fn=update, inputs=shared.input_mix_image_2, outputs=text_2)
           weight_2 = gr.Slider(0, 1, 0.5, step=0.05, label='Weight')
-      add_btn = gr.Button('Add another mix image', interactive=False)
-      remove_btn = gr.Button('Remove last mix image', interactive=False)
+      with gr.Column(scale=1):
+        add_btn = gr.Button('Add another mix image', interactive=False)
+        remove_btn = gr.Button('Remove last mix image', interactive=False)
       negative_prompt = gr.Textbox('', label='Negative prompt')
       with gr.Row():
         steps = gr.Slider(0, 200, 100, step=1, label='Steps')
@@ -46,56 +47,47 @@ def mix_ui(generate_fn, shared: SharedUI, tabs):
         prior_scale = gr.Slider(0, 100, 4, step=1, label='Prior scale')
         prior_steps = gr.Slider(0, 100, 5, step=1, label='Prior steps')
         negative_prior_prompt = gr.Textbox('', label='Negative prior prompt')
+
+      augmentations['ui']()
+
     with gr.Column(scale=1):
       generate_mix = gr.Button('Generate', variant='primary')
       mix_output = gr.Gallery(label='Generated Images').style(grid=2, preview=True)
-      selected_image_info = gr.HTML(value='')
-      mix_output.select(fn=mix_gallery_select, outputs=[selected_mix_image_index, selected_image_info])
+      selected_image_info = gr.HTML(value='', elem_classes=['block-info'])
+      mix_output.select(fn=mix_gallery_select, outputs=[selected_mix_image_index, selected_image_info], show_progress=False)
+      
+      shared.create_base_send_targets(mix_output, selected_mix_image_index, tabs)
+      shared.create_ext_send_targets(mix_output, selected_mix_image_index, tabs)
+     
+      def generate(image_1, image_2, text_1, text_2, weight_1, weight_2, negative_prompt, steps, batch_count, batch_size, guidance_scale, w, h, sampler, prior_cf_scale, prior_steps, negative_prior_prompt, input_seed, *injections):
+        params = {
+          'image_1': image_1,
+          'image_2': image_2,
+          'text_1': text_1,
+          'text_2': text_2,
+          'weight_1': weight_1,
+          'weight_2': weight_2,
+          'negative_decoder_prompt': negative_prompt,
+          'num_steps': steps,
+          'batch_count': batch_count,
+          'batch_size': batch_size,
+          'guidance_scale': guidance_scale,
+          'w': w,
+          'h': h,
+          'sampler': sampler,
+          'prior_cf_scale': prior_cf_scale,
+          'prior_steps': prior_steps,
+          'negative_prior_prompt': negative_prior_prompt,
+          'input_seed': input_seed
+        }
 
-      send_i2i_btn = gr.Button('Send to img2img', variant='secondary')
-      send_i2i_btn.click(fn=open_another_tab, inputs=[gr.State(1)], outputs=tabs, # type: ignore
-        queue=False).then( 
-          send_gallery_image_to_another_tab, inputs=[mix_output, selected_mix_image_index], outputs=[shared.input_i2i_image] 
-        )
+        params = augmentations['exec'](params, *injections)
+        return generate_fn(params)
       
-      with gr.Row():    
-        send_mix_1_btn = gr.Button('Send to mix (1)', variant='secondary')
-        send_mix_1_btn.click(fn=open_another_tab, inputs=[gr.State(2)], outputs=tabs, # type: ignore
-          queue=False).then( 
-            send_gallery_image_to_another_tab, inputs=[mix_output, selected_mix_image_index], outputs=[shared.input_mix_image_1]
-          )
-        
-        send_mix_2_btn = gr.Button('Send to mix (2)', variant='secondary')
-        send_mix_2_btn.click(fn=open_another_tab, inputs=[gr.State(2)], outputs=tabs, # type: ignore
-          queue=False).then( 
-            send_gallery_image_to_another_tab, inputs=[mix_output, selected_mix_image_index], outputs=[shared.input_mix_image_2] 
-          )
-      
-      send_inpaint_btn = gr.Button('Send to inpaint', variant='secondary')
-      send_inpaint_btn.click(fn=open_another_tab, inputs=[gr.State(3)], outputs=tabs, # type: ignore
-        queue=False).then( 
-          send_gallery_image_to_another_tab, inputs=[mix_output, selected_mix_image_index], outputs=[shared.input_inpaint_image] 
-        )
-      
-    generate_mix.click(generate_fn, inputs=[
-      shared.input_mix_image_1,
-      shared.input_mix_image_2,
-      text_1,
-      text_2,
-      weight_1,
-      weight_2,
-      negative_prompt,
-      steps,
-      batch_count,
-      batch_size,
-      guidance_scale,
-      width,
-      height,
-      sampler,
-      prior_scale,
-      prior_steps,
-      negative_prior_prompt,
-      seed
-    ], outputs=mix_output)
+    generate_mix.click(generate, inputs=[
+        shared.input_mix_image_1, shared.input_mix_image_2, text_1, text_2, weight_1, weight_2, negative_prompt, steps, batch_count, batch_size, guidance_scale, width, height, sampler, prior_scale, prior_steps, negative_prior_prompt, seed
+      ] + augmentations['injections'],
+      outputs=mix_output
+    )
 
   return mix_block

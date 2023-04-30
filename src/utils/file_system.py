@@ -2,7 +2,7 @@ import os
 import uuid
 from datetime import datetime
 
-def saveOutput(output_dir, task_type, images, seed):
+def save_output(output_dir, task_type, images, seed):
   output = []
   for img in images:
     path = f'{output_dir}/{task_type}'
