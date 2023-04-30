@@ -19,6 +19,7 @@ parser.add_argument('--locale', type=str, default='en-us') # unused
 parser.add_argument('--model-config', type=str, default='config.kd2') #  unused
 parser.add_argument('--max-mix', type=int, default=2) # unused 
 parser.add_argument('--extensions-path', type=str, default='extensions')
+parser.add_argument('--enabled-extensions', type=str, default=None)
 parser.add_argument('--disabled-extensions', type=str, default=None)
 parser.add_argument('--skip-install', default=False, action='store_true')
 parser.add_argument('--safe-mode', default=False, action='store_true')
@@ -31,7 +32,7 @@ print(f'launching with: {vars(args)}')
 
 kubin = Kubin(args)
 kubin.with_utils()
-kubin.init_ext(args.safe_mode)
+kubin.init_extensions()
 
 ui = gradio_ui(kubin)
 
