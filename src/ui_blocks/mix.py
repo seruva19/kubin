@@ -10,7 +10,7 @@ def update(image):
   return gr.update(label='Prompt' if no_image else 'Prompt (ignored, using image instead)', visible=no_image, interactive=no_image)
 
 # TODO: add mixing for images > 2
-# gradio does not support dynamic elements https://github.com/gradio-app/gradio/issues/2680
+# gradio does not directly support dynamic number of elements https://github.com/gradio-app/gradio/issues/2680
 def mix_ui(generate_fn, shared: SharedUI, tabs):
   selected_mix_image_index = gr.State(None) # type: ignore
   augmentations = shared.create_ext_augment_blocks('mix')
@@ -28,7 +28,7 @@ def mix_ui(generate_fn, shared: SharedUI, tabs):
           text_2 = gr.Textbox('', placeholder='', label='Prompt')
           shared.input_mix_image_2.change(fn=update, inputs=shared.input_mix_image_2, outputs=text_2)
           weight_2 = gr.Slider(0, 1, 0.5, step=0.05, label='Weight')
-      with gr.Column(scale=1):
+      with gr.Column(scale=1, visible=False):
         with gr.Row():
           add_btn = gr.Button('Add another mix image', interactive=False)
           remove_btn = gr.Button('Remove last mix image', interactive=False)

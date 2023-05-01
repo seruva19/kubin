@@ -37,11 +37,11 @@ def extensions_ui(kubin: Kubin, extensions_data):
     for index, extension_info in enumerate(extensions_data):
       with gr.Row():
         gr.Textbox(value=(
-          f"Title: {extension_info['title']}\n"
-          f"Type: {extension_info['type']}\n"
-          f"Path: {extension_info['path']}\n"
-          f"Status: {'enabled' if extension_info['enabled'] else 'disabled'}"
-        ), lines=5, label=f'[{str(index+1)}] {extension_info["name"]}', interactive=False).style(show_copy_button=True)
+          f'Title: {extension_info["title"]}\n'
+          f'Type: {extension_info["type"]}\n'
+          f'Path: {extension_info["path"]}\n'
+          f'Status: {"enabled" if extension_info["enabled"] else "disabled"}'
+        ), lines=5, label=f'{str(index+1)}: {extension_info["name"]}', interactive=False).style(show_copy_button=True)
 
     clear_ext_install_btn = gr.Button(value='Force extension reinstall on next run', label='Force reinstall', interactive=True)
     clear_ext_install_btn.click(lambda: kubin.ext_registry.force_reinstall())
