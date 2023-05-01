@@ -11,19 +11,19 @@
 - [x] Img2img
 - [x] Mixing
 - [x] Inpainting 
-- [x] Upscaling (Real-ESRGAN)
+- [x] Upscaling ([Real-ESRGAN](https://github.com/ai-forever/Real-ESRGAN))
 - [ ] Outpainting
-- [x] Extension support (limited)
+- [x] Extension support (initial)
 - [ ] Fine-tuning ([dreambooth, textual inversion](https://github.com/TheDenk/Kandinsky-2-textual-inversion))
 - [ ] VRAM usage optimization
 - [ ] Advanced prompt syntax
-- [ ] Interrogation
+- [x] Interrogation ([CLIP Interrogator](https://github.com/pharmapsychotic/clip-interrogator))
 - [ ] SAM/Grounded SAM 
 - [ ] Additional schedulers
 - [ ] Animation
 - [ ] ControlNet 
 
-## Screenshots (very outdated)
+## Screenshots (outdated)
 <details> 
 <summary>Expand</summary>
 
