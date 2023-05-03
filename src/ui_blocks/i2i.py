@@ -50,7 +50,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
       i2i_output.select(fn=i2i_gallery_select, outputs=[selected_i2i_image_index, selected_image_info], show_progress=False)
 
       with gr.Row():
-        with gr.Accordion("Send image(s) to : Image 2 Image, Mix Images, Inpaint, Upscale", open=True):
+        with gr.Accordion("Send image(s) to : Image 2 Image, Mix Images, Inpaint, Upscale", open=False):
           shared.create_base_send_targets(i2i_output, selected_i2i_image_index, tabs)
           shared.create_ext_send_targets(i2i_output, selected_i2i_image_index, tabs)
       
