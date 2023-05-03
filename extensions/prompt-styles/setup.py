@@ -1,7 +1,7 @@
 import gradio as gr
  
 def setup(kubin):
-  available_styles = get_styles()
+  available_styles = get_fb_styles()
   default_style = list(available_styles.keys())[0]
   targets = ['t2i', 'i2i', 'inpaint']
 
@@ -34,7 +34,7 @@ def setup(kubin):
   } 
 
 # these prompt modifiers were taken from fusionbrain.ai
-def get_styles():
+def get_fb_styles():
   return {
     'none': '',
     'anime': 'in anime style',
