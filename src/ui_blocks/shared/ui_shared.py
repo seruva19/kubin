@@ -87,7 +87,7 @@ class SharedUI():
         if target in ext_augment['targets']:
           with gr.Row() as row:
             with gr.Accordion(ext_augment['title'], open=ext_augment.get('opened', lambda o: False)(target)):
-              ext_info = ext_augment['ui_fn'](target)
+              ext_info = ext_augment['augment_fn'](target)
 
           ext_blocks.append(row)
           ext_exec.append(ext_augment['exec_fn'])

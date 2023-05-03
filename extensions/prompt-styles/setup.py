@@ -28,7 +28,7 @@ def setup(kubin):
   return {
     'type': 'augment', 
     'title': 'Style',
-    'ui_fn': lambda target: style_selector_ui(target),
+    'augment_fn': lambda target: style_selector_ui(target),
     'exec_fn': lambda target, params, modifier: append_style(target, params, modifier),
     'targets': targets
   } 

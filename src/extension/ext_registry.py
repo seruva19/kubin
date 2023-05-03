@@ -65,10 +65,10 @@ class ExtensionRegistry:
     subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', f'{reqs_path}'])
 
   def standalone(self): # extensions with dedicated tab
-    return list({key: value for key, value in self.extensions.items() if value['type'] == 'standalone'}.values())
+    return list({key: value for key, value in self.extensions.items() if value.get('tab_fn', None) is not None}.values())
 
   def augment(self): # extensions for augmentation generation params
-    return list({key: value for key, value in self.extensions.items() if value['type'] == 'augment'}.values())
+    return list({key: value for key, value in self.extensions.items() if value.get('augment_fn', None) is not None}.values())
   
   def force_reinstall(self):
     ext_folders = self.get_ext_folders()

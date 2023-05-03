@@ -58,4 +58,4 @@ def create_ext_tabs(exts, ext_start_tab_index, ui_shared, tabs):
   ext_ui = []
   for tab_index, ext in enumerate(exts):
     with gr.TabItem(ext['title'], id = ext_start_tab_index + tab_index):  
-      ext_ui.append(ext['ui_fn'](ui_shared, tabs))
+      ext_ui.append(ext['tab_fn'](ui_shared, tabs))

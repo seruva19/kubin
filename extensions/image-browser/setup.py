@@ -52,7 +52,6 @@ def setup(kubin):
     return image_browser_block
   
   return {
-    'type': 'standalone', 
     'title': 'Image Browser',
-    'ui_fn': lambda ui_s, ts: image_browser_ui(ui_s, ts)
+    'tab_fn': lambda ui_s, ts: image_browser_ui(ui_s, ts)
   }
