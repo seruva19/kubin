@@ -20,7 +20,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
           strength = gr.Slider(0.1, 1, 0.7, step=0.1, label='Strength')
 
         with gr.Row():
-          steps = gr.Slider(25, 200, 100, step=1, label='Steps')
+          steps = gr.Slider(20, 200, 100, step=1, label='Steps')
           guidance_scale = gr.Slider(1, 30, 7, step=0.5, label='Guidance scale')
 
         with gr.Row():
