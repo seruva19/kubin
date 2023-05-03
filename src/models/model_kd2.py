@@ -1,6 +1,7 @@
 import gc
 import itertools
 import secrets
+from PIL import Image
 import numpy as np
 import torch
 import torch.backends
@@ -24,6 +25,8 @@ class Model_KD2:
 
   def prepare(self, task):
     print(f'preparing model for {task}')
+    assert task in ['text2img', 'img2img', 'mix', 'inpainting', 'outpainting']
+
     ready = True
     
     if task == 'img2img':
@@ -31,6 +34,9 @@ class Model_KD2:
     
     if task == 'mix':
       task = 'text2img' 
+    
+    if task == 'outpainting':
+      task = 'inpainting' 
 
     if self.task_type != task:
       self.task_type = task
@@ -176,7 +182,7 @@ class Model_KD2:
     
     mask_img = resize_pil_img(image_mask['mask'], output_size)
     mask = np.array(mask_img.convert('L')).astype(np.float32) / 255.0
-    
+  
     if params['target'] == 'only mask':
       mask = 1.0 - mask
       
@@ -203,5 +209,36 @@ class Model_KD2:
     return images
   
   def outpaint(self, params):
-    pass
-  
+    seed = self.prepare('outpainting').withSeed(params['input_seed'])
+    assert self.kandinsky is not None
+
+    output_size = (params['w'], params['h'])
+    image = params['image'] 
+
+    x1, y1, x2, y2 = image.getbbox()
+    mask = np.zeros(image.size, dtype=np.float32)
+    mask[y1:y2, x1:x2] = 1
+
+    image_resized = resize_pil_img(image, output_size)
+      
+    images = []
+    for _ in itertools.repeat(None, params['batch_count']):
+      current_batch = self.kandinsky.generate_inpainting(
+        prompt=params['prompt'],
+        pil_img=image_resized,
+        img_mask=mask,
+        num_steps=params['num_steps'],
+        batch_size=params['batch_size'],  # type: ignore
+        guidance_scale=params['guidance_scale'],
+        h=params['h'], # type: ignore
+        w=params['w'], # type: ignore
+        sampler=params['sampler'], 
+        prior_cf_scale=params['prior_cf_scale'],  # type: ignore
+        prior_steps=str(params['prior_steps']),  # type: ignore
+        negative_prior_prompt=params['negative_prior_prompt'], # type: ignore
+        negative_decoder_prompt=params['negative_decoder_prompt'] # type: ignore
+      )
+
+      saved_batch = save_output(self.output_dir, 'outpainting', current_batch, seed)
+      images = images + saved_batch
+    return images  

@@ -3,6 +3,10 @@ import os
 from PIL import Image
 from io import BytesIO
 
+import numpy as np
+
+from utils.image import resize_pil_img
+
 # intended for testing purposes only
 class Model_Mock:
   def __init__(self):
@@ -32,6 +36,10 @@ class Model_Mock:
   
   def inpaint(self, params):
     print('mock inpaint executed')
+    return self.dummyImages()
+  
+  def outpaint(self, params):
+    print('mock outpaint executed')
     return self.dummyImages()
   
   def dummyImages(self):
