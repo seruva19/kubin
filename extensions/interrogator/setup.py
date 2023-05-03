@@ -41,6 +41,7 @@ def cancel_patch(patch):
 def setup(kubin):
   ci = None
   ci_config = None
+  source_image = gr.Image(type='pil', label='Input image')
 
   def get_interrogator(clip_model, blip_type, cache_path, chunk_size):
     nonlocal ci 
@@ -75,7 +76,7 @@ def setup(kubin):
     with gr.Row() as interrogator_block:
       with gr.Column(scale=1):
         with gr.Row():
-          source_image = gr.Image(type='pil', label='Input image')
+          source_image.render()
 
         with gr.Row():
           clip_model = gr.Dropdown(choices=['ViT-L-14/openai', 'ViT-H-14/laion2b_s32b_b79k'], value='ViT-L-14/openai', label='CLIP model')
@@ -94,7 +95,7 @@ def setup(kubin):
     return interrogator_block
   
   return {
-    'type': 'standalone', 
     'title': 'Interrogator',
-    'ui_fn': lambda ui_s, ts: interrogator_ui(ui_s, ts)
+    'tab_fn': lambda ui_s, ts: interrogator_ui(ui_s, ts),
+    'send_target': source_image
   }
