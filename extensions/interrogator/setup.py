@@ -72,19 +72,19 @@ def setup(kubin):
     return interrogated_text
 
   def interrogator_ui(ui_shared, ui_tabs):
-    with gr.Row() as interrogator_block:
-      with gr.Column(scale=1):
+    with gr.Box() as interrogator_block:
+      with gr.Row():
         with gr.Row():
           source_image = gr.Image(type='pil', label='Input image')
-
-        with gr.Row():
-          clip_model = gr.Dropdown(choices=['ViT-L-14/openai', 'ViT-H-14/laion2b_s32b_b79k'], value='ViT-L-14/openai', label='CLIP model')
-        with gr.Row():
-          mode = gr.Radio(['best', 'classic', 'fast', 'negative'], value='fast', label='Mode')
-        with gr.Row():
-          blip_model_type = gr.Radio(['base', 'large'], value='large', label='BLIP model type')
-        with gr.Row():
-          chunk_size = gr.Slider(512, 2048, 2048, step=512, label='Chunk size')
+          with gr.Box():
+            with gr.Row():
+              clip_model = gr.Dropdown(choices=['ViT-L-14/openai', 'ViT-H-14/laion2b_s32b_b79k'], value='ViT-L-14/openai', label='CLIP model')
+            with gr.Row():
+              mode = gr.Radio(['best', 'classic', 'fast', 'negative'], value='fast', label='Mode')
+            with gr.Row():
+              blip_model_type = gr.Radio(['base', 'large'], value='large', label='BLIP model type')
+            with gr.Row():
+              chunk_size = gr.Slider(512, 2048, 2048, step=512, label='Chunk size')
  
       with gr.Column(scale=1):
         interrogate_btn = gr.Button('Interrogate', variant='primary')

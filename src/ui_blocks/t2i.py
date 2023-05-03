@@ -44,8 +44,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
           with gr.Row():
             augmentations['ui']()
 
-        t2i_output = gr.Gallery(label='Generated Images').style(columns=[4], rows=[4], object_fit="contain",
-                                                                height="auto", preview=True)
+        t2i_output = gr.Gallery(label='Generated Images').style(columns=[4], rows=[4], object_fit="contain", height="auto", preview=True)
         selected_image_info = gr.HTML(value='', elem_classes=['block-info'])
         t2i_output.select(fn=t2i_gallery_select, outputs=[selected_t2i_image_index, selected_image_info],
                           show_progress=False)
@@ -82,7 +81,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                                           ] + augmentations['injections'],
                          outputs=t2i_output
                          )
-    with gr.Accordion("Send image(s) to : Image 2 Image, Mix Images, Inpaint, Upscale,", open=True):
+    with gr.Accordion("Send image(s) to : Image 2 Image, Mix Images, Inpaint, Upscale,", open=False):
       shared.create_base_send_targets(t2i_output, selected_t2i_image_index, tabs)
       shared.create_ext_send_targets(t2i_output, selected_t2i_image_index, tabs)
     
