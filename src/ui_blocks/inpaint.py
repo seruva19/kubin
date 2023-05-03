@@ -10,37 +10,35 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs):
   selected_inpaint_image_index = gr.State(None) # type: ignore
   augmentations = shared.create_ext_augment_blocks('inpaint')
 
-  with gr.Box() as inpaint_block:
-    with gr.Column():
-      with gr.Box():
+  with gr.Row() as inpaint_block:
+    with gr.Column(scale=2):
+      with gr.Row():
         shared.input_inpaint_image.render()
-        with gr.Accordion("Mask settings", open=False):
-          inpainting_target = gr.Radio(['only mask', 'all but mask'], value='only mask', label='Inpainting target')
-          inpainting_region = gr.Radio(['whole', 'mask'], value='whole', label='Inpainting region', visible=False)
-        with gr.Row():
+        with gr.Column():
           prompt = gr.Textbox('', placeholder='', label='Prompt')
-        with gr.Row():
           negative_prompt = gr.Textbox('', placeholder='', label='Negative prompt')
-      with gr.Accordion("Advanced Image settings", open=False):
-        with gr.Row():
-          steps = gr.Slider(1, 200, 100, step=1, label='Steps')
-          guidance_scale = gr.Slider(1, 30, 10, step=0.5, label='Guidance scale')
-        with gr.Row():
-          batch_count = gr.Slider(1, 16, 4, step=1, label='Batch count')
-          batch_size = gr.Slider(1, 16, 1, step=1, label='Batch size')
-          # TODO: fix https://github.com/ai-forever/Kandinsky-2/issues/53
-        with gr.Row():
-          width = gr.Slider(params.image_width_min, params.image_width_max, 768, step=params.image_width_step, label='Width')
-          height = gr.Slider(params.image_height_min, params.image_height_max, 768, step=params.image_height_step, label='Height')
-        with gr.Row():
-          sampler = gr.Radio(['ddim_sampler', 'p_sampler', 'plms_sampler'], value='p_sampler', label='Sampler')
-          seed = gr.Number(-1, label='Seed', precision=0)
-        with gr.Row():
-          prior_scale = gr.Slider(1, 100, 4, step=1, label='Prior scale')
-          prior_steps = gr.Slider(1, 100, 5, step=1, label='Prior steps')
-          negative_prior_prompt = gr.Textbox('', label='Negative prior prompt')
+      with gr.Row():
+        inpainting_target = gr.Radio(['only mask', 'all but mask'], value='only mask', label='Inpainting target')
+        inpainting_region = gr.Radio(['whole', 'mask'], value='whole', label='Inpainting region', visible=False)
+      with gr.Row():
+        steps = gr.Slider(0, 200, 100, step=1, label='Steps')
+        guidance_scale = gr.Slider(0, 30, 10, step=1, label='Guidance scale')
+      with gr.Row():
+        batch_count = gr.Slider(0, 16, 4, step=1, label='Batch count')
+        batch_size = gr.Slider(0, 16, 1, step=1, label='Batch size')
+        # TODO: fix https://github.com/ai-forever/Kandinsky-2/issues/53
+      with gr.Row():
+        width = gr.Slider(params.image_width_min, params.image_width_max, 768, step=params.image_width_step, label='Width')
+        height = gr.Slider(params.image_height_min, params.image_height_max, 768, step=params.image_height_step, label='Height')
+      with gr.Row():
+        sampler = gr.Radio(['ddim_sampler', 'p_sampler', 'plms_sampler'], value='p_sampler', label='Sampler')
+        seed = gr.Number(-1, label='Seed', precision=0)
+      with gr.Row():
+        prior_scale = gr.Slider(0, 100, 4, step=1, label='Prior scale')
+        prior_steps = gr.Slider(0, 100, 5, step=1, label='Prior steps')
+        negative_prior_prompt = gr.Textbox('', label='Negative prior prompt')
 
-        augmentations['ui']()
+      augmentations['ui']()
 
     with gr.Column(scale=1):
       generate_inpaint = gr.Button('Generate', variant='primary')

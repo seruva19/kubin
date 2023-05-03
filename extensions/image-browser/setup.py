@@ -41,6 +41,7 @@ def setup(kubin):
         folder_contents.select(fn=folder_contents_gallery_select, outputs=[selected_folder_contents_index], show_progress=False)
         
         ui_shared.create_base_send_targets(folder_contents, selected_folder_contents_index, ui_tabs) # type: ignore
+        ui_shared.create_ext_send_targets(folder_contents, selected_folder_contents_index, ui_tabs) # type: ignore
         image_folders.change(fn=view_folder, inputs=image_folders, outputs=folder_contents)
 
         refresh_btn.click(fn=check_folders, inputs=[image_folders], outputs=[no_folders_message, image_folders], # type: ignore

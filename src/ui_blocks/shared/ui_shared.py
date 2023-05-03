@@ -5,10 +5,11 @@ import gradio as gr
 
 class SharedUI():
   def __init__(self, kubin: Kubin, extension_targets, augment_exts):
-    self.input_i2i_image = gr.Image(type='pil') 
-    self.input_mix_image_1 = gr.Image(type='pil') 
-    self.input_mix_image_2 = gr.Image(type='pil') 
-    self.input_inpaint_image = gr.ImageMask(type='pil')
+    self.input_i2i_image = gr.Image(type='pil', elem_classes='i2i_image')
+    self.input_mix_image_1 = gr.Image(type='pil', elem_classes='mix_1_image')
+    self.input_mix_image_2 = gr.Image(type='pil', elem_classes='mix_2_image') 
+    self.input_inpaint_image = gr.ImageMask(type='pil', elem_classes='inpaint_image')
+    self.input_outpaint_image = gr.ImageMask(type='pil', source='upload', tool='editor', elem_classes='outpaint_image')
 
     self.extensions_images_targets = extension_targets
     self.extensions_augment = augment_exts
@@ -59,6 +60,12 @@ class SharedUI():
         self.send_gallery_image_to_another_tab, inputs=[output, selected_image_index], outputs=[self.input_inpaint_image] 
       )
 
+    send_outpaint_btn = gr.Button('Send to Outpaint', variant='secondary')
+    send_outpaint_btn.click(fn=self.open_another_tab, inputs=[gr.State(4)], outputs=tabs, # type: ignore
+      queue=False).then( 
+        self.send_gallery_image_to_another_tab, inputs=[output, selected_image_index], outputs=[self.input_outpaint_image] 
+      )
+    
   def create_ext_send_targets(self, output, selected_image_index, tabs):
     ext_image_targets = []
     for ext in self.extensions_images_targets:

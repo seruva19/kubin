@@ -42,7 +42,7 @@ def setup(kubin):
   
   return {
     'type': 'standalone', 
-    'title': 'Upscale',
+    'title': 'Upscaler',
     'ui_fn': lambda ui_s, ts: upscaler_ui(ui_s, ts),
     'send_target': source_image
   } 
