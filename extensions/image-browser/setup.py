@@ -21,6 +21,8 @@ def setup(kubin):
   
   def view_folder(folder):
     image_files = [entry.path for entry in os.scandir(f'{image_root}/{folder}') if entry.is_file() and entry.name.endswith(('png'))]
+    image_files.sort(key=lambda f: os.path.getmtime(f), reverse=True)
+
     return image_files
   
   def folder_contents_gallery_select(evt: gr.SelectData):
