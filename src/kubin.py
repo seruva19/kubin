@@ -39,6 +39,7 @@ ui = gradio_ui(kubin)
 ui.queue(concurrency_count=kubin.args.concurrency_count, api_open=False).launch(
   show_api=False,
   debug=kubin.args.debug,
+  show_error=True,
   share=kubin.args.share=='gradio',
   server_name=kubin.args.server_name,
   server_port=kubin.args.server_port,
