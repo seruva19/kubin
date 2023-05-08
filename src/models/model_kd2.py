@@ -177,24 +177,21 @@ class Model_KD2:
     assert self.kandinsky is not None
 
     output_size = (params['w'], params['h'])
-    image_with_mask = params['image_mask']    
-
-    image = image_with_mask['image']
-    image = image.convert('RGB')
-    image = image.resize(output_size, resample=Image.LANCZOS)
+    image_mask = params['image_mask']
+    pil_img = image_mask['image'].resize(output_size, resample=Image.LANCZOS)
     
-    mask = image_with_mask['mask']
-    mask = mask.convert('L')
-    mask = mask.resize(output_size, resample=Image.LANCZOS)
-    mask_array = np.array(mask)
-    mask_array = (mask_array == 0).astype(np.float32)
+    mask_img = image_mask['mask'].resize(output_size)
+    mask_arr = np.array(mask_img.convert('L')).astype(np.float32) / 255.0
+  
+    if params['target'] == 'only mask':
+      mask_arr = 1.0 - mask_arr
 
     images = []
     for _ in itertools.repeat(None, params['batch_count']):
       current_batch = self.kandinsky.generate_inpainting(
         prompt=params['prompt'],
-        pil_img=image,
-        img_mask=mask_array,
+        pil_img=pil_img,
+        img_mask=mask_arr,
         num_steps=params['num_steps'],
         batch_size=params['batch_size'],  # type: ignore
         guidance_scale=params['guidance_scale'],
