@@ -19,7 +19,7 @@ def write_styles(styles):
     yaml.safe_dump(data, stream, default_flow_style=False, indent=2, allow_unicode=True)
     
 def setup(kubin):
-  targets = ['t2i', 'i2i', 'inpaint']
+  targets = ['t2i', 'mix', 'inpaint', 'outpaint']
 
   def load_styles():
     initial_styles = get_styles()
@@ -34,8 +34,12 @@ def setup(kubin):
     )
 
   def append_style(target, params, current_style, default_style):
-    params['prompt'] += '' if current_style['name'] == default_style['name'] else f', {current_style["prompt"]}'
-    params['negative_decoder_prompt'] += '' if current_style['name'] == default_style['name'] else f', {current_style["negative"]}'
+    if 'prompt' in params:
+      params['prompt'] += '' if current_style['name'] == default_style['name'] else f', {current_style["prompt"]}'
+
+    if 'negative_decoder_prompt' in params:
+      params['negative_decoder_prompt'] += '' if current_style['name'] == default_style['name'] else f', {current_style["negative"]}'
+
     return params
 
   def select_style(target, selected_style_name, available):
