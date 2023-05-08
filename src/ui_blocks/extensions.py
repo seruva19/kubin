@@ -12,7 +12,8 @@ def create_extensions_info(kubin: Kubin):
       extensions_info.append({
         'name': extension[0],
         'title': extension[1]['title'],
-        'type': extension[1]['type'],
+        'is_tab': extension[1].get('tab_fn', None) is not None,
+        'is_augment': extension[1].get('augment_fn', None) is not None,
         'path': get_path(extension[0]),
         'enabled': True
       })
@@ -24,7 +25,8 @@ def create_extensions_info(kubin: Kubin):
       extensions_info.append({
         'name': extension_name,
         'title': 'unknown (not loaded)',
-        'type': 'unknown (not loaded)',
+        'is_tab': 'unknown (not loaded)',
+        'is_augment': 'unknown (not loaded)',
         'path': get_path(extension_name),
         'enabled': False
       })
@@ -37,10 +39,11 @@ def extensions_ui(kubin: Kubin, extensions_data):
     for index, extension_info in enumerate(extensions_data):
       with gr.Row():
         gr.Textbox(value=(
-          f'Title: {extension_info["title"]}\n'
-          f'Type: {extension_info["type"]}\n'
-          f'Path: {extension_info["path"]}\n'
-          f'Status: {"enabled" if extension_info["enabled"] else "disabled"}'
+          f'title: {extension_info["title"]}\n'
+          f'is tab: {extension_info["is_tab"]}\n'
+          f'is augmentation: {extension_info["is_augment"]}\n'
+          f'path: {extension_info["path"]}\n'
+          f'status: {"enabled" if extension_info["enabled"] else "disabled"}'
         ), lines=5, label=f'{str(index+1)}: {extension_info["name"]}', interactive=False).style(show_copy_button=True)
 
     clear_ext_install_btn = gr.Button(value='Force extension reinstall on next run', label='Force reinstall', interactive=True)

@@ -21,6 +21,8 @@ def setup(kubin):
   
   def view_folder(folder):
     image_files = [entry.path for entry in os.scandir(f'{image_root}/{folder}') if entry.is_file() and entry.name.endswith(('png'))]
+    image_files.sort(key=lambda f: os.path.getmtime(f), reverse=True)
+
     return image_files
   
   def folder_contents_gallery_select(evt: gr.SelectData):
@@ -40,10 +42,11 @@ def setup(kubin):
         folder_contents = gr.Gallery(label='Images in folder').style(preview=False, grid=5)
         folder_contents.select(fn=folder_contents_gallery_select, outputs=[selected_folder_contents_index], show_progress=False)
         
-        ui_shared.create_base_send_targets(folder_contents, selected_folder_contents_index, ui_tabs) # type: ignore
+        ui_shared.create_base_send_targets(folder_contents, selected_folder_contents_index, ui_tabs)
+        ui_shared.create_ext_send_targets(folder_contents, selected_folder_contents_index, ui_tabs) 
         image_folders.change(fn=view_folder, inputs=image_folders, outputs=folder_contents)
 
-        refresh_btn.click(fn=check_folders, inputs=[image_folders], outputs=[no_folders_message, image_folders], # type: ignore
+        refresh_btn.click(fn=check_folders, inputs=[image_folders], outputs=[no_folders_message, image_folders], 
         queue=False).then( 
           fn=refresh, inputs=[image_folders], outputs=[folder_contents]
         )
@@ -51,7 +54,6 @@ def setup(kubin):
     return image_browser_block
   
   return {
-    'type': 'standalone', 
     'title': 'Image Browser',
-    'ui_fn': lambda ui_s, ts: image_browser_ui(ui_s, ts)
+    'tab_fn': lambda ui_s, ts: image_browser_ui(ui_s, ts)
   }

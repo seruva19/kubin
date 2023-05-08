@@ -3,7 +3,7 @@
 git+https://github.com/ai-forever/Kandinsky-2.git@c9ec0dd
 git+https://github.com/openai/CLIP.git@a9b1bf5
 opencv-python==4.7.0.72
-gradio==3.24.1
+gradio==3.28.3
 psutil==5.9.4
 
 # uncomment if cpu version of torch is retrieved

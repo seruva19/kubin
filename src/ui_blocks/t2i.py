@@ -13,22 +13,23 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
     with gr.Column(scale=2):
       prompt = gr.Textbox('', label='Prompt', placeholder='')
       negative_decoder_prompt = gr.Textbox('', placeholder='', label='Negative prompt')
-      with gr.Row():
-        steps = gr.Slider(0, 200, 100, step=1, label='Steps')
-        guidance_scale = gr.Slider(0, 30, 4, step=1, label='Guidance scale')
-      with gr.Row():
-        batch_count = gr.Slider(0, 16, 4, step=1, label='Batch count')
-        batch_size = gr.Slider(0, 16, 1, step=1, label='Batch size')
-      with gr.Row():
-        width = gr.Slider(params.image_width_min, params.image_width_max, 768, step=params.image_width_step, label='Width')
-        height = gr.Slider(params.image_height_min, params.image_height_max, 768, step=params.image_height_step, label='Height')
-      with gr.Row():
-        sampler = gr.Radio(['ddim_sampler', 'p_sampler', 'plms_sampler'], value='p_sampler', label='Sampler')
-        seed = gr.Number(-1, label='Seed', precision=0)
-      with gr.Row():
-        prior_scale = gr.Slider(0, 100, 4, step=1, label='Prior scale')
-        prior_steps = gr.Slider(0, 100, 5, step=1, label='Prior steps')
-        negative_prior_prompt = gr.Textbox('', label='Negative prior prompt')
+      with gr.Accordion('Advanced params', open=True):
+        with gr.Row():
+          steps = gr.Slider(1, 200, 100, step=1, label='Steps')
+          guidance_scale = gr.Slider(1, 30, 4, step=1, label='Guidance scale')
+        with gr.Row():
+          batch_count = gr.Slider(1, 16, 4, step=1, label='Batch count')
+          batch_size = gr.Slider(1, 16, 1, step=1, label='Batch size')
+        with gr.Row():
+          width = gr.Slider(params.image_width_min, params.image_width_max, params.image_width_default, step=params.image_width_step, label='Width', )
+          height = gr.Slider(params.image_height_min, params.image_height_max, params.image_height_default, step=params.image_height_step, label='Height')
+        with gr.Row():
+          sampler = gr.Radio(['ddim_sampler', 'p_sampler', 'plms_sampler'], value='p_sampler', label='Sampler')
+          seed = gr.Number(-1, label='Seed', precision=0)
+        with gr.Row():
+          prior_scale = gr.Slider(1, 100, 4, step=1, label='Prior scale')
+          prior_steps = gr.Slider(1, 100, 5, step=1, label='Prior steps')
+          negative_prior_prompt = gr.Textbox('', label='Negative prior prompt')
 
       augmentations['ui']()
 
@@ -40,7 +41,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
 
       shared.create_base_send_targets(t2i_output, selected_t2i_image_index, tabs)
       shared.create_ext_send_targets(t2i_output, selected_t2i_image_index, tabs)
-    
+  
       def generate(prompt, negative_decoder_prompt, num_steps, batch_count, batch_size, guidance_scale, w, h, sampler, prior_cf_scale, prior_steps, negative_prior_prompt, input_seed, *injections):
         params = {
           'prompt': prompt,
@@ -58,7 +59,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
           'input_seed': input_seed
         }
 
-        params = augmentations['exec'](params, *injections)
+        params = augmentations['exec'](params, injections)
         return generate_fn(params)
 
       generate_t2i.click(generate, inputs=[

@@ -33,22 +33,23 @@ def mix_ui(generate_fn, shared: SharedUI, tabs):
           add_btn = gr.Button('Add another mix image', interactive=False)
           remove_btn = gr.Button('Remove last mix image', interactive=False)
       negative_prompt = gr.Textbox('', label='Negative prompt')
-      with gr.Row():
-        steps = gr.Slider(0, 200, 100, step=1, label='Steps')
-        guidance_scale = gr.Slider(0, 30, 4, step=1, label='Guidance scale')
-      with gr.Row():
-        batch_count = gr.Slider(0, 16, 4, step=1, label='Batch count')
-        batch_size = gr.Slider(0, 16, 1, step=1, label='Batch size')
-      with gr.Row():
-        width = gr.Slider(params.image_width_min, params.image_width_max, 768, step=params.image_width_step, label='Width')
-        height = gr.Slider(params.image_height_min, params.image_height_max, 768, step=params.image_height_step, label='Height')
-      with gr.Row():
-        sampler = gr.Radio(['ddim_sampler', 'p_sampler', 'plms_sampler'], value='p_sampler', label='Sampler')
-        seed = gr.Number(-1, label='Seed', precision=0)
-      with gr.Row():
-        prior_scale = gr.Slider(0, 100, 4, step=1, label='Prior scale')
-        prior_steps = gr.Slider(0, 100, 5, step=1, label='Prior steps')
-        negative_prior_prompt = gr.Textbox('', label='Negative prior prompt')
+      with gr.Accordion('Advanced params', open=True):
+        with gr.Row():
+          steps = gr.Slider(1, 200, 100, step=1, label='Steps')
+          guidance_scale = gr.Slider(1, 30, 4, step=1, label='Guidance scale')
+        with gr.Row():
+          batch_count = gr.Slider(1, 16, 4, step=1, label='Batch count')
+          batch_size = gr.Slider(1, 16, 1, step=1, label='Batch size')
+        with gr.Row():
+          width = gr.Slider(params.image_width_min, params.image_width_max, params.image_width_default, step=params.image_width_step, label='Width')
+          height = gr.Slider(params.image_height_min, params.image_height_max, params.image_height_default, step=params.image_height_step, label='Height')
+        with gr.Row():
+          sampler = gr.Radio(['ddim_sampler', 'p_sampler', 'plms_sampler'], value='p_sampler', label='Sampler')
+          seed = gr.Number(-1, label='Seed', precision=0)
+        with gr.Row():
+          prior_scale = gr.Slider(1, 100, 4, step=1, label='Prior scale')
+          prior_steps = gr.Slider(1, 100, 5, step=1, label='Prior steps')
+          negative_prior_prompt = gr.Textbox('', label='Negative prior prompt')
 
       augmentations['ui']()
 
@@ -83,7 +84,7 @@ def mix_ui(generate_fn, shared: SharedUI, tabs):
           'input_seed': input_seed
         }
 
-        params = augmentations['exec'](params, *injections)
+        params = augmentations['exec'](params, injections)
         return generate_fn(params)
       
     generate_mix.click(generate, inputs=[

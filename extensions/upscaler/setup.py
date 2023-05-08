@@ -5,7 +5,7 @@ import numpy as np
 from RealESRGAN import RealESRGAN
 
 def setup(kubin):
-  source_image = gr.Image(type='pil')
+  source_image = gr.Image(type='pil', label="Image to upscale")
 
   def upscaler_ui(ui_shared, ui_tabs):
     with gr.Row() as upscaler_block:
@@ -41,9 +41,8 @@ def setup(kubin):
     return upscaler_block
   
   return {
-    'type': 'standalone', 
-    'title': 'Upscale',
-    'ui_fn': lambda ui_s, ts: upscaler_ui(ui_s, ts),
+    'title': 'Upscaler',
+    'tab_fn': lambda ui_s, ts: upscaler_ui(ui_s, ts),
     'send_target': source_image
   } 
 
