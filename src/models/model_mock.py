@@ -2,10 +2,7 @@ import base64
 import os
 from PIL import Image
 from io import BytesIO
-
 import numpy as np
-
-from utils.image import resize_pil_img
 
 # intended for testing purposes only
 class Model_Mock:
@@ -36,7 +33,19 @@ class Model_Mock:
   
   def inpaint(self, params):
     print('mock inpaint executed')
-    return self.dummyImages()
+    
+    output_size = (params['w'], params['h'])
+    image_with_mask = params['image_mask']
+
+    image = image_with_mask['image']
+    image = image.convert('RGB')
+    image = image.resize(output_size, resample=Image.LANCZOS)
+
+    mask = image_with_mask['mask']
+    mask = mask.convert('L')
+    mask = mask.resize(output_size, resample=Image.LANCZOS)
+
+    return [image, mask]
   
   def outpaint(self, params):
     print('mock outpaint executed')

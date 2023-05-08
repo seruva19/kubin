@@ -1,63 +1,185 @@
 import gradio as gr
- 
+from pathlib import Path
+import yaml
+import uuid
+
+dir = Path(__file__).parent.absolute()
+
+def read_styles():
+  with open(f'{dir}/styles.yaml', 'r') as stream:
+    data = yaml.safe_load(stream)
+    return data['styles']
+
+def get_styles():
+  return [{'name': 'none', 'prompt': None, 'negative': None}] + read_styles()
+
+def write_styles(styles):
+  with open(f'{dir}/styles.yaml', 'w') as stream:
+    data = {'styles': styles}
+    yaml.safe_dump(data, stream, default_flow_style=False, indent=2, allow_unicode=True)
+    
 def setup(kubin):
-  available_styles = get_fb_styles()
-  default_style = list(available_styles.keys())[0]
   targets = ['t2i', 'i2i', 'inpaint']
 
-  def append_style(target, params, style):
-    params['prompt'] += '' if style == default_style else f', {style}'
+  def load_styles():
+    initial_styles = get_styles()
+
+    return (
+      initial_styles,
+      initial_styles[0],
+      initial_styles[0],
+      gr.update(choices=[style['name'] for style in initial_styles], value=initial_styles[0]['name']),
+      gr.update(value=''),
+      gr.update(value='')
+    )
+
+  def append_style(target, params, current_style, default_style):
+    params['prompt'] += '' if current_style['name'] == default_style['name'] else f', {current_style["prompt"]}'
+    params['negative_decoder_prompt'] += '' if current_style['name'] == default_style['name'] else f', {current_style["negative"]}'
     return params
 
-  def style_select(style, target, current_modifier):
-    selected_style = available_styles[style]
+  def select_style(target, selected_style_name, available):
+    selected_style = next(filter(lambda x: x['name'] == selected_style_name, available))
 
-    return '' if selected_style == '' else f'added to prompt: {selected_style}', selected_style
+    selected_modifier = selected_style['prompt']
+    selected_negative_modifier = selected_style['negative']
+
+    return (
+      '' if selected_modifier is None else f'adds to prompt: {selected_modifier}',
+      '' if selected_negative_modifier is None else f'adds to negative prompt: {selected_negative_modifier}',
+       gr.update(visible=selected_style['name'] != 'none'),
+      selected_style
+    )
+
+  def add_style(chosen_style):
+    return (
+      gr.update(visible=True),
+      f'User style {uuid.uuid4()}' if chosen_style is None else chosen_style['name'],
+      '' if chosen_style is None else chosen_style['prompt'],
+      '' if chosen_style is None else chosen_style['negative'],
+      gr.update(visible=False)
+    )
     
-  def style_selector_ui(target):
+  def save_style(name, prompt, negative_prompt):
+    initial_styles = read_styles()
+    exists = False
+
+    for style in initial_styles:
+      if style['name'] == name:
+        style['prompt'] = prompt
+        style['negative'] = negative_prompt
+        exists = True
+        break 
+
+    if not exists:
+      initial_styles = initial_styles + [{'name': name, 'prompt': prompt, 'negative': negative_prompt}]
+
+    write_styles(initial_styles)
+
+    return (
+      gr.update(visible=True),
+      gr.update(visible=False)
+    )
+  
+  def remove_style(name):
+    initial_styles = read_styles()
+    found_style = None
+
+    for style in initial_styles:
+      if style['name'] == name:
+        found_style = style
+        break 
+
+    if found_style is not None:
+      initial_styles.remove(found_style)
+
+    write_styles(initial_styles)
+
+    return (
+      gr.update(visible=True),
+      gr.update(visible=False),
+    )
+
+  def style_select_ui(target):
+    target = gr.State(value=target) # type: ignore
+
+    initial_styles = get_styles()
+    available_styles = gr.State(value=initial_styles) # type: ignore
+    default_style = gr.State(value=initial_styles[0]) # type: ignore
+    current_style = gr.State(value=initial_styles[0]) # type: ignore
+
     with gr.Column() as style_selector_block:
-      current_target = gr.State(value=target) # type: ignore
-      modifier = gr.State(default_style) # type: ignore
-      
-      style_variant = gr.Dropdown([style for style in available_styles], value=default_style, show_label=False, interactive=True)
+      style_variant = gr.Dropdown([style['name'] for style in initial_styles], value=initial_styles[0]['name'], show_label=False, interactive=True) 
       style_info = gr.HTML(value='', elem_classes='block-info')
-      style_variant.change(fn=style_select, inputs=[style_variant, current_target, modifier], outputs=[style_info, modifier], show_progress=False)
-          
-    return style_selector_block, modifier
+      style_negative_info = gr.HTML(value='', elem_classes='block-info')
+
+      with gr.Row() as style_edit_elements:
+        add_style_btn = gr.Button('Add style')
+        edit_style_btn = gr.Button('Edit style', visible=False)
+        refresh_styles_btn = gr.Button('Reload all styles')
+        
+      with gr.Column(visible=False) as edit_prompt_elements:
+        style_name = gr.Textbox(label='Style name', value='', lines=1, interactive=True) 
+        style_prompt = gr.Textbox(label='Style prompt', value='', lines=4, interactive=True)  
+        style_negative_prompt = gr.Textbox(label='Style negative prompt', value='', lines=4, interactive=True)  
+
+        with gr.Row():
+          save_style_btn = gr.Button('Save style')
+          cancel_style_btn = gr.Button('Cancel editing')
+          remove_style_btn = gr.Button('Remove style')
+
+      style_variant.change(fn=select_style,
+        inputs=[target, style_variant, available_styles],
+        outputs=[style_info, style_negative_info, edit_style_btn, current_style],
+        show_progress=False
+      )
+      
+      refresh_styles_btn.click(fn=load_styles, inputs=[], outputs=[
+        available_styles,
+        default_style,
+        current_style,
+        style_variant,
+        style_info,
+        style_negative_info
+      ]) 
+
+      add_style_btn.click(fn=add_style, inputs=[gr.State(None)], outputs=[ # type: ignore
+        edit_prompt_elements,
+        style_name,
+        style_prompt,
+        style_negative_prompt,
+        style_edit_elements
+      ]) 
+
+      edit_style_btn.click(fn=add_style, inputs=[current_style], outputs=[ # type: ignore
+        edit_prompt_elements,
+        style_name,
+        style_prompt,
+        style_negative_prompt,
+        style_edit_elements
+      ]) 
+
+      save_style_btn.click(fn=save_style, inputs=[style_name, style_prompt, style_negative_prompt], outputs=[ # type: ignore
+        style_edit_elements,
+        edit_prompt_elements
+      ]) 
+
+      cancel_style_btn.click(fn=lambda: [gr.update(visible=True), gr.update(visible=False)], inputs=[], outputs=[ # type: ignore
+        style_edit_elements,
+        edit_prompt_elements
+      ]) 
+      
+      remove_style_btn.click(fn=remove_style, inputs=[style_name], outputs=[ # type: ignore
+        style_edit_elements,
+        edit_prompt_elements
+      ]) 
+
+    return style_selector_block, current_style, default_style
        
   return {
     'type': 'augment', 
     'title': 'Style',
-    'augment_fn': lambda target: style_selector_ui(target),
-    'exec_fn': lambda target, params, modifier: append_style(target, params, modifier),
+    'augment_fn': lambda target: style_select_ui(target),
+    'exec_fn': lambda target, params, augmentations: append_style(target, params, augmentations[0], augmentations[1]),
     'targets': targets
   } 
-
-# these prompt modifiers were taken from fusionbrain.ai
-def get_fb_styles():
-  return {
-    'none': '',
-    'anime': 'in anime style',
-    'detailed photo':	'4k, ultra HD, detailed phot',
-    'cyberpunk': 'in cyberpunk style, futuristic cyberpunk',
-    'kandinsky': 'painted by Vasily Kandinsky, abstractionis',
-    'aivazovsky': 'painted by Aivazovsky',
-    'malevich': 'Malevich, suprematism, avant-garde art, 20th century, geometric shapes , colorful, Russian avant-garde',
-    'picasso': 'Cubist painting by Pablo Picasso, 1934, colorful',
-    'goncharova': 'painted by Goncharova, Russian avant-garde, futurism, cubism, suprematism',
-    'classicism':	'classicism painting, 17th century, trending on artstation, baroque painting',
-    'renaissance': 'painting, renaissance old master royal collection, artstation',
-    'oil painting':	'like oil painting',
-    'pencil art':	'pencil art, pencil drawing, highly detailed',
-    'digital painting':	'high quality, highly detailed, concept art, digital painting, by greg rutkowski trending on artstation',
-    'medieval':	'medieval painting, 15th century, trending on artstation',
-    'soviet cartoon':	'picture from soviet cartoons',
-    '3d render': 'Unreal Engine rendering, 3d render, photorealistic, digital concept art, octane render, 4k HD',
-    'cartoon': 'as cartoon, picture from cartoon',
-    'studio photo':	'glamorous, emotional ,shot in the photo studio, professional studio lighting, backlit, rim lighting, 8k',
-    'portrait photo':	'50mm portrait photography, hard rim lighting photography',
-    'mosaic': 'as tile mosaic',
-    'icon painting': 'in the style of a wooden christian medieval icon in the church',
-    'khokhloma': 'in Russian style, Khokhloma, 16th century, marble, decorative, realistic',
-    'new year':	'christmas, winter, x-mas, decorations, new year eve, snowflakes, 4k',
-  }

@@ -1,0 +1,97 @@
+styles:
+- name: anime
+  negative: null
+  prompt: in anime style
+  source: fusionbrain.ai
+- name: detailed photo
+  negative: null
+  prompt: 4k, ultra HD, detailed phot
+  source: fusionbrain.ai
+- name: cyberpunk
+  negative: null
+  prompt: in cyberpunk style, futuristic cyberpunk
+  source: fusionbrain.ai
+- name: kandinsky
+  negative: null
+  prompt: painted by Vasily Kandinsky, abstractionis
+  source: fusionbrain.ai
+- name: aivazovsky
+  negative: null
+  prompt: painted by Aivazovsky
+  source: fusionbrain.ai
+- name: malevich
+  negative: null
+  prompt: Malevich, suprematism, avant-garde art, 20th century, geometric shapes,
+    colorful, Russian avant-garde
+  source: fusionbrain.ai
+- name: picasso
+  negative: null
+  prompt: Cubist painting by Pablo Picasso, 1934, colorful
+  source: fusionbrain.ai
+- name: goncharova
+  negative: null
+  prompt: painted by Goncharova, Russian avant-garde, futurism, cubism, suprematism
+  source: fusionbrain.ai
+- name: classicism
+  negative: null
+  prompt: classicism painting, 17th century, trending on artstation, baroque painting
+  source: fusionbrain.ai
+- name: renaissance
+  negative: null
+  prompt: painting, renaissance old master royal collection, artstation
+  source: fusionbrain.ai
+- name: oil painting
+  negative: null
+  prompt: like oil painting
+  source: fusionbrain.ai
+- name: pencil art
+  negative: null
+  prompt: pencil art, pencil drawing, highly detailed
+  source: fusionbrain.ai
+- name: digital painting
+  negative: null
+  prompt: high quality, highly detailed, concept art, digital painting, by greg rutkowski
+    trending on artstation
+  source: fusionbrain.ai
+- name: medieval
+  negative: null
+  prompt: medieval painting, 15th century, trending on artstation
+  source: fusionbrain.ai
+- name: soviet cartoon
+  negative: null
+  prompt: picture from soviet cartoons
+  source: fusionbrain.ai
+- name: 3d render
+  negative: null
+  prompt: Unreal Engine rendering, 3d render, photorealistic, digital concept art,
+    octane render, 4k HD
+  source: fusionbrain.ai
+- name: cartoon
+  negative: null
+  prompt: as cartoon, picture from cartoon
+  source: fusionbrain.ai
+- name: studio photo
+  negative: null
+  prompt: glamorous, emotional, shot in the photo studio, professional studio lighting,
+    backlit, rim lighting, 8k
+  source: fusionbrain.ai
+- name: portrait photo
+  negative: null
+  prompt: 50mm portrait photography, hard rim lighting photography
+  source: fusionbrain.ai
+- name: mosaic
+  negative: null
+  prompt: as tile mosaic
+  source: fusionbrain.ai
+- name: icon painting
+  negative: null
+  prompt: in the style of a wooden christian medieval icon in the church
+  source: fusionbrain.ai
+- name: khokhloma
+  negative: null
+  prompt: in Russian style, Khokhloma, 16th century, marble, decorative, realistic
+  source: fusionbrain.ai
+- name: new year
+  negative: null
+  prompt: christmas, winter, x-mas, decorations, new year eve, snowflakes, 4k
+  source: fusionbrain.ai

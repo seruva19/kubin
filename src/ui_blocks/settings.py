@@ -56,4 +56,7 @@ def settings_ui(kubin: Kubin):
         value = gr.Textbox(label=str(key), value=model_config[key])
         values.append(value)
 
+    with gr.Row():
+      textbox_log = gr.TextArea(label='Log', lines=10, interactive=False).style(show_copy_button=True)
+
   return settings_block

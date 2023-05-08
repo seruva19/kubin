@@ -59,7 +59,7 @@ class SharedUI():
       queue=False).then( 
         self.send_gallery_image_to_another_tab, inputs=[output, selected_image_index], outputs=[self.input_inpaint_image] 
       )
-
+    
     send_outpaint_btn = gr.Button('Send to Outpaint', variant='secondary')
     send_outpaint_btn.click(fn=self.open_another_tab, inputs=[gr.State(4)], outputs=tabs, # type: ignore
       queue=False).then( 
@@ -80,7 +80,7 @@ class SharedUI():
   def create_ext_augment_blocks(self, target):
     ext_blocks = []
     ext_exec = []
-    ext_injected = []
+    ext_injections = []
     
     def create_block():
       for ext_augment in self.extensions_augment:
@@ -91,15 +91,18 @@ class SharedUI():
 
           ext_blocks.append(row)
           ext_exec.append(ext_augment['exec_fn'])
-          ext_injected.append(ext_info[1])
+
+          for ext_injection in ext_info[1:]:
+            ext_injections.append(ext_injection)
 
     def augment_params(target, params, *injections):
       for index, ext_fn in enumerate(ext_exec):
         params = ext_fn(target, params, injections[index])
       return params
 
+
     return {
       'ui': lambda: create_block(),
       'exec': lambda p, *a: augment_params(target, p, *a),
-      'injections': ext_injected
+      'injections': ext_injections
     }

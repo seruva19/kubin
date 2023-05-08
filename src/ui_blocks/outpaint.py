@@ -18,11 +18,11 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs):
 
         with gr.Column(scale=1):
           manual_control = gr.Checkbox(False, label='Manual control')
-          offset_top = gr.Slider(0, 1024, 0, step=16, label='Top')
+          offset_top = gr.Slider(1, 1024, 0, step=16, label='Top')
           with gr.Row():
-            offset_left = gr.Slider(0, 1024, 0, step=16, label='Left')
-            offset_right = gr.Slider(0, 1024, 0, step=16, label='Right')
-          offset_bottom = gr.Slider(0, 1024, 0, step=16, label='Bottom')
+            offset_left = gr.Slider(1, 1024, 0, step=16, label='Left')
+            offset_right = gr.Slider(1, 1024, 0, step=16, label='Right')
+          offset_bottom = gr.Slider(1, 1024, 0, step=16, label='Bottom')
 
           manual_control.change(
             fn=lambda x: [gr.update(interactive=x), gr.update(interactive=x), gr.update(interactive=x), gr.update(interactive=x)],
@@ -32,22 +32,24 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs):
       with gr.Column():
         prompt = gr.Textbox('', placeholder='', label='Prompt')
         negative_prompt = gr.Textbox('', placeholder='', label='Negative prompt')
-      with gr.Row():
-        steps = gr.Slider(0, 200, 100, step=1, label='Steps')
-        guidance_scale = gr.Slider(0, 30, 10, step=1, label='Guidance scale')
-      with gr.Row():
-        batch_count = gr.Slider(0, 16, 4, step=1, label='Batch count')
-        batch_size = gr.Slider(0, 16, 1, step=1, label='Batch size')
-      with gr.Row():
-        width = gr.Slider(params.image_width_min, params.image_width_max, 768, step=params.image_width_step, label='Width')
-        height = gr.Slider(params.image_height_min, params.image_height_max, 768, step=params.image_height_step, label='Height')
-      with gr.Row():
-        sampler = gr.Radio(['ddim_sampler', 'p_sampler', 'plms_sampler'], value='p_sampler', label='Sampler')
-        seed = gr.Number(-1, label='Seed', precision=0)
-      with gr.Row():
-        prior_scale = gr.Slider(0, 100, 4, step=1, label='Prior scale')
-        prior_steps = gr.Slider(0, 100, 5, step=1, label='Prior steps')
-        negative_prior_prompt = gr.Textbox('', label='Negative prior prompt')
+        
+      with gr.Accordion('Advanced params', open=True):
+        with gr.Row():
+          steps = gr.Slider(1, 200, 100, step=1, label='Steps')
+          guidance_scale = gr.Slider(1, 30, 10, step=1, label='Guidance scale')
+        with gr.Row():
+          batch_count = gr.Slider(1, 16, 4, step=1, label='Batch count')
+          batch_size = gr.Slider(1, 16, 1, step=1, label='Batch size')
+        with gr.Row():
+          width = gr.Slider(params.image_width_min, params.image_width_max, params.image_width_default, step=params.image_width_step, label='Width')
+          height = gr.Slider(params.image_height_min, params.image_height_max, params.image_height_default, step=params.image_height_step, label='Height')
+        with gr.Row():
+          sampler = gr.Radio(['ddim_sampler', 'p_sampler', 'plms_sampler'], value='p_sampler', label='Sampler')
+          seed = gr.Number(-1, label='Seed', precision=0)
+        with gr.Row():
+          prior_scale = gr.Slider(1, 100, 4, step=1, label='Prior scale')
+          prior_steps = gr.Slider(1, 100, 5, step=1, label='Prior steps')
+          negative_prior_prompt = gr.Textbox('', label='Negative prior prompt')
 
       augmentations['ui']()
 
@@ -78,7 +80,7 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs):
           'input_seed': input_seed
         }
 
-        params = augmentations['exec'](params, *injections)
+        params = augmentations['exec'](params, injections)
         return generate_fn(params)
     
     generate_outpaint.click(generate, inputs=[
