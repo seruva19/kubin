@@ -5,7 +5,7 @@
 
 🚧 WIP 🚧 DO NOT USE 🚧
 
-## Features
+## Roadmap
 
 - [x] Txt2img
 - [x] Img2img
