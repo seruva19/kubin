@@ -7,7 +7,7 @@ import urllib.request
 from segment_anything import SamPredictor, SamAutomaticMaskGenerator, sam_model_registry
 
 def setup(kubin):
-  source_image = gr.Image(type='pil', label="Image to extract mask from")
+  source_image = gr.Image(type='pil', label='Image to extract mask from', elem_classes=['full-height'])
 
   def segment_anything_ui(ui_shared, ui_tabs):
     selected_mask_index = gr.State(None) # type: ignore
@@ -28,6 +28,13 @@ def setup(kubin):
         segment_output = gr.Gallery(label='Segmented Masks').style(preview=True, grid=4)
         
         ui_shared.create_base_send_targets(segment_output, selected_mask_index, ui_tabs) 
+
+      def select_point(img, evt: gr.SelectData):
+        selected_point = img[evt.index[1], evt.index[0]] # type: ignore
+        print(evt)
+        print(f"Selected point: {selected_point}")
+      
+      source_image.select(select_point, source_image)
 
       segment_btn.click(fn=lambda *p: segment_image(kubin, *p), inputs=[
         source_image,
