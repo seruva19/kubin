@@ -18,7 +18,7 @@
 - [ ] VRAM usage optimization
 - [ ] Advanced prompt syntax
 - [x] Interrogation ([CLIP Interrogator](https://github.com/pharmapsychotic/clip-interrogator))
-- [ ] SAM/Grounded SAM 
+- [ ] Segmentation ([Segment Anything](https://github.com/facebookresearch/segment-anything))
 - [ ] Additional schedulers
 - [ ] Animation
 - [ ] ControlNet 
