@@ -3,7 +3,7 @@
 
 ## Disclaimer
 
-🚧 WIP 🚧 DO NOT USE 🚧
+🚧 WIP UNTIL IT'S DONE 🚧 
 
 ## Roadmap
 
@@ -13,9 +13,10 @@
 - [x] Inpainting 
 - [x] Upscaling ([Real-ESRGAN](https://github.com/ai-forever/Real-ESRGAN))
 - [ ] Outpainting
-- [x] Extension support (initial)
+- [x] Support for extensions (initial)
 - [ ] Fine-tuning ([dreambooth, textual inversion](https://github.com/TheDenk/Kandinsky-2-textual-inversion))
 - [ ] VRAM usage optimization
+- [x] Img2mesh ([Shape-E](https://github.com/openai/shap-e))
 - [ ] Advanced prompt syntax
 - [x] Interrogation ([CLIP Interrogator](https://github.com/pharmapsychotic/clip-interrogator))
 - [ ] Segmentation ([Segment Anything](https://github.com/facebookresearch/segment-anything))
@@ -56,12 +57,9 @@
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1lx4lQS61hYb02BSoAoJUAVwPr7PhhkJt)
 <br>
 
+Notebooks for Paperspace and Kaggle are in "notebooks" folder.
 
 ## Documentation
 
-None yet, because codebase and modules structure has not been finalized.
-
-If you have questions, please feel free to open an issue or start a discussion.
-
-Some information can be found [in wiki](https://github.com/seruva19/kubin/wiki/Docs).
+Some information can be found in [Wiki](https://github.com/seruva19/kubin/wiki/Docs).
 

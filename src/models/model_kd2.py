@@ -209,7 +209,6 @@ class Model_KD2:
     return images
   
   def outpaint(self, params):
-    print(params)
     seed = self.prepare('outpainting').withSeed(params['input_seed'])
     assert self.kandinsky is not None 
 
@@ -222,7 +221,6 @@ class Model_KD2:
       top, right, bottom, left = offset
       inferred_mask_size = tuple(a + b for a, b in zip(image.size, (left + right, top + bottom)))[::-1]
       mask = np.zeros(inferred_mask_size, dtype=np.float32)
-      print(inferred_mask_size)
       mask[top:old_h+top, left:old_w+left] = 1
       image = ImageOps.expand(image, border=(left, top, right, bottom), fill=0)
 
@@ -249,7 +247,6 @@ class Model_KD2:
       height=params['h']
 
     images = []
-    print(width, height)
     for _ in itertools.repeat(None, params['batch_count']):
       current_batch = self.kandinsky.generate_inpainting(
         prompt=params['prompt'],
