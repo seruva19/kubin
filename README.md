@@ -24,7 +24,7 @@
 - [ ] Animation
 - [ ] ControlNet 
 
-## Screenshots (outdated)
+## Screenshots
 <details> 
 <summary>Expand</summary>
 
