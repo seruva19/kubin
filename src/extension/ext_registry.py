@@ -51,15 +51,18 @@ class ExtensionRegistry:
             open(extension_installed, 'a').close()
 
         extension_py_path = f'{self.root}/{extension}/setup.py'
-        spec = importlib.util.spec_from_file_location(f'{self.root}/{extension}', extension_py_path)
-        if spec is not None:
-          module = importlib.util.module_from_spec(spec)
-          sys.modules[extension] = module
-          if spec.loader is not None:
-            spec.loader.exec_module(module)
-            self.extensions[extension] = module.setup(kubin)
-        
-        print(f'{i+1}: extension \'{extension}\' successfully registered')
+        if os.path.exists(extension_py_path):
+          spec = importlib.util.spec_from_file_location(f'{self.root}/{extension}', extension_py_path)
+          if spec is not None:
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[extension] = module
+            if spec.loader is not None:
+              spec.loader.exec_module(module)
+              self.extensions[extension] = module.setup(kubin)
+          
+          print(f'{i+1}: extension \'{extension}\' successfully registered')
+        else:
+          print(f'{i+1}: setup.py not found for \'{extension}\', extension will not be registered')
 
   def install_ext_reqs(self, reqs_path):
     subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', f'{reqs_path}'])
