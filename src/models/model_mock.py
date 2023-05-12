@@ -1,6 +1,6 @@
 import base64
 import os
-from PIL import Image
+from PIL import Image, ImageOps
 from io import BytesIO
 import numpy as np
 
@@ -49,7 +49,41 @@ class Model_Mock:
   
   def outpaint(self, params):
     print('mock outpaint executed')
-    return self.dummyImages()
+    image = params['image'] 
+    old_w, old_h = image.size
+    
+    offset = params['offset']
+
+    if offset is not None:
+      top, right, bottom, left = offset
+      inferred_mask_size = tuple(a + b for a, b in zip(image.size, (left + right, top + bottom)))[::-1]
+      mask = np.zeros(inferred_mask_size, dtype=np.float32)
+      mask[top:old_h+top, left:old_w+left] = 1
+      image = ImageOps.expand(image, border=(left, top, right, bottom), fill=0)
+
+    else:
+      output_size = (params['w'], params['h'])
+      image = image.resize(output_size)
+      x1, y1, x2, y2 = image.getbbox()
+      w_factor = params['w'] / old_w
+      h_factor = params['h'] / old_h
+
+      x1 *= w_factor
+      x2 *= w_factor
+      y1 *= h_factor
+      y2 *= h_factor
+
+      mask = np.zeros(image.size, dtype=np.float32)
+      mask[int(y1):int(y2), int(x1):int(x2)] = 1
+    
+    infer_size = params['infer_size']
+    if infer_size:
+      height, width = mask.shape[:2]
+    else:
+      width=params['w']
+      height=params['h']
+
+    return [image, Image.fromarray(np.uint8(mask * 255))]
   
   def dummyImages(self):
     screenshots_as_dummies = [entry.name for entry in os.scandir('sshots') if entry.is_file()]
