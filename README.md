@@ -28,28 +28,54 @@
 <details> 
 <summary>Expand</summary>
 
-### txt2img
+### txt2img tab
 	
 ![img](/sshots/t2i.png)
 	
-<br>
-
-### img2img
+### img2img tab
 	
 ![img](/sshots/i2i.png)
 
-<br>
-
-### mixing
+### mixing tab
 	
 ![img](/sshots/mix.png)
 
-<br>
-	
-### inpainting
+### inpainting tab
     
 ![img](/sshots/inpaint.png)
-	
+
+### outpainting tab
+    
+![img](/sshots/outpaint.png)
+
+### image browser extension tab
+    
+![img](/sshots/image_browser.png)
+
+### interrogator extension tab
+    
+![img](/sshots/interrogate.png)
+
+### mesh generator extension tab
+    
+![img](/sshots/mesh_model.png)
+
+### image segmentation extension tab
+    
+![img](/sshots/segmentation.png)
+
+### upscaler extension tab
+    
+![img](/sshots/upscale.png)
+
+### extensions tab
+    
+![img](/sshots/extensions.png)
+
+### settings tab
+    
+![img](/sshots/settings.png)
+
 </details>
 
 ## Google Colab
