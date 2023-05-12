@@ -9,7 +9,5 @@ image_height_step = 64
 
 css_styles = '''
 .block.block-info .min {min-height: initial;}
-.block.i2i_image .fixed-height {height: initial;}
-.block.mix_1_image .fixed-height {height: initial;}
-.block.mix_2_image .fixed-height {height: initial;}
+.block.full-height {height: initial !important;}
 '''

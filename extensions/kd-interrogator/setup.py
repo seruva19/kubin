@@ -41,7 +41,7 @@ def cancel_patch(patch):
 def setup(kubin):
   ci = None
   ci_config = None
-  source_image = gr.Image(type='pil', label='Input image')
+  source_image = gr.Image(type='pil', label='Input image', elem_classes=['full-height'])
 
   def get_interrogator(clip_model, blip_type, cache_path, chunk_size):
     nonlocal ci 

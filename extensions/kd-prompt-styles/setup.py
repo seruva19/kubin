@@ -131,6 +131,7 @@ def setup(kubin):
           save_style_btn = gr.Button('Save style')
           cancel_style_btn = gr.Button('Cancel editing')
           remove_style_btn = gr.Button('Remove style')
+        gr.HTML("To apply changes after adding or editing a style, you need to press 'Refresh' button, otherwise new changes won't be reflected in list.")
 
       style_variant.change(fn=select_style,
         inputs=[target, style_variant, available_styles],
@@ -145,7 +146,7 @@ def setup(kubin):
         style_variant,
         style_info,
         style_negative_info
-      ]) 
+      ], show_progress=False) 
 
       add_style_btn.click(fn=add_style, inputs=[gr.State(None)], outputs=[ # type: ignore
         edit_prompt_elements,

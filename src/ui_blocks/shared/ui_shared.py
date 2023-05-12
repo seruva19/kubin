@@ -5,11 +5,11 @@ import gradio as gr
 
 class SharedUI():
   def __init__(self, kubin: Kubin, extension_targets, augment_exts):
-    self.input_i2i_image = gr.Image(type='pil', elem_classes='i2i_image')
-    self.input_mix_image_1 = gr.Image(type='pil', elem_classes='mix_1_image')
-    self.input_mix_image_2 = gr.Image(type='pil', elem_classes='mix_2_image') 
-    self.input_inpaint_image = gr.ImageMask(type='pil', elem_classes='inpaint_image')
-    self.input_outpaint_image = gr.ImageMask(type='pil', source='upload', tool='editor', elem_classes='outpaint_image')
+    self.input_i2i_image = gr.Image(type='pil', elem_classes=['i2i_image', 'full-height'])
+    self.input_mix_image_1 = gr.Image(type='pil', elem_classes=['mix_1_image', 'full-height'])
+    self.input_mix_image_2 = gr.Image(type='pil', elem_classes=['mix_2_image', 'full-height'])
+    self.input_inpaint_image = gr.ImageMask(type='pil', elem_classes=['inpaint_image'])
+    self.input_outpaint_image = gr.ImageMask(type='pil', source='upload', tool='editor', elem_classes=['outpaint_image'])
 
     self.extensions_images_targets = extension_targets
     self.extensions_augment = augment_exts

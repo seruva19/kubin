@@ -210,27 +210,42 @@ class Model_KD2:
   
   def outpaint(self, params):
     seed = self.prepare('outpainting').withSeed(params['input_seed'])
-    assert self.kandinsky is not None
+    assert self.kandinsky is not None 
 
-    output_size = (params['w'], params['h'])
     image = params['image'] 
-
     old_w, old_h = image.size
-    x1, y1, x2, y2 = image.getbbox()
-    w_factor = params['w'] / old_w
-    h_factor = params['h'] / old_h
+    
+    offset = params['offset']
 
-    x1 *= w_factor
-    x2 *= w_factor
-    y1 *= h_factor
-    y2 *= h_factor
+    if offset is not None:
+      top, right, bottom, left = offset
+      inferred_mask_size = tuple(a + b for a, b in zip(image.size, (left + right, top + bottom)))[::-1]
+      mask = np.zeros(inferred_mask_size, dtype=np.float32)
+      mask[top:old_h+top, left:old_w+left] = 1
+      image = ImageOps.expand(image, border=(left, top, right, bottom), fill=0)
 
-    image = image.resize(output_size)
-    image = image
+    else:
+      output_size = (params['w'], params['h'])
+      image = image.resize(output_size)
+      x1, y1, x2, y2 = image.getbbox()
+      w_factor = params['w'] / old_w
+      h_factor = params['h'] / old_h
 
-    mask = np.zeros(image.size, dtype=np.float32)
-    mask[int(y1):int(y2), int(x1):int(x2)] = 1
-      
+      x1 *= w_factor
+      x2 *= w_factor
+      y1 *= h_factor
+      y2 *= h_factor
+
+      mask = np.zeros(image.size, dtype=np.float32)
+      mask[int(y1):int(y2), int(x1):int(x2)] = 1
+    
+    infer_size = params['infer_size']
+    if infer_size:
+      height, width = mask.shape[:2]
+    else:
+      width=params['w']
+      height=params['h']
+
     images = []
     for _ in itertools.repeat(None, params['batch_count']):
       current_batch = self.kandinsky.generate_inpainting(
@@ -240,8 +255,8 @@ class Model_KD2:
         num_steps=params['num_steps'],
         batch_size=params['batch_size'],  # type: ignore
         guidance_scale=params['guidance_scale'],
-        h=params['h'], # type: ignore
-        w=params['w'], # type: ignore
+        h=width, # type: ignore
+        w=height, # type: ignore
         sampler=params['sampler'], 
         prior_cf_scale=params['prior_cf_scale'],  # type: ignore
         prior_steps=str(params['prior_steps']),  # type: ignore
