@@ -19,11 +19,11 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs):
 
         with gr.Column(scale=1):
           manual_control = gr.Checkbox(True, label='Expansion offset')
-          offset_top = gr.Slider(1, 1024, 0, step=16, label='Top', interactive=True)
+          offset_top = gr.Slider(1, 1024, 0, step=params.image_height_step, label='Top', interactive=True)
           with gr.Row():
-            offset_left = gr.Slider(1, 1024, 0, step=16, label='Left', interactive=True)
-            offset_right = gr.Slider(1, 1024, 0, step=16, label='Right', interactive=True)
-          offset_bottom = gr.Slider(1, 1024, 0, step=16, label='Bottom', interactive=True)
+            offset_left = gr.Slider(0, 1024, 0, step=params.image_width_step, label='Left', interactive=True)
+            offset_right = gr.Slider(0, 1024, 0, step=params.image_width_step, label='Right', interactive=True)
+          offset_bottom = gr.Slider(0, 1024, 0, step=params.image_height_step, label='Bottom', interactive=True)
         
           manual_control.change(
             fn=lambda x: [gr.update(interactive=x), gr.update(interactive=x), gr.update(interactive=x), gr.update(interactive=x)],
