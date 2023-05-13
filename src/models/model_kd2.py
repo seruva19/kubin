@@ -213,7 +213,7 @@ class Model_KD2:
     assert self.kandinsky is not None 
 
     image = params['image'] 
-    old_w, old_h = image.size
+    image_w, image_h = image.size
     
     offset = params['offset']
 
@@ -221,23 +221,16 @@ class Model_KD2:
       top, right, bottom, left = offset
       inferred_mask_size = tuple(a + b for a, b in zip(image.size, (left + right, top + bottom)))[::-1]
       mask = np.zeros(inferred_mask_size, dtype=np.float32)
-      mask[top:old_h+top, left:old_w+left] = 1
+      mask[top:image_h+top, left:image_w+left] = 1
       image = ImageOps.expand(image, border=(left, top, right, bottom), fill=0)
 
     else:
-      output_size = (params['w'], params['h'])
-      image = image.resize(output_size)
       x1, y1, x2, y2 = image.getbbox()
-      w_factor = params['w'] / old_w
-      h_factor = params['h'] / old_h
-
-      x1 *= w_factor
-      x2 *= w_factor
-      y1 *= h_factor
-      y2 *= h_factor
-
-      mask = np.zeros(image.size, dtype=np.float32)
-      mask[int(y1):int(y2), int(x1):int(x2)] = 1
+      mask = np.ones((image_h, image_w), dtype=np.float32)
+      mask[0:y1,:] = 0
+      mask[:,0:x1] = 0
+      mask[y2:image_h,:] = 0
+      mask[:,x2:image_w] = 0
     
     infer_size = params['infer_size']
     if infer_size:
