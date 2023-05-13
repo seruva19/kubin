@@ -8,7 +8,7 @@ from ui_blocks.outpaint import outpaint_ui
 from ui_blocks.settings import settings_ui
 from ui_blocks.shared.ui_shared import SharedUI
 from ui_blocks.t2i import t2i_ui
-from shared import params
+from shared import params, client
 
 def gradio_ui(kubin: Kubin):
   ext_standalone = kubin.ext_registry.standalone() 
@@ -17,7 +17,9 @@ def gradio_ui(kubin: Kubin):
   ext_target_images = create_ext_targets(ext_standalone, ext_start_tab_index) 
   ui_shared = SharedUI(kubin, ext_target_images, kubin.ext_registry.augment())
 
-  with gr.Blocks(title='Kubin: Kandinsky 2.1 WebGUI', theme=ui_shared.select_theme(kubin.args.theme), css=params.css_styles) as ui:
+  with gr.Blocks(title='Kubin: Kandinsky 2.1 WebGUI', theme=ui_shared.select_theme(kubin.args.theme), css=client.css_styles) as ui:
+    ui.load(fn=None, _js=client.js_scripts)
+    
     with gr.Tabs() as ui_tabs:
       with gr.TabItem('Text To Image', id=0):
         t2i_ui(generate_fn=lambda params: kubin.model.t2i(params), shared=ui_shared, tabs=ui_tabs)
