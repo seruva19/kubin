@@ -12,7 +12,7 @@
 - [x] Mixing
 - [x] Inpainting 
 - [x] Upscaling ([Real-ESRGAN](https://github.com/ai-forever/Real-ESRGAN))
-- [ ] Outpainting
+- [x] Outpainting
 - [x] Support for extensions (initial)
 - [ ] Fine-tuning ([dreambooth, textual inversion](https://github.com/TheDenk/Kandinsky-2-textual-inversion))
 - [ ] VRAM usage optimization
