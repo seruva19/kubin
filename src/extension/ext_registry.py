@@ -73,10 +73,11 @@ class ExtensionRegistry:
   def augment(self): # extensions for augmentation generation params
     return list({key: value for key, value in self.extensions.items() if value.get('augment_fn', None) is not None}.values())
   
-  def force_reinstall(self):
+  def force_reinstall(self, ext = None):
     ext_folders = self.get_ext_folders()
     for i, extension in enumerate(ext_folders):
-      extension_installed = f'{self.root}/{extension}/.installed'
-      if os.path.exists(extension_installed):
-        os.remove(extension_installed)
-        print(f'{i+1}: extension \'{extension}\' will be reinstalled on next run')
+      if ext is None or extension == ext:
+        extension_installed = f'{self.root}/{extension}/.installed'
+        if os.path.exists(extension_installed):
+          os.remove(extension_installed)
+          print(f'{i+1}: extension \'{extension}\' will be reinstalled on next run')
