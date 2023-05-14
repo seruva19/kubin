@@ -12,7 +12,10 @@ from models.model_mock import Model_Mock
 def update_info():
   torch_version = torch.__version__
   cuda_version = torch.version.cuda
-  torch_free, torch_total = torch.cuda.mem_get_info()
+  if torch.cuda.is_available():
+    torch_free, torch_total = torch.cuda.mem_get_info()
+  else:
+    torch_free, torch_total = 0, 0
   vmem = psutil.virtual_memory()
   ram_total = vmem.total
   ram_available = vmem.available
