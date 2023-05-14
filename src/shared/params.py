@@ -6,8 +6,3 @@ image_width_default= 768
 image_height_default = 768
 image_width_step = 64
 image_height_step = 64
-
-css_styles = '''
-.block.block-info .min {min-height: initial;}
-.block.full-height {height: initial !important;}
-'''

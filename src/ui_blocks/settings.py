@@ -43,7 +43,9 @@ def settings_ui(kubin: Kubin):
   model_config = flatten_model_config(CONFIG_2_1)
 
   with gr.Column() as settings_block:
-    system_info = gr.Textbox(update_info, label='System info', lines=10).style(show_copy_button=True)
+    gr.Markdown('## System info')
+
+    system_info = gr.Textbox(update_info, lines=10, show_label=False).style(show_copy_button=True)
     with gr.Row():
       update_btn = gr.Button(value='Update system info')
       update_btn.click(update_info, outputs=system_info)

@@ -15,7 +15,7 @@ from shap_e.rendering.torch_mesh import TorchMesh
 from shap_e.util.collections import AttrDict
 
 def setup(kubin):
-  source_image = gr.Image(type='pil', label="Source image")
+  source_image = gr.Image(type='pil', label="Source image", elem_classes=['full-height'])
 
   def model_3d_ui(ui_shared, ui_tabs):
     selected_model_index = gr.State(None) # type: ignore
