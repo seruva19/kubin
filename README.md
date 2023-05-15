@@ -3,7 +3,7 @@
 
 ## Disclaimer
 
-🚧 WIP UNTIL IT'S DONE 🚧 
+🚧 WIP 🚧 NOT PRODUCTION-READY 🚧 
 
 ## Roadmap
 
@@ -14,7 +14,7 @@
 - [x] Upscaling ([Real-ESRGAN](https://github.com/ai-forever/Real-ESRGAN))
 - [x] Outpainting
 - [x] Support for extensions (initial)
-- [ ] Fine-tuning ([dreambooth, textual inversion](https://github.com/TheDenk/Kandinsky-2-textual-inversion))
+- [ ] Tools for fine-tuning ([dreambooth, textual inversion](https://github.com/TheDenk/Kandinsky-2-textual-inversion))
 - [ ] VRAM usage optimization
 - [x] Img2mesh ([Shape-E](https://github.com/openai/shap-e))
 - [ ] Advanced prompt syntax
@@ -26,7 +26,7 @@
 
 ## Screenshots
 <details> 
-<summary>Expand</summary>
+<summary>Click to expand</summary>
 
 ### txt2img tab
 	
