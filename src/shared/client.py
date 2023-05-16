@@ -5,5 +5,12 @@ html {overflow-y: scroll;}
 '''
 
 js_scripts = '''
-() => console.log('kubin client scripts: loaded')
+() => {
+  const script = document.createElement('script')
+  script.src = '/file=client/ui_utils.js'
+  script.async = false
+
+  const head = document.getElementsByTagName("head")[0]
+  head.appendChild(script)
+}
 '''

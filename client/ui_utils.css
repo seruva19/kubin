@@ -1,0 +1,7 @@
+.notyf__wrapper {
+  padding: 10px;
+}
+
+.notyf__message {
+  font-family: var(--font);
+}

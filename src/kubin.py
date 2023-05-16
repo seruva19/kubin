@@ -1,6 +1,8 @@
 import argparse
 from env import Kubin
 from webui import gradio_ui
+import os
+from pathlib import Path
 
 parser = argparse.ArgumentParser(description='Run Kubin')
 parser.add_argument('--from-config', type=str, default='') # unused 
@@ -35,7 +37,6 @@ kubin.with_utils()
 kubin.init_extensions()
 
 ui = gradio_ui(kubin)
-
 ui.queue(concurrency_count=kubin.args.concurrency_count, api_open=False).launch(
   show_api=False,
   debug=kubin.args.debug,
@@ -43,5 +44,5 @@ ui.queue(concurrency_count=kubin.args.concurrency_count, api_open=False).launch(
   share=kubin.args.share=='gradio',
   server_name=kubin.args.server_name,
   server_port=kubin.args.server_port,
-  file_directories=[]
+  allowed_paths=[f'{Path(__file__).parent.parent.absolute()}/client']
 )
