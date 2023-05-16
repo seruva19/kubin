@@ -50,9 +50,11 @@ class ExtensionRegistry:
             self.install_ext_reqs(extension_reqs_path)
             open(extension_installed, 'a').close()
 
-        extension_py_path = f'{self.root}/{extension}/setup.py'
+        extension_py_path = f'{self.root}/{extension}/setup_ext.py'
         if os.path.exists(extension_py_path):
-          spec = importlib.util.spec_from_file_location(f'{self.root}/{extension}', extension_py_path)
+          path = f'{self.root}/{extension}'
+          sys.path.append(path)
+          spec = importlib.util.spec_from_file_location(extension, extension_py_path)
           if spec is not None:
             module = importlib.util.module_from_spec(spec)
             sys.modules[extension] = module
@@ -67,11 +69,11 @@ class ExtensionRegistry:
   def install_ext_reqs(self, reqs_path):
     subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', f'{reqs_path}'])
 
-  def standalone(self): # extensions with dedicated tab
-    return list({key: value for key, value in self.extensions.items() if value.get('tab_fn', None) is not None}.values())
+  def standalone(self): # collect extensions with dedicated tab
+    return list({key: value for key, value in self.extensions.items() if value.get('tab_ui', None) is not None}.values())
 
-  def augment(self): # extensions for augmentation generation params
-    return list({key: value for key, value in self.extensions.items() if value.get('augment_fn', None) is not None}.values())
+  def injected(self): # collect extensions that are injected into UI blocks
+    return list({key: value for key, value in self.extensions.items() if value.get('inject_ui', None) is not None}.values())
   
   def force_reinstall(self, ext = None):
     ext_folders = self.get_ext_folders()
@@ -81,3 +83,6 @@ class ExtensionRegistry:
         if os.path.exists(extension_installed):
           os.remove(extension_installed)
           print(f'{i+1}: extension \'{extension}\' will be reinstalled on next run')
+
+  def is_installed(self, ext):
+    return os.path.exists(f'{self.root}/{ext}/.installed')

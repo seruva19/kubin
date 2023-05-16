@@ -19,7 +19,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
         with gr.Row():
           steps = gr.Slider(1, 200, 100, step=1, label='Steps')
           guidance_scale = gr.Slider(1, 30, 7, step=1, label='Guidance scale')
-          strength = gr.Slider(0, 1, 0.7, step=0.05, label='Strength')
+          strength = gr.Slider(0, 1, 0.7, step=0.05, label='Strength', info='Input image strength')
         with gr.Row():
           batch_count = gr.Slider(1, 16, 4, step=1, label='Batch count')
           batch_size = gr.Slider(1, 16, 1, step=1, label='Batch size')

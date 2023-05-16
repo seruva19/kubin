@@ -55,5 +55,5 @@ def setup(kubin):
   
   return {
     'title': 'Image Browser',
-    'tab_fn': lambda ui_s, ts: image_browser_ui(ui_s, ts)
+    'tab_ui': lambda ui_s, ts: image_browser_ui(ui_s, ts)
   }
