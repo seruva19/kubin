@@ -17,7 +17,7 @@ def gradio_ui(kubin: Kubin):
   ext_target_images = create_ext_targets(ext_standalone, ext_start_tab_index) 
   ui_shared = SharedUI(kubin, ext_target_images, kubin.ext_registry.injected())
 
-  with gr.Blocks(title='Kubin: Kandinsky 2.1 WebGUI', theme=ui_shared.select_theme(kubin.args.theme), css=client.css_styles) as ui:
+  with gr.Blocks(title='Kubin: Web-GUI for Kandinsky 2.1', theme=ui_shared.select_theme(kubin.args.theme), css=client.css_styles) as ui:
     ui.load(fn=None, _js=client.js_scripts)
     
     with gr.Tabs() as ui_tabs:

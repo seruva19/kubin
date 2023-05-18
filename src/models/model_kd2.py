@@ -63,7 +63,7 @@ class Model_KD2:
     return self
   
   def flush(self): 
-    print(f'trying to free vram')
+    print(f'releasing vram')
     
     if (self.kandinsky is not None):
       self.kandinsky.model.to('cpu')
