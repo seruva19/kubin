@@ -1,6 +1,6 @@
 --extra-index-url https://download.pytorch.org/whl/cu118
 
-git+https://github.com/ai-forever/Kandinsky-2.git@c9ec0dd
+git+https://github.com/ai-forever/Kandinsky-2.git@47c01fa
 git+https://github.com/openai/CLIP.git@a9b1bf5
 opencv-python==4.7.0.72
 gradio==3.28.3

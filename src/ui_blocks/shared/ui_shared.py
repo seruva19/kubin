@@ -4,7 +4,7 @@ from utils.image import image_path_to_pil
 import gradio as gr
 
 class SharedUI():
-  def __init__(self, kubin: Kubin, extension_targets, augment_exts):
+  def __init__(self, kubin: Kubin, extension_targets, injected_exts):
     self.input_i2i_image = gr.Image(type='pil', elem_classes=['i2i_image', 'full-height'])
     self.input_mix_image_1 = gr.Image(type='pil', elem_classes=['mix_1_image', 'full-height'])
     self.input_mix_image_2 = gr.Image(type='pil', elem_classes=['mix_2_image', 'full-height'])
@@ -12,7 +12,7 @@ class SharedUI():
     self.input_outpaint_image = gr.ImageMask(type='pil', tool='editor', elem_classes=['outpaint_image'])
 
     self.extensions_images_targets = extension_targets
-    self.extensions_augment = augment_exts
+    self.extensions_augment = injected_exts
     
   def select_theme(self, theme):
     themes = {
@@ -35,32 +35,32 @@ class SharedUI():
     return gr.update(value=img)
   
   def create_base_send_targets(self, output, selected_image_index, tabs):
-    send_i2i_btn = gr.Button('Send to Img2img', variant='secondary')
+    send_i2i_btn = gr.Button('Send to Img2img', variant='secondary').style(size='sm')
     send_i2i_btn.click(fn=self.open_another_tab, inputs=[gr.State(1)], outputs=tabs, # type: ignore
       queue=False).then(
         self.send_gallery_image_to_another_tab, inputs=[output, selected_image_index], outputs=[self.input_i2i_image] 
       )
 
     with gr.Row():
-      send_mix_1_btn = gr.Button('Send to Mix (1)', variant='secondary')
+      send_mix_1_btn = gr.Button('Send to Mix (1)', variant='secondary').style(size='sm')
       send_mix_1_btn.click(fn=self.open_another_tab, inputs=[gr.State(2)], outputs=tabs, # type: ignore
         queue=False).then( 
           self.send_gallery_image_to_another_tab, inputs=[output, selected_image_index], outputs=[self.input_mix_image_1] 
         )
 
-      send_mix_2_btn = gr.Button('Send to Mix (2)', variant='secondary')
+      send_mix_2_btn = gr.Button('Send to Mix (2)', variant='secondary').style(size='sm')
       send_mix_2_btn.click(fn=self.open_another_tab, inputs=[gr.State(2)], outputs=tabs, # type: ignore
         queue=False).then( 
           self.send_gallery_image_to_another_tab, inputs=[output, selected_image_index], outputs=[self.input_mix_image_2] 
         )
 
-    send_inpaint_btn = gr.Button('Send to Inpaint', variant='secondary')
+    send_inpaint_btn = gr.Button('Send to Inpaint', variant='secondary').style(size='sm')
     send_inpaint_btn.click(fn=self.open_another_tab, inputs=[gr.State(3)], outputs=tabs, # type: ignore
       queue=False).then( 
         self.send_gallery_image_to_another_tab, inputs=[output, selected_image_index], outputs=[self.input_inpaint_image] 
       )
     
-    send_outpaint_btn = gr.Button('Send to Outpaint', variant='secondary')
+    send_outpaint_btn = gr.Button('Send to Outpaint', variant='secondary').style(size='sm')
     send_outpaint_btn.click(fn=self.open_another_tab, inputs=[gr.State(4)], outputs=tabs, # type: ignore
       queue=False).then( 
         self.send_gallery_image_to_another_tab, inputs=[output, selected_image_index], outputs=[self.input_outpaint_image] 
@@ -69,7 +69,7 @@ class SharedUI():
   def create_ext_send_targets(self, output, selected_image_index, tabs):
     ext_image_targets = []
     for ext in self.extensions_images_targets:
-      send_toext_btn = gr.Button(f'Send to {ext[0]}', variant='secondary')
+      send_toext_btn = gr.Button(f'Send to {ext[0]}', variant='secondary').style(size='sm')
       send_toext_btn.click(fn=self.open_another_tab, inputs=[gr.State(ext[2])], outputs=tabs, # type: ignore
         queue=False).then( 
           self.send_gallery_image_to_another_tab, inputs=[output, selected_image_index], outputs=[ext[1]] 
@@ -86,11 +86,12 @@ class SharedUI():
       for ext_augment in self.extensions_augment:
         if target in ext_augment['targets']:
           with gr.Row() as row:
-            with gr.Accordion(ext_augment['title'], open=ext_augment.get('opened', lambda o: False)(target)):
-              ext_info = ext_augment['augment_fn'](target)
+            title = ext_augment.get('inject_title', ext_augment['title'])
+            with gr.Accordion(title, open=ext_augment.get('opened', lambda o: False)(target)):
+              ext_info = ext_augment['inject_ui'](target)
 
           ext_blocks.append(row)
-          ext_exec.append(ext_augment['exec_fn'])
+          ext_exec.append(ext_augment['inject_fn'])
 
           for ext_injection in ext_info[1:]:
             ext_injections.append(ext_injection)
@@ -99,7 +100,6 @@ class SharedUI():
       for index, ext_fn in enumerate(ext_exec):
         params = ext_fn(target, params, injections[index])
       return params
-
 
     return {
       'ui': lambda: create_block(),

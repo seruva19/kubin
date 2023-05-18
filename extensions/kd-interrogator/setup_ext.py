@@ -96,6 +96,6 @@ def setup(kubin):
   
   return {
     'title': 'Interrogator',
-    'tab_fn': lambda ui_s, ts: interrogator_ui(ui_s, ts),
+    'tab_ui': lambda ui_s, ts: interrogator_ui(ui_s, ts),
     'send_target': source_image
   }

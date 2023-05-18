@@ -182,9 +182,8 @@ def setup(kubin):
     return style_selector_block, current_style, default_style
        
   return {
-    'type': 'augment', 
     'title': 'Style',
-    'augment_fn': lambda target: style_select_ui(target),
-    'exec_fn': lambda target, params, augmentations: append_style(target, params, augmentations[0], augmentations[1]),
+    'inject_ui': lambda target: style_select_ui(target),
+    'inject_fn': lambda target, params, augmentations: append_style(target, params, augmentations[0], augmentations[1]),
     'targets': targets
   } 
