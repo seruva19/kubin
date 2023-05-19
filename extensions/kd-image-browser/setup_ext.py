@@ -1,6 +1,8 @@
 import gradio as gr
 import os
 from PIL import Image
+import json
+from metadata_extractor import metadata_to_html
 
 # TODO: add paging
 def setup(kubin):
@@ -28,8 +30,9 @@ def setup(kubin):
 
     return image_files
   
-  def folder_contents_gallery_select(evt: gr.SelectData):
-    return evt.index
+  def folder_contents_gallery_select(gallery, evt: gr.SelectData):
+    html = metadata_to_html(gallery[evt.index]['name'])
+    return [gr.update(value=html), evt.index]
 
   def image_browser_ui(ui_shared, ui_tabs):
     folders = get_folders() 
@@ -43,10 +46,11 @@ def setup(kubin):
           image_sort = gr.Radio(["date", "name"], value="date", label='Sort images by', interactive=True)
           image_order = gr.Radio(["ascending", "descending"], value="descending", label='Sort order', interactive=True)
         refresh_btn = gr.Button('Refresh', variant='secondary')
-          
+        metadata_info = gr.HTML()
+
       with gr.Column(scale=5):
         folder_contents = gr.Gallery(label='Images in folder').style(preview=False, grid=5)
-        folder_contents.select(fn=folder_contents_gallery_select, outputs=[selected_folder_contents_index], show_progress=False)
+        folder_contents.select(fn=folder_contents_gallery_select, inputs=[folder_contents], outputs=[metadata_info, selected_folder_contents_index], show_progress=False)
         
         ui_shared.create_base_send_targets(folder_contents, selected_folder_contents_index, ui_tabs)
         ui_shared.create_ext_send_targets(folder_contents, selected_folder_contents_index, ui_tabs) 
