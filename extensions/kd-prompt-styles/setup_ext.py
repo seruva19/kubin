@@ -19,7 +19,7 @@ def write_styles(styles):
     yaml.safe_dump(data, stream, default_flow_style=False, indent=2, allow_unicode=True)
     
 def setup(kubin):
-  targets = ['t2i', 'mix', 'inpaint', 'outpaint']
+  targets = ['t2i', 't2i', 'mix', 'inpaint', 'outpaint']
 
   def load_styles():
     initial_styles = get_styles()
@@ -32,15 +32,6 @@ def setup(kubin):
       gr.update(value=''),
       gr.update(value='')
     )
-
-  def append_style(target, params, current_style, default_style):
-    if 'prompt' in params:
-      params['prompt'] += '' if current_style['name'] == default_style['name'] else f', {current_style["prompt"]}'
-
-    if 'negative_decoder_prompt' in params:
-      params['negative_decoder_prompt'] += '' if current_style['name'] == default_style['name'] else f', {current_style["negative"]}'
-
-    return params
 
   def select_style(target, selected_style_name, available):
     selected_style = next(filter(lambda x: x['name'] == selected_style_name, available))
@@ -109,7 +100,7 @@ def setup(kubin):
 
     initial_styles = get_styles()
     available_styles = gr.State(value=initial_styles) # type: ignore
-    default_style = gr.State(value=initial_styles[0]) # type: ignore
+    default_style = gr.State(value=initial_styles[0], _source='kd-prompt-styles') # type: ignore
     current_style = gr.State(value=initial_styles[0]) # type: ignore
 
     with gr.Column() as style_selector_block:
@@ -131,7 +122,7 @@ def setup(kubin):
           save_style_btn = gr.Button('Save style')
           cancel_style_btn = gr.Button('Cancel editing')
           remove_style_btn = gr.Button('Remove style')
-        gr.HTML("To apply changes after adding or editing a style, you need to press 'Refresh' button, otherwise new changes won't be reflected in list.")
+        gr.HTML("To apply changes after adding or editing a style, you need to press 'Refresh' button, otherwise changes won't be reflected in list.")
 
       style_variant.change(fn=select_style,
         inputs=[target, style_variant, available_styles],
@@ -187,3 +178,18 @@ def setup(kubin):
     'inject_fn': lambda target, params, augmentations: append_style(target, params, augmentations[0], augmentations[1]),
     'targets': targets
   } 
+
+def append_style(target, params, current_style, default_style):
+  with gr.Blocks():
+    style_not_chosen = current_style['name'] == default_style['name']
+    style_prompt = current_style['prompt']
+    style_negative_prompt = current_style['negative']
+
+    if 'prompt' in params:
+      params['prompt'] += '' if style_not_chosen or style_prompt is None else f', {style_prompt}'
+
+    if 'negative_decoder_prompt' in params:
+      params['negative_decoder_prompt'] += '' if style_not_chosen or style_negative_prompt is None else f', {style_negative_prompt}'
+
+  return params
+
