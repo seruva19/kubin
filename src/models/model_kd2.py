@@ -77,16 +77,18 @@ class Model_KD2:
           torch.cuda.empty_cache()
           torch.cuda.ipc_collect()
 
-  def withSeed(self, seed):
-    seed = secrets.randbelow(99999999999) if seed == -1 else seed
+  def seed(self, params):
+    input_seed = params['input_seed']
+    seed = secrets.randbelow(99999999999) if input_seed == -1 else input_seed
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
     print(f'seed generated: {seed}')
-    return seed
+    params['input_seed'] = seed
+    return params
     
   def t2i(self, params):
-    seed = self.prepare('text2img').withSeed(params['input_seed'])
+    params = self.prepare('text2img').seed(params)
     assert self.kandinsky is not None
     
     images = []
@@ -109,12 +111,12 @@ class Model_KD2:
         negative_decoder_prompt=params['negative_decoder_prompt'] # type: ignore
       )
 
-      saved_batch = save_output(self.output_dir, 'text2img', current_batch, seed)
+      saved_batch = save_output(self.output_dir, 'text2img', current_batch, params)
       images = images + saved_batch
     return images
   
   def i2i(self, params):
-    seed = self.prepare('img2img').withSeed(params['input_seed'])
+    params = self.prepare('img2img').seed(params)
     assert self.kandinsky is not None    
 
     output_size = (params['w'], params['h'])
@@ -136,12 +138,12 @@ class Model_KD2:
         prior_steps=str(params['prior_steps']) # type: ignore
       )
 
-      saved_batch = save_output(self.output_dir, 'img2img', current_batch, seed)
+      saved_batch = save_output(self.output_dir, 'img2img', current_batch, params)
       images = images + saved_batch
     return images
     
   def mix(self, params):
-    seed = self.prepare('mix').withSeed(params['input_seed'])
+    params = self.prepare('mix').seed(params)
     assert self.kandinsky is not None    
 
     def images_or_texts(images, texts):
@@ -168,12 +170,12 @@ class Model_KD2:
         negative_decoder_prompt=params['negative_decoder_prompt']
       )
 
-      saved_batch = save_output(self.output_dir, 'mix', current_batch, seed)
+      saved_batch = save_output(self.output_dir, 'mix', current_batch, params)
       images = images + saved_batch
     return images
   
   def inpaint(self, params):
-    seed = self.prepare('inpainting').withSeed(params['input_seed'])
+    params = self.prepare('inpainting').seed(params)
     assert self.kandinsky is not None
 
     output_size = (params['w'], params['h'])
@@ -204,12 +206,12 @@ class Model_KD2:
         negative_decoder_prompt=params['negative_decoder_prompt'] # type: ignore
       )
 
-      saved_batch = save_output(self.output_dir, 'inpainting', current_batch, seed)
+      saved_batch = save_output(self.output_dir, 'inpainting', current_batch, params)
       images = images + saved_batch
     return images
   
   def outpaint(self, params):
-    seed = self.prepare('outpainting').withSeed(params['input_seed'])
+    params = self.prepare('outpainting').seed(params)
     assert self.kandinsky is not None 
 
     image = params['image'] 
@@ -257,6 +259,6 @@ class Model_KD2:
         negative_decoder_prompt=params['negative_decoder_prompt'] # type: ignore
       )
 
-      saved_batch = save_output(self.output_dir, 'outpainting', current_batch, seed)
+      saved_batch = save_output(self.output_dir, 'outpainting', current_batch, params)
       images = images + saved_batch
     return images  

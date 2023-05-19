@@ -1,24 +1,48 @@
 import os
 import uuid
 from datetime import datetime
+import json
+from PIL import PngImagePlugin, Image
+import re
 
-def save_output(output_dir, task_type, images, seed):
+def create_png_info(metadata):
+  png_info = PngImagePlugin.PngInfo()
+  png_info.add_text("kubin_image_metadata", metadata)
+  return png_info
+
+def create_filename(path, params):
+  current_datetime = datetime.now()
+  format_string = "%Y%m%d%H%M%S"
+  formatted_datetime = current_datetime.strftime(format_string)
+
+  if params is not None and params.get('prompt', None) is not None:
+    invalid_symbols_pattern = r'[\/:*?"<>|]'
+    prompt_string = params.get('prompt').strip()
+    prompt_string = re.sub(invalid_symbols_pattern, '', prompt_string)
+
+    prompt_words = '_'.join(prompt_string.split()[:5])
+    postfix = f'_{prompt_words}'
+  else:
+    postfix = ''
+
+  filename = f'{path}/{formatted_datetime}{postfix}.png'
+  while os.path.exists(filename):
+    unique_id = current_datetime.microsecond
+    filename = f'{formatted_datetime}_{unique_id}.png'
+  
+  return filename
+
+def save_output(output_dir, task_type, images, params=None):
   output = []
+
+  params_as_json = None if params is None else json.dumps(params, skipkeys=True)
+
   for img in images:
     path = f'{output_dir}/{task_type}'
     if not os.path.exists(path): os.makedirs(path)
 
-    current_datetime = datetime.now()
-    format_string = "%Y%m%d%H%M%S"
-    formatted_datetime = current_datetime.strftime(format_string)
-
-    # name = f'{path}/{seed}-{uuid.uuid4()}.png'
-    filename = f'{path}/{formatted_datetime}.png'
-    while os.path.exists(filename):
-      unique_id = current_datetime.microsecond
-      filename = f'{formatted_datetime}_{unique_id}.jpg'
-
-    img.save(filename, 'PNG')
+    filename = create_filename(path, params)
+    img.save(filename, 'PNG', pnginfo=create_png_info(params_as_json))
     output.append(filename)
 
   return output
