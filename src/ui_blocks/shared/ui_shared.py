@@ -2,6 +2,7 @@ import gradio as gr
 from env import Kubin
 from utils.image import image_path_to_pil
 import gradio as gr
+from collections.abc import Iterable
 
 class SharedUI():
   def __init__(self, kubin: Kubin, extension_targets, injected_exts):
@@ -78,31 +79,36 @@ class SharedUI():
       ext_image_targets.append(send_toext_btn)
       
   def create_ext_augment_blocks(self, target):
-    ext_blocks = []
-    ext_exec = []
+    ext_exec = {}
     ext_injections = []
     
     def create_block():
       for ext_augment in self.extensions_augment:
+        name = ext_augment['_name']
         if target in ext_augment['targets']:
+          current_ext = ext_exec[name] = {'fn': ext_augment['inject_fn']}
+
           with gr.Row() as row:
             title = ext_augment.get('inject_title', ext_augment['title'])
             with gr.Accordion(title, open=ext_augment.get('opened', lambda o: False)(target)):
               ext_info = ext_augment['inject_ui'](target)
+              if isinstance(ext_info, Iterable):
+                current_ext['input_size'] = (len(ext_injections), len(ext_injections) + len(ext_info[1:])) # type: ignore
+                for ext_injection in ext_info[1:]: # type: ignore
+                  ext_injections.append(ext_injection) 
+              else:
+                ext_injections.append(gr.State(None))
+                current_ext['input_size'] = (len(ext_injections), len(ext_injections) + 1) 
 
-          ext_blocks.append(row)
-          ext_exec.append(ext_augment['inject_fn'])
-
-          for ext_injection in ext_info[1:]:
-            ext_injections.append(ext_injection)
-
-    def augment_params(target, params, *injections):
-      for index, ext_fn in enumerate(ext_exec):
-        params = ext_fn(target, params, injections[index])
+    def augment_params(target, params, injections):
+      for _, data in ext_exec.items():
+        ext_fn = data['fn']
+        size = data['input_size']
+        params = ext_fn(target, params, injections[size[0]:size[1]])
       return params
 
     return {
       'ui': lambda: create_block(),
-      'exec': lambda p, *a: augment_params(target, p, *a),
+      'exec': lambda p, a: augment_params(target, p, a),
       'injections': ext_injections
     }

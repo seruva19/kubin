@@ -60,8 +60,10 @@ class ExtensionRegistry:
             sys.modules[extension] = module
             if spec.loader is not None:
               spec.loader.exec_module(module)
-              self.extensions[extension] = module.setup(kubin)
-          
+              extension_info = module.setup(kubin)
+              extension_info['_name'] = extension
+              self.extensions[extension] = extension_info
+
           print(f'{i+1}: extension \'{extension}\' successfully registered')
         else:
           print(f'{i+1}: setup.py not found for \'{extension}\', extension will not be registered')
