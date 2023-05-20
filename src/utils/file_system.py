@@ -7,7 +7,8 @@ import re
 
 def create_png_info(metadata):
   png_info = PngImagePlugin.PngInfo()
-  png_info.add_text("kubin_image_metadata", metadata)
+  if metadata:
+    png_info.add_text("kubin_image_metadata", metadata)
   return png_info
 
 def create_filename(path, params):
@@ -34,8 +35,11 @@ def create_filename(path, params):
 
 def save_output(output_dir, task_type, images, params=None):
   output = []
+  params_as_json = None
 
-  params_as_json = None if params is None else json.dumps(params, skipkeys=True)
+  if params:
+    params = {v: k for k, v in params.items() if not isinstance(v, Image.Image)}
+    params_as_json = json.dumps(params, skipkeys=True)
 
   for img in images:
     path = f'{output_dir}/{task_type}'
