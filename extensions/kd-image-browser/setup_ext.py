@@ -18,8 +18,12 @@ def setup(kubin):
     return [gr.update(visible=not exist), gr.update(visible=exist), gr.update(visible=exist, value=choice, choices=[folder for folder in existing_folders])]
     
   def refresh(folder, sort_by, order_by):
-    return [] if folder is None else view_folder(folder, sort_by, order_by)
-    # TODO: fix strange bug where first refresh after 'outputs' folder is removed causes error in gallery output
+    if folder is not None:
+      folder_path = f'{image_root}/{folder}'
+      if os.path.exists(folder_path):
+        return view_folder(folder, sort_by, order_by)
+
+    return [[], 'No data found']
   
   def view_folder(folder, sort_by, order_by):
     image_files = [entry.path for entry in os.scandir(f'{image_root}/{folder}') if entry.is_file() and entry.name.endswith(('png'))]
@@ -28,7 +32,7 @@ def setup(kubin):
     elif sort_by == "name":
       image_files = sorted(image_files, key=lambda f: str(os.path.splitext(os.path.basename(f))[0]).lower(), reverse=order_by == "descending")
 
-    return image_files
+    return [image_files, gr.update(value='')]
   
   def folder_contents_gallery_select(gallery, evt: gr.SelectData):
     html = metadata_to_html(gallery[evt.index]['name'])
@@ -54,13 +58,13 @@ def setup(kubin):
         
         ui_shared.create_base_send_targets(folder_contents, selected_folder_contents_index, ui_tabs)
         ui_shared.create_ext_send_targets(folder_contents, selected_folder_contents_index, ui_tabs) 
-        image_folders.change(fn=view_folder, inputs=[image_folders, image_sort, image_order], outputs=folder_contents)
-        image_sort.change(fn=view_folder, inputs=[image_folders, image_sort, image_order], outputs=folder_contents)
-        image_order.change(fn=view_folder, inputs=[image_folders, image_sort, image_order], outputs=folder_contents)
+        image_folders.change(fn=view_folder, inputs=[image_folders, image_sort, image_order], outputs=[folder_contents, metadata_info])
+        image_sort.change(fn=view_folder, inputs=[image_folders, image_sort, image_order], outputs=[folder_contents, metadata_info])
+        image_order.change(fn=view_folder, inputs=[image_folders, image_sort, image_order], outputs=[folder_contents, metadata_info])
 
         refresh_btn.click(fn=check_folders, inputs=[image_folders], outputs=[no_folders_message, image_sources, image_folders],  # type: ignore
         queue=False).then( 
-          fn=refresh, inputs=[image_folders, image_sort, image_order], outputs=[folder_contents]
+          fn=refresh, inputs=[image_folders, image_sort, image_order], outputs=[folder_contents, metadata_info]
         )
 
     return image_browser_block
