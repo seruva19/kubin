@@ -38,8 +38,8 @@ def save_output(output_dir, task_type, images, params=None):
   params_as_json = None
 
   if params:
-    params = {v: k for k, v in params.items() if not isinstance(v, Image.Image)}
-    params_as_json = json.dumps(params, skipkeys=True)
+    params = {k: v for k, v in params.items() if not isinstance(v, Image.Image)}
+    params_as_json = json.dumps(params, skipkeys=True, default=lambda _: '<parameter cannot be serialized>')
 
   for img in images:
     path = f'{output_dir}/{task_type}'
