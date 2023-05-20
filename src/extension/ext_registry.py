@@ -44,7 +44,7 @@ class ExtensionRegistry:
 
         if not self.skip_install and os.path.isfile(extension_reqs_path):
           if os.path.exists(extension_installed):
-            print(f'{i+1}: extension \'{extension}\' has requirements.txt, but was already installed, skipping')
+            print(f'{i+1}: extension \'{extension}\' has requirements.txt, but was already installed, skipping install phase')
           else:
             print(f'{i+1}: extension \'{extension}\' has requirements.txt, installing')
             self.install_ext_reqs(extension_reqs_path)
@@ -66,7 +66,7 @@ class ExtensionRegistry:
 
           print(f'{i+1}: extension \'{extension}\' successfully registered')
         else:
-          print(f'{i+1}: setup.py not found for \'{extension}\', extension will not be registered')
+          print(f'{i+1}: setup_ext.py not found for \'{extension}\', extension will not be registered')
 
   def install_ext_reqs(self, reqs_path):
     subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', f'{reqs_path}'])

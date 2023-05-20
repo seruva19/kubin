@@ -37,7 +37,7 @@ def create_extensions_info(kubin: Kubin):
   
 def extensions_ui(kubin: Kubin, extensions_data):
   with gr.Column() as extensions_block:
-    gr.Markdown(f'## Installed extensions: {len(extensions_data)}')
+    gr.Markdown(f'## Local extensions found: {len(extensions_data)}')
     for index, extension_info in enumerate(extensions_data):
       with gr.Column():
         gr.Markdown(f'### {str(index+1)}: {extension_info["name"]}')

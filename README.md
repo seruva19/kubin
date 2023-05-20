@@ -83,7 +83,7 @@
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1lx4lQS61hYb02BSoAoJUAVwPr7PhhkJt)
 <br>
 
-Notebooks for Paperspace and Kaggle are in "notebooks" folder.
+Notebook examples for Paperspace and Kaggle are in "notebooks" folder.
 
 ## Documentation
 
