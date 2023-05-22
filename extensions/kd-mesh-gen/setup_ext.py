@@ -31,8 +31,8 @@ def setup(kubin):
 
       create_btn.click(fn=lambda *p: create_model(kubin, *p), inputs=[
         source_image,
-        gr.State(kubin.args.output_dir), # type: ignore
-        gr.State(kubin.args.device) # type: ignore
+        gr.State(kubin.options.output_dir), # type: ignore
+        gr.State(kubin.options.device) # type: ignore
       ], outputs=model_output) 
 
     return model_3d_block
@@ -45,7 +45,7 @@ def setup(kubin):
 
 def patch(kubin):
   old_method = download.default_cache_dir
-  download.default_cache_dir = lambda: f'{kubin.args.cache_dir}/shap-e'
+  download.default_cache_dir = lambda: f'{kubin.options.cache_dir}/shap-e'
   return old_method
 
 def unpatch(old_method):

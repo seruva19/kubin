@@ -1,6 +1,7 @@
 (global => {
   const kubin = global.kubin = {
     client_root : '/file=client/',
+    client_id: String(Date.now().toString(32) + Math.random().toString(16)).replace(/\./g, ''),
     utils: {}
   }
 
@@ -27,7 +28,9 @@
 
   kubin.notify = {
     lib: undefined,
-    success: message => kubin.notify.lib.success(message)
+    success: message => kubin.notify.lib.success(message),
+    warning: message => kubin.notify.lib.warning(message),
+    error: message => kubin.notify.lib.error(message)
   }
   
   Promise.all([

@@ -16,12 +16,14 @@ def setup(kubin):
       with gr.Column(scale=1):
         with gr.Row():
           source_image.render()
+      
+      with gr.Column(scale=1):
+        with gr.Row():
+          model_type = gr.Radio(choices=['vit_h/sam_vit_h_4b8939', 'vit_l/sam_vit_l_0b3195', 'vit_b/sam_vit_b_01ec64.pth'], value='vit_h/sam_vit_h_4b8939', label='Model type')
 
-      with gr.Row():
-        model_type = gr.Radio(choices=['vit_h/sam_vit_h_4b8939', 'vit_l/sam_vit_l_0b3195', 'vit_b/sam_vit_b_01ec64.pth'], value='vit_h/sam_vit_h_4b8939', label='Model type')
-
-      with gr.Row(visible=False):
-        prompt = gr.Textbox('', label='Prompt', placeholder='')
+        with gr.Row():
+          mode = gr.Radio(choices=['Extract all'], value='Extract all', label='Mode')
+          prompt = gr.Textbox('', label='Prompt', placeholder='', visible=False)
 
       with gr.Column(scale=2):
         segment_btn = gr.Button('Segment image', variant='primary')
@@ -40,8 +42,8 @@ def setup(kubin):
         source_image,
         prompt,
         model_type,
-        gr.State(kubin.args.cache_dir), # type: ignore
-        gr.State(kubin.args.device) # type: ignore
+        gr.State(kubin.options.cache_dir), # type: ignore
+        gr.State(kubin.options.device) # type: ignore
       ], outputs=segment_output)
 
     return segment_block

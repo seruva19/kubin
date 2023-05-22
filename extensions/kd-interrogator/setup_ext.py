@@ -31,7 +31,7 @@ def use_patch(kubin):
   old_torch_dir = torch.hub.get_dir()
 
   BertLMHeadModel.prepare_inputs_for_generation = patched_prepare_inputs_for_generation
-  torch.hub.set_dir(kubin.args.cache_dir)
+  torch.hub.set_dir(kubin.options.cache_dir)
   return old_method, old_torch_dir
 
 def cancel_patch(patch):
@@ -59,7 +59,7 @@ def setup(kubin):
     image = image.convert('RGB') 
     interrogated_text = ''
 
-    interrogator = get_interrogator(clip_model=clip_model, blip_type=blip_type, cache_path=f'{kubin.args.cache_dir}/clip_cache', chunk_size=chunk_size)
+    interrogator = get_interrogator(clip_model=clip_model, blip_type=blip_type, cache_path=f'{kubin.options.cache_dir}/clip_cache', chunk_size=chunk_size)
     if mode == 'best':
       interrogated_text = interrogator.interrogate(image)
     elif mode == 'classic':

@@ -28,10 +28,10 @@ def setup(kubin):
 
       upscale_btn.click(fn=lambda *p: upscale_with(kubin, *p), inputs=[
         upscaler,
-        gr.Textbox(value=kubin.args.device, visible=False),
-        gr.Textbox(value=kubin.args.cache_dir, visible=False),
+        gr.Textbox(value=kubin.options.device, visible=False),
+        gr.Textbox(value=kubin.options.cache_dir, visible=False),
         scale,
-        gr.Textbox(value=kubin.args.output_dir, visible=False),
+        gr.Textbox(value=kubin.options.output_dir, visible=False),
         source_image,
         clear_memory
       ], outputs=upscale_output)

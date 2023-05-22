@@ -6,7 +6,7 @@ from metadata_extractor import metadata_to_html
 
 # TODO: add paging
 def setup(kubin):
-  image_root = kubin.args.output_dir
+  image_root = kubin.options.output_dir
   
   def get_folders():
     return [entry.name for entry in os.scandir(image_root) if entry.is_dir()] if os.path.exists(image_root) else []

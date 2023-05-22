@@ -17,7 +17,6 @@ parser.add_argument('--server-name', type=str, default='127.0.0.1')
 parser.add_argument('--server-port', type=int, default=7860)
 parser.add_argument('--concurrency-count', type=int, default=2)
 parser.add_argument('--debug', default=True, action='store_true')
-parser.add_argument('--locale', type=str, default='en-us') # unused 
 parser.add_argument('--model-config', type=str, default='config.kd2') #  unused
 parser.add_argument('--max-mix', type=int, default=2) # unused 
 parser.add_argument('--extensions-path', type=str, default='extensions')
@@ -34,15 +33,15 @@ print(f'launching with: {vars(args)}')
 
 kubin = Kubin(args)
 kubin.with_utils()
-kubin.init_extensions()
+kubin.with_extensions()
 
 ui = gradio_ui(kubin)
-ui.queue(concurrency_count=kubin.args.concurrency_count, api_open=False).launch(
+ui.queue(concurrency_count=kubin.options.concurrency_count, api_open=False).launch(
   show_api=False,
-  debug=kubin.args.debug,
+  debug=kubin.options.debug,
   show_error=True,
-  share=kubin.args.share=='gradio',
-  server_name=kubin.args.server_name,
-  server_port=kubin.args.server_port,
+  share=kubin.options.share=='gradio',
+  server_name=kubin.options.server_name,
+  server_port=kubin.options.server_port,
   allowed_paths=[f'{Path(__file__).parent.parent.absolute()}/client']
 )

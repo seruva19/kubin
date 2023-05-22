@@ -17,7 +17,7 @@
 - [ ] Tools for fine-tuning ([dreambooth, textual inversion](https://github.com/TheDenk/Kandinsky-2-textual-inversion))
 - [ ] VRAM usage optimization
 - [x] Img2mesh ([Shape-E](https://github.com/openai/shap-e))
-- [ ] Advanced prompt syntax
+- [ ] Advanced prompting
 - [x] Interrogation ([CLIP Interrogator](https://github.com/pharmapsychotic/clip-interrogator))
 - [x] Segmentation ([Segment Anything](https://github.com/facebookresearch/segment-anything))
 - [ ] Additional schedulers

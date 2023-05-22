@@ -4,7 +4,7 @@ from env import Kubin
 
 def create_extensions_info(kubin: Kubin):
   extensions = [(key, value) for key, value in kubin.ext_registry.extensions.items()]
-  get_path = lambda x: f'{kubin.args.extensions_path}/{x}'
+  get_path = lambda x: f'{kubin.options.extensions_path}/{x}'
 
   extensions_info = []
   if len(extensions) > 0:
