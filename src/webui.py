@@ -8,17 +8,19 @@ from ui_blocks.outpaint import outpaint_ui
 from ui_blocks.settings import settings_ui
 from ui_blocks.shared.ui_shared import SharedUI
 from ui_blocks.t2i import t2i_ui
-from shared import params, client
+from shared import client
 
 def gradio_ui(kubin: Kubin):
   ext_standalone = kubin.ext_registry.standalone() 
 
   ext_start_tab_index = 5 
   ext_target_images = create_ext_targets(ext_standalone, ext_start_tab_index) 
-  ui_shared = SharedUI(kubin, ext_target_images, kubin.ext_registry.injected())
+  ext_client_folders, ext_client_resources = kubin.ext_registry.locate_resources()
+
+  ui_shared = SharedUI(kubin, ext_target_images, kubin.ext_registry.injectable())
 
   with gr.Blocks(title='Kubin: Web-GUI for Kandinsky 2.1', theme=ui_shared.select_theme(kubin.options.theme), css=client.css_styles) as ui:
-    ui.load(fn=None, _js=client.js_scripts)
+    ui.load(fn=None, _js=client.js_loader(ext_client_resources))
     
     with gr.Tabs() as ui_tabs:
       with gr.TabItem('Text To Image', id=0):
@@ -45,7 +47,7 @@ def gradio_ui(kubin: Kubin):
       with gr.TabItem('Settings', id=next_id+2):
         settings_ui(kubin)
 
-  return ui
+  return ui, ext_client_folders
 
 def create_ext_targets(exts, ext_start_tab_index):
   ext_targets = []

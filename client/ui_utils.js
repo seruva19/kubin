@@ -1,14 +1,25 @@
 (global => {
   const kubin = global.kubin = {
-    client_root : '/file=client/',
+    client_prefix : '/file=',
     client_id: String(Date.now().toString(32) + Math.random().toString(16)).replace(/\./g, ''),
     utils: {}
+  }
+
+  const randomHash = () => {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let randomHash = '';
+    for (let i = 0; i < length; i++) {
+      const randomIndex = Math.floor(Math.random() * characters.length);
+      randomHash += characters.charAt(randomIndex);
+    }
+
+    return randomHash;
   }
 
   const loadJs = kubin.utils.loadJs = async url => {
     return new Promise(resolve => { 
       const script = document.createElement('script')
-      script.src = url
+      script.src = `${url}?${randomHash()}`
       script.async = false
       script.onload = resolve
 
@@ -19,7 +30,7 @@
 
   const loadCss = kubin.utils.loadCss = url => {
     const style = document.createElement('link')
-    style.href = url
+    style.href = `${url}?${randomHash()}`
     style.rel = 'stylesheet'
     
     const head = document.getElementsByTagName("head")[0]
@@ -33,11 +44,22 @@
     error: message => kubin.notify.lib.error(message)
   }
   
+  const extensionResources = window._kubinResources ?? []
+
   Promise.all([
-    loadCss(kubin.client_root + 'ui_utils.css'),
-    loadJs(kubin.client_root + '3party/notyf.min.js'),
-    loadCss(kubin.client_root + '3party/notyf.min.css'),
-  ])
+    loadCss(`${kubin.client_prefix}client/ui_utils.css`),
+    loadJs(`${kubin.client_prefix}client/3party/notyf.min.js`),
+    loadCss(`${kubin.client_prefix}client/3party/notyf.min.css`),
+  ].concat(extensionResources.map(resource => {
+    const resourceUrl = `${kubin.client_prefix}${resource}`
+    if (resource.endsWith('.css')) {
+      return loadCss(resourceUrl)
+    } else if (resource.endsWith('.js')) {
+      return loadJs(resourceUrl)
+    } else {
+      return Promise.resolve()
+    }
+  })))
   .then(() => {
     kubin.notify.lib = new Notyf({
       duration: 5000,

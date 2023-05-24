@@ -35,7 +35,7 @@ kubin = Kubin(args)
 kubin.with_utils()
 kubin.with_extensions()
 
-ui = gradio_ui(kubin)
+ui, resources = gradio_ui(kubin)
 ui.queue(concurrency_count=kubin.options.concurrency_count, api_open=False).launch(
   show_api=False,
   debug=kubin.options.debug,
@@ -43,5 +43,5 @@ ui.queue(concurrency_count=kubin.options.concurrency_count, api_open=False).laun
   share=kubin.options.share=='gradio',
   server_name=kubin.options.server_name,
   server_port=kubin.options.server_port,
-  allowed_paths=[f'{Path(__file__).parent.parent.absolute()}/client']
+  allowed_paths=[f'{Path(__file__).parent.parent.absolute()}/client'] + resources
 )

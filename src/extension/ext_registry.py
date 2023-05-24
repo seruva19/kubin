@@ -52,8 +52,8 @@ class ExtensionRegistry:
 
         extension_py_path = f'{self.root}/{extension}/setup_ext.py'
         if os.path.exists(extension_py_path):
-          path = f'{self.root}/{extension}'
-          sys.path.append(path)
+          extension_folder = f'{self.root}/{extension}'
+          sys.path.append(extension_folder)
           spec = importlib.util.spec_from_file_location(extension, extension_py_path)
           if spec is not None:
             module = importlib.util.module_from_spec(spec)
@@ -62,6 +62,7 @@ class ExtensionRegistry:
               spec.loader.exec_module(module)
               extension_info = module.setup(kubin)
               extension_info['_name'] = extension
+              extension_info['_path'] = extension_folder
               self.extensions[extension] = extension_info
 
           print(f'{i+1}: extension \'{extension}\' successfully registered')
@@ -74,7 +75,7 @@ class ExtensionRegistry:
   def standalone(self): # collect extensions with dedicated tab
     return list({key: value for key, value in self.extensions.items() if value.get('tab_ui', None) is not None}.values())
 
-  def injected(self): # collect extensions that are injected into UI blocks
+  def injectable(self): # collect extensions that are injected into UI blocks
     return list({key: value for key, value in self.extensions.items() if value.get('inject_ui', None) is not None}.values())
   
   def force_reinstall(self, ext = None):
@@ -88,3 +89,19 @@ class ExtensionRegistry:
 
   def is_installed(self, ext):
     return os.path.exists(f'{self.root}/{ext}/.installed')
+  
+  def locate_resources(self): 
+    client_folders = []
+    client_files= []
+
+    for _, value in self.extensions.items():
+      client_path = os.path.join(value['_path'], 'client')
+      if os.path.exists(client_path):
+        client_folders.append(client_path)
+        for file_name in os.listdir(client_path):
+          client_file_path = os.path.join(client_path, file_name)
+
+          if os.path.isfile(client_file_path) and (file_name.endswith('.js') or file_name.endswith('.css')):
+            client_files.append(client_file_path)
+
+    return client_folders, client_files
