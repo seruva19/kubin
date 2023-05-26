@@ -1,6 +1,6 @@
 (global => {
   const kubin = global.kubin = {
-    client_prefix : '/file=',
+    client_prefix: '/file=',
     client_id: String(Date.now().toString(32) + Math.random().toString(16)).replace(/\./g, ''),
     utils: {}
   }
@@ -17,7 +17,7 @@
   }
 
   const loadJs = kubin.utils.loadJs = async url => {
-    return new Promise(resolve => { 
+    return new Promise(resolve => {
       const script = document.createElement('script')
       script.src = `${url}?${randomHash()}`
       script.async = false
@@ -32,7 +32,7 @@
     const style = document.createElement('link')
     style.href = `${url}?${randomHash()}`
     style.rel = 'stylesheet'
-    
+
     const head = document.getElementsByTagName("head")[0]
     head.appendChild(style)
   }
@@ -43,7 +43,7 @@
     warning: message => kubin.notify.lib.warning(message),
     error: message => kubin.notify.lib.error(message)
   }
-  
+
   const extensionResources = window._kubinResources ?? []
 
   Promise.all([
@@ -60,19 +60,19 @@
       return Promise.resolve()
     }
   })))
-  .then(() => {
-    kubin.notify.lib = new Notyf({
-      duration: 5000,
-      ripple: false,
-      position: {x: 'right', y: 'bottom'},
-      types: [
-        {type: 'warning', background: 'orange', icon: false},
-        {type: 'success', background: 'seagreen', icon: false},
-        {type: 'error', background: 'indianred', icon: false}
-      ]
-    })
+    .then(() => {
+      kubin.notify.lib = new Notyf({
+        duration: 5000,
+        ripple: false,
+        position: { x: 'right', y: 'bottom' },
+        types: [
+          { type: 'warning', background: 'orange', icon: false },
+          { type: 'success', background: 'seagreen', icon: false },
+          { type: 'error', background: 'indianred', icon: false }
+        ]
+      })
 
-    kubin.notify.success('kubin client library: loaded')
-    console.log('kubin client library: loaded')
-  })
+      kubin.notify.success('kubin client library: loaded')
+      console.log('kubin client library: loaded')
+    })
 })(window)
