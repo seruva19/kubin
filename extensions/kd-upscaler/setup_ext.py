@@ -75,7 +75,7 @@ def upscale_with(
     if upscaler == "Real-ESRGAN":
         upscaled_image = upscale_esrgan(device, cache_dir, input_image, scale)
         upscaled_image_path = kubin.fs_utils.save_output(
-            output_dir, "upscale", [upscaled_image], "esrgan"
+            output_dir, "upscale", [upscaled_image]
         )
 
         return upscaled_image_path
