@@ -29,11 +29,11 @@ class EMA(nn.Module):
     def forward(self, model):
         decay = self.decay
 
-        if self.num_updates >= 0: # type: ignore
-            self.num_updates += 1 # type: ignore
-            decay = min(self.decay, (1 + self.num_updates) / (10 + self.num_updates)) # type: ignore
+        if self.num_updates >= 0:  # type: ignore
+            self.num_updates += 1  # type: ignore
+            decay = min(self.decay, (1 + self.num_updates) / (10 + self.num_updates))  # type: ignore
 
-        one_minus_decay = 1.0 - decay # type: ignore
+        one_minus_decay = 1.0 - decay  # type: ignore
 
         with torch.no_grad():
             m_param = dict(model.named_parameters())
@@ -62,5 +62,5 @@ class EMA(nn.Module):
         self.collected_params = [param.clone() for param in parameters]
 
     def restore(self, parameters):
-        for c_param, param in zip(self.collected_params, parameters):
+        for c_param, param in zip(self.collected_params, parameters):  # type: ignore
             param.data.copy_(c_param.data)

@@ -53,11 +53,11 @@ class Decoder(pl.LightningModule):
             )
 
         self.clip_model, _ = clip.load(clip_name, device="cpu", jit=False)
-        self.clip_model.transformer = None # type: ignore
-        self.clip_model.positional_embedding = None # type: ignore
-        self.clip_model.ln_final = None # type: ignore
-        self.clip_model.token_embedding = None # type: ignore
-        self.clip_model.text_projection = None # type: ignore
+        self.clip_model.transformer = None  # type: ignore
+        self.clip_model.positional_embedding = None  # type: ignore
+        self.clip_model.ln_final = None  # type: ignore
+        self.clip_model.token_embedding = None  # type: ignore
+        self.clip_model.text_projection = None  # type: ignore
 
     def create_image_encoder(
         self,
@@ -157,7 +157,7 @@ class Decoder(pl.LightningModule):
             model_kwargs=cond,
         )
         losses = compute_losses()
-        loss = losses["loss"].mean()
+        loss = losses["loss"].mean()  # type: ignore
         self.log(f"{stage}_loss", loss.detach().cpu().item(), sync_dist=True)
 
         return loss

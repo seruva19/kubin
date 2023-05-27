@@ -34,7 +34,7 @@ def _convert_image_to_rgb(image):
 def _transform(n_px):
     return Compose(
         [
-            Resize(n_px, interpolation=BICUBIC), # type: ignore
+            Resize(n_px, interpolation=BICUBIC),  # type: ignore
             CenterCrop(n_px),
             _convert_image_to_rgb,
             ToTensor(),
@@ -89,7 +89,9 @@ class TextImageDataset(Dataset):
             text = ""
         else:
             text = self.df["caption"].iloc[ind]
-        out_dict["tokens"], out_dict["mask"] = self.tokenizer.padded_tokens_and_mask([text], 77)
+        out_dict["tokens"], out_dict["mask"] = self.tokenizer.padded_tokens_and_mask(
+            [text], 77
+        )
         out_dict["tokens"] = out_dict["tokens"][0]
         out_dict["mask"] = out_dict["mask"][0]
         return clip_image, out_dict
@@ -115,10 +117,10 @@ class LightningDataModule(pl.LightningDataModule):
         self.val_config = val_config
 
     def train_dataloader(self):
-        return create_loader(**self.train_config) # type: ignore
+        return create_loader(**self.train_config)  # type: ignore
 
     def test_dataloader(self):
-        return create_loader(**self.val_config) # type: ignore
+        return create_loader(**self.val_config)  # type: ignore
 
     def val_dataloader(self):
-        return create_loader(**self.val_config) # type: ignore
+        return create_loader(**self.val_config)  # type: ignore

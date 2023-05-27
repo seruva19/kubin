@@ -50,7 +50,7 @@ def get_polygon_mask(mask_size, mask_points):
 
     path = Path(mask_points)
     grid = path.contains_points(points)
-    grid = grid.reshape((mask_size[0], mask_size[1])) # type: ignore
+    grid = grid.reshape((mask_size[0], mask_size[1]))  # type: ignore
     return 1.0 - grid.astype(np.int32)
 
 

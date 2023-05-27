@@ -1,11 +1,7 @@
 import gradio as gr
 import os
-from train_modules.train_tools import (
-    relative_path_app_warning,
-    relative_path_extension_warning,
-    save_config_to_path,
-    load_config_from_path,
-)
+import numpy as np
+from train_modules.train_tools import save_config_to_path, load_config_from_path
 from train_modules.train_unclip import (
     default_unclip_config_path,
     add_default_values,
@@ -13,11 +9,13 @@ from train_modules.train_unclip import (
 )
 
 
+def array_to_str(value):
+    return str(value).strip("[]")
+
+
 def train_unclip_ui(kubin, tabs):
     default_config_from_path = load_config_from_path(default_unclip_config_path)
-    default_config_from_path = add_default_values(
-        kubin.options.cache_dir, default_config_from_path
-    )
+    default_config_from_path = add_default_values(default_config_from_path)
 
     with gr.Row() as train_unclip_block:
         current_config = gr.State(default_config_from_path)
@@ -25,17 +23,17 @@ def train_unclip_ui(kubin, tabs):
         with gr.Column(scale=3):
             with gr.Accordion("General params", open=True):
                 with gr.Row():
-                    params_path = gr.Textbox(value=default_config_from_path["params_path"], label="Params path", interactive=True, info=relative_path_app_warning)  # type: ignore
+                    params_path = gr.Textbox(value=default_config_from_path["params_path"], label="Params path", interactive=True)  # type: ignore
                     clip_name = gr.Textbox(value=default_config_from_path["clip_name"], label="Clip Name", interactive=True)  # type: ignore
-                    save_path = gr.Textbox(value=default_config_from_path["save_path"], label="Save path", interactive=True, info=relative_path_extension_warning)  # type: ignore
+                    save_path = gr.Textbox(value=default_config_from_path["save_path"], label="Save path", interactive=True)  # type: ignore
                     save_name = gr.Textbox(value=default_config_from_path["save_name"], label="Save name", interactive=True)  # type: ignore
                 with gr.Row():
                     with gr.Column():
                         num_epochs = gr.Number(value=default_config_from_path["num_epochs"], label="Number of epochs", interactive=True)  # type: ignore
-                        save_every = gr.Number(value=default_config_from_path["save_every"], label="Save every", interactive=True)  # type: ignore
+                        save_every = gr.Number(value=default_config_from_path["save_every"], label="Save every steps", interactive=True)  # type: ignore
                     with gr.Column():
                         device = gr.Textbox(value=default_config_from_path["device"], label="Device", interactive=True)  # type: ignore
-                        num_workers = gr.Number(value=default_config_from_path["data"]["train"]["num_workers"], label="Number of workers", info="Set to 0 if Windows", interactive=True)  # type: ignore
+                        num_workers = gr.Number(value=default_config_from_path["data"]["train"]["num_workers"], label="Number of workers", interactive=True)  # type: ignore
                     with gr.Column():
                         inpainting = gr.Checkbox(value=default_config_from_path["inpainting"], label="Inpainting", interactive=True)  # type: ignore
                         shuffle = gr.Checkbox(value=default_config_from_path["data"]["train"]["shuffle"], label="Shuffle", interactive=True)  # type: ignore
@@ -46,7 +44,7 @@ def train_unclip_ui(kubin, tabs):
                 with gr.Row():
                     with gr.Column():
                         with gr.Row():
-                            df_path = gr.Textbox(value=default_config_from_path["data"]["train"]["df_path"], label="Dataset path", interactive=True, info=relative_path_extension_warning)  # type: ignore
+                            df_path = gr.Textbox(value=default_config_from_path["data"]["train"]["df_path"], label="Dataset path", interactive=True)  # type: ignore
                             open_tools = gr.Button("Dataset preparation").style(
                                 size="sm", full_width=False
                             )
@@ -89,10 +87,10 @@ def train_unclip_ui(kubin, tabs):
                     in_channels = gr.Number(value=default_config_from_path["image_enc_params"]["params"]["ddconfig"]["in_channels"], label="Input Channels", interactive=True)  # type: ignore
                     out_ch = gr.Number(value=default_config_from_path["image_enc_params"]["params"]["ddconfig"]["out_ch"], label="Output Channels", interactive=True)  # type: ignore
                     ch = gr.Number(value=default_config_from_path["image_enc_params"]["params"]["ddconfig"]["ch"], label="Channels", interactive=True)  # type: ignore
-                    ch_mult = gr.Textbox(value=default_config_from_path["image_enc_params"]["params"]["ddconfig"]["ch_mult"], label=" Channel Multiplier", interactive=True)  # type: ignore
+                    ch_mult = gr.Textbox(value=array_to_str(default_config_from_path["image_enc_params"]["params"]["ddconfig"]["ch_mult"]), label="Channel Multiplier", interactive=True)  # type: ignore
                 with gr.Row():
                     num_res_blocks = gr.Number(value=default_config_from_path["image_enc_params"]["params"]["ddconfig"]["num_res_blocks"], label="Number of Residual Blocks", interactive=True)  # type: ignore
-                    attn_resolutions = gr.Textbox(value=default_config_from_path["image_enc_params"]["params"]["ddconfig"]["attn_resolutions"], label="Attention Resolutions", interactive=True)  # type: ignore
+                    attn_resolutions = gr.Textbox(value=array_to_str(default_config_from_path["image_enc_params"]["params"]["ddconfig"]["attn_resolutions"]), label="Attention Resolutions", interactive=True)  # type: ignore
                     dropout = gr.Number(value=default_config_from_path["image_enc_params"]["params"]["ddconfig"]["dropout"], label="Dropout", interactive=True)  # type: ignore
 
             with gr.Accordion("Text encoder params", open=True):
@@ -105,9 +103,7 @@ def train_unclip_ui(kubin, tabs):
             with gr.Accordion("Miscellaneous", open=True):
                 with gr.Row():
                     config_path = gr.Textbox(
-                        "train/train_unclip_config.yaml",
-                        label="Config path",
-                        info=relative_path_extension_warning,
+                        "train/train_unclip_config.yaml", label="Config path"
                     )
                     load_config = gr.Button("Load parameters from file").style(
                         size="sm", full_width=False
@@ -223,15 +219,19 @@ def train_unclip_ui(kubin, tabs):
                         "out_ch"
                     ],
                     ch: current_config["image_enc_params"]["params"]["ddconfig"]["ch"],
-                    ch_mult: current_config["image_enc_params"]["params"]["ddconfig"][
-                        "ch_mult"
-                    ],
+                    ch_mult: array_to_str(
+                        current_config["image_enc_params"]["params"]["ddconfig"][
+                            "ch_mult"
+                        ]
+                    ),
                     num_res_blocks: current_config["image_enc_params"]["params"][
                         "ddconfig"
                     ]["num_res_blocks"],
-                    attn_resolutions: current_config["image_enc_params"]["params"][
-                        "ddconfig"
-                    ]["attn_resolutions"],
+                    attn_resolutions: array_to_str(
+                        current_config["image_enc_params"]["params"]["ddconfig"][
+                            "attn_resolutions"
+                        ]
+                    ),
                     dropout: current_config["image_enc_params"]["params"]["ddconfig"][
                         "dropout"
                     ],
@@ -242,6 +242,9 @@ def train_unclip_ui(kubin, tabs):
                 }
 
             def update_config_from_ui(params):
+                def str_to_int_array(text):
+                    return [int(value) for value in text.split(",")]
+
                 updated_config = default_config_from_path.copy()
 
                 updated_config["params_path"] = params[params_path]  # type: ignore
@@ -280,9 +283,9 @@ def train_unclip_ui(kubin, tabs):
                 updated_config["image_enc_params"]["params"]["ddconfig"]["in_channels"] = int(params[in_channels])  # type: ignore
                 updated_config["image_enc_params"]["params"]["ddconfig"]["out_ch"] = int(params[out_ch])  # type: ignore
                 updated_config["image_enc_params"]["params"]["ddconfig"]["ch"] = int(params[ch])  # type: ignore
-                updated_config["image_enc_params"]["params"]["ddconfig"]["ch_mult"] = params[ch_mult]  # type: ignore
+                updated_config["image_enc_params"]["params"]["ddconfig"]["ch_mult"] = str_to_int_array(params[ch_mult])  # type: ignore
                 updated_config["image_enc_params"]["params"]["ddconfig"]["num_res_blocks"] = int(params[num_res_blocks])  # type: ignore
-                updated_config["image_enc_params"]["params"]["ddconfig"]["attn_resolutions"] = params[attn_resolutions]  # type: ignore
+                updated_config["image_enc_params"]["params"]["ddconfig"]["attn_resolutions"] = str_to_int_array(params[attn_resolutions])  # type: ignore
                 updated_config["image_enc_params"]["params"]["ddconfig"]["dropout"] = params[dropout]  # type: ignore
                 updated_config["text_enc_params"]["model_path"] = params[model_path]  # type: ignore
                 updated_config["text_enc_params"]["model_name"] = params[model_name]  # type: ignore
@@ -291,8 +294,7 @@ def train_unclip_ui(kubin, tabs):
 
                 return updated_config
 
-            def load_config_values(root_path, path, current_config):
-                path = path if os.path.isabs(path) else os.path.join(root_path, path)
+            def load_config_values(path, current_config):
                 return load_config_values_from_path(path, current_config)
 
             def load_config_values_from_path(path, current_config):
@@ -304,25 +306,21 @@ def train_unclip_ui(kubin, tabs):
                     return current_config, True
 
             def append_recommended_values(current_config):
-                current_config = add_default_values(
-                    kubin.options.cache_dir, current_config
-                )
+                current_config = add_default_values(current_config)
                 return current_config
 
-            def save_config_values(root_path, path, current_config):
-                path = path if os.path.isabs(path) else os.path.join(root_path, path)
+            def save_config_values(path, current_config):
                 if os.path.exists(path):
                     print("existing unclip config file found, overwriting")
 
                 save_config_to_path(current_config, path)
                 return False
 
-            dir_root = gr.State(kubin.root)
             config_error = gr.Checkbox(False, visible=False)
 
             load_config.click(
                 fn=load_config_values,
-                inputs=[dir_root, config_path, current_config],
+                inputs=[config_path, current_config],
                 outputs=[current_config, config_error],
                 queue=False,
             ).then(
@@ -340,7 +338,7 @@ def train_unclip_ui(kubin, tabs):
 
             save_config.click(fn=update_config_from_ui, inputs=config_params, outputs=[current_config], queue=False).then(  # type: ignore
                 fn=save_config_values,
-                inputs=[dir_root, config_path, current_config],
+                inputs=[config_path, current_config],
                 outputs=[config_error],
                 queue=False,
             ).then(  # type: ignore
@@ -382,12 +380,11 @@ def train_unclip_ui(kubin, tabs):
             def check_training_params(config):
                 return True, ""
 
-            def launch_training(success, root_path, training_config):
+            def launch_training(success, training_config):
                 if not success:
                     return
 
                 path = training_config["save_path"]
-                path = path if os.path.isabs(path) else os.path.join(root_path, path)
 
                 if not os.path.exists(path):
                     print(f"creating output path {path}")
@@ -410,7 +407,7 @@ def train_unclip_ui(kubin, tabs):
                 show_progress=False,
             ).then(
                 fn=launch_training,
-                inputs=[ready_to_train, dir_root, training_config],
+                inputs=[ready_to_train, training_config],
                 outputs=[unclip_training_info],
             )
 

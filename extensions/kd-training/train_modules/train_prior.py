@@ -1,3 +1,4 @@
+import os
 import torch
 from huggingface_hub import hf_hub_url, cached_download
 import pytorch_lightning as pl
@@ -16,18 +17,19 @@ default_prior_config_path = (
 )
 
 
-def add_default_values(cache_dir, config_prior):
-    config_prior["params_path"] = f"{cache_dir}/2_1/prior_fp16.ckpt"
-    config_prior["clip_mean_std_path"] = f"{cache_dir}/2_1/ViT-L-14_stats.th"
+def add_default_values(config_prior):
+    config_prior["params_path"] = "models/2_1/prior_fp16.ckpt"
+    config_prior["clip_mean_std_path"] = "models/2_1/ViT-L-14_stats.th"
     config_prior["data"]["train"]["df_path"] = "train/dataset.csv"
-    config_prior["num_epochs"] = 2
+    config_prior["num_epochs"] = 100
+    config_prior["save_every"] = 0
     config_prior["save_path"] = "train/checkpoint"
     config_prior["save_name"] = "prior_ckpt"
     return config_prior
 
 
 def get_prior_model(kubin):
-    cache_dir = f"{kubin.root}/{kubin.options.cache_dir}/2_1"
+    cache_dir = "models/2_1"
 
     prior_name = "prior_fp16.ckpt"
     config_file_url = hf_hub_url(
@@ -64,7 +66,7 @@ def start_prior_training(kubin, config):
     )
 
     diffusion = model.create_prior_diffusion()
-    print("start loading")
+
     if config["params_path"] != "":
         model.load_state_dict(torch.load(config["params_path"]))
 

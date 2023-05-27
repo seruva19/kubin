@@ -33,7 +33,7 @@ def _convert_image_to_rgb(image):
 def _transform(n_px):
     return Compose(
         [
-            Resize(n_px, interpolation=BICUBIC), # type: ignore
+            Resize(n_px, interpolation=BICUBIC),  # type: ignore
             CenterCrop(n_px),
             _convert_image_to_rgb,
             ToTensor(),
@@ -111,8 +111,8 @@ class TextImageDataset(Dataset):
             return_tensors="pt",
         )
 
-        out_dict["tokens"] = text_encoding["input_ids"][0] # type: ignore
-        out_dict["mask"] = text_encoding["attention_mask"][0] # type: ignore
+        out_dict["tokens"] = text_encoding["input_ids"][0]  # type: ignore
+        out_dict["mask"] = text_encoding["attention_mask"][0]  # type: ignore
         if np.random.binomial(1, self.drop_image_prob):
             out_dict["clip_image"] = torch.zeros(
                 3, self.clip_image_size, self.clip_image_size
@@ -142,10 +142,10 @@ class LightningDataModule(pl.LightningDataModule):
         self.val_config = val_config
 
     def train_dataloader(self):
-        return create_loader(**self.train_config) # type: ignore
+        return create_loader(**self.train_config)  # type: ignore
 
     def test_dataloader(self):
-        return create_loader(**self.val_config) # type: ignore
+        return create_loader(**self.val_config)  # type: ignore
 
     def val_dataloader(self):
-        return create_loader(**self.val_config) # type: ignore
+        return create_loader(**self.val_config)  # type: ignore

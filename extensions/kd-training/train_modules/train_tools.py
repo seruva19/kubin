@@ -4,9 +4,6 @@ import pandas as pd
 from PIL import Image
 from omegaconf import OmegaConf
 
-relative_path_extension_warning = "Relative to extension folder"
-relative_path_app_warning = "Relative to app root"
-
 
 def load_config_from_path(path):
     config = OmegaConf.load(path)
@@ -14,7 +11,7 @@ def load_config_from_path(path):
 
 
 def save_config_to_path(config, path):
-    OmegaConf.save(config, path)
+    OmegaConf.save(config, path, resolve=True)
 
 
 def train_tools_ui(kubin):
@@ -22,9 +19,7 @@ def train_tools_ui(kubin):
         with gr.Row():
             with gr.Column():
                 image_folder_path = gr.Textbox(
-                    "train/images",
-                    label="Path to image folder",
-                    info=relative_path_app_warning,
+                    "train/images", label="Path to image folder"
                 )
                 image_extensions = gr.CheckboxGroup(
                     [".jpg", ".jpeg", ".png", ".bmp"],
@@ -34,16 +29,12 @@ def train_tools_ui(kubin):
             with gr.Column():
                 resize_images = gr.Checkbox(label="Resize images", default=False)
                 resized_images_path = gr.Textbox(
-                    "train/images_resized",
-                    label="Path to folder with resize images",
-                    info=relative_path_app_warning,
+                    "train/images_resized", label="Path to folder with resize images"
                 )
         with gr.Row():
             caption_extension = gr.Textbox(".txt", label="Caption files extension")
             output_csv_path = gr.Textbox(
-                "train/dataset.csv",
-                label="Path to output dataset file",
-                info=relative_path_app_warning,
+                "train/dataset.csv", label="Path to output dataset file"
             )
         with gr.Row():
             create_df = gr.Button("Create dataset", variant="primary")
@@ -87,7 +78,6 @@ def train_tools_ui(kubin):
             fn=prepare_dataset,
             inputs=[
                 image_folder_path,
-                gr.State(kubin.root),
                 image_extensions,
                 caption_extension,
                 output_csv_path,
@@ -108,7 +98,6 @@ def train_tools_ui(kubin):
         clear_existing.click(
             fn=clear_existing_data,
             inputs=[
-                gr.State(kubin.root),
                 output_csv_path,
                 resize_images,
                 resized_images_path,
@@ -120,7 +109,7 @@ def train_tools_ui(kubin):
 
         view_df.click(
             fn=load_dataframe,
-            inputs=[gr.State(kubin.root), output_csv_path],
+            inputs=[output_csv_path],
             outputs=[images_dataframe, dataframe_result, dataframe_not_exists],
         ).then(
             fn=None,
@@ -130,10 +119,7 @@ def train_tools_ui(kubin):
         )
 
 
-def load_dataframe(root_path, csv_path):
-    csv_path = (
-        csv_path if os.path.isabs(csv_path) else os.path.join(root_path, csv_path)
-    )
+def load_dataframe(csv_path):
     if os.path.exists(csv_path):
         df = pd.read_csv(csv_path)
         return gr.update(value=df, visible=True), "", False
@@ -141,35 +127,23 @@ def load_dataframe(root_path, csv_path):
     return gr.update(visible=False), "Dataset does not exist", True
 
 
-def clear_existing_data(root_path, csv_path, resize_enabled, resized_path):
-    csv_path = (
-        csv_path if os.path.isabs(csv_path) else os.path.join(root_path, csv_path)
-    )
-    resized_path = (
-        resized_path
-        if os.path.isabs(resized_path)
-        else os.path.join(root_path, resized_path)
-    )
-
+def clear_existing_data(csv_path, resize_enabled, resized_path):
     if os.path.exists(csv_path):
         os.remove(csv_path)
         print(f"{csv_path} removed")
     else:
         print(f"{csv_path} does not exist")
 
-    if resize_enabled:
-        if os.path.exists(resized_path):
-            existing_resized_files = os.listdir(resized_path)
+    if os.path.exists(resized_path):
+        existing_resized_files = os.listdir(resized_path)
 
-            if len(existing_resized_files) > 0:
-                for filename in existing_resized_files:
-                    file_path = os.path.join(resized_path, filename)
-                    os.remove(file_path)
-                print(
-                    f"{len(existing_resized_files)} files removed from {resized_path}"
-                )
-            else:
-                print(f"no files found in {resized_path}")
+        if len(existing_resized_files) > 0:
+            for filename in existing_resized_files:
+                file_path = os.path.join(resized_path, filename)
+                os.remove(file_path)
+            print(f"{len(existing_resized_files)} files removed from {resized_path}")
+        else:
+            print(f"no files found in {resized_path}")
 
     return (
         gr.update(visible=False),
@@ -180,7 +154,6 @@ def clear_existing_data(root_path, csv_path, resize_enabled, resized_path):
 
 def prepare_dataset(
     image_dir,
-    root_path,
     image_extensions,
     caption_extension,
     csv_path,
@@ -189,20 +162,11 @@ def prepare_dataset(
 ):
     data = []
 
-    image_dir = (
-        image_dir if os.path.isabs(image_dir) else os.path.join(root_path, image_dir)
-    )
-    csv_path = (
-        csv_path if os.path.isabs(csv_path) else os.path.join(root_path, csv_path)
-    )
-    resized_path = (
-        resized_path
-        if os.path.isabs(resized_path)
-        else os.path.join(root_path, resized_path)
-    )
-
     if os.path.exists(csv_path):
         return f"Error: file {csv_path} already exists", True
+
+    if not os.path.exists(image_dir):
+        return f"Error: image folder {image_dir} does not exists", True
 
     for filename in os.listdir(image_dir):
         if filename.endswith(tuple(image_extensions)):
@@ -224,7 +188,7 @@ def prepare_dataset(
 
         if len(os.listdir(resized_path)) == 0:
             for image_path, caption_text in data:
-                image = Image.open(image_path)
+                image = Image.open(image_path).convert("RGB")
                 resized_image = image.resize((768, 768))
                 new_image_path = os.path.join(
                     resized_path, os.path.basename(image_path)
@@ -238,7 +202,7 @@ def prepare_dataset(
 
     df = pd.DataFrame(processed_data, columns=["image_name", "caption"])
     csv_dir = os.path.dirname(csv_path)
-    os.makedirs(os.path.dirname(csv_dir), exist_ok=True)
+    os.makedirs(csv_dir, exist_ok=True)
 
     df.to_csv(csv_path, index=False)
     print(f"Dataset saved to {csv_path}")

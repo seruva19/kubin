@@ -21,13 +21,14 @@ default_unclip_config_path = (
 )
 
 
-def add_default_values(cache_dir, config_unclip):
-    config_unclip["params_path"] = f"{cache_dir}/2_1/decoder_fp16.ckpt"
-    config_unclip["image_enc_params"]["ckpt_path"] = f"{cache_dir}/2_1/movq_final.ckpt"
-    config_unclip["text_enc_params"]["model_path"] = f"{cache_dir}/2_1/text_encoder"
-    config_unclip["data"]["train"]["tokenizer_name"] = f"{cache_dir}/2_1/text_encoder"
+def add_default_values(config_unclip):
+    config_unclip["params_path"] = "models/2_1/decoder_fp16.ckpt"
+    config_unclip["image_enc_params"]["ckpt_path"] = "models/2_1/movq_final.ckpt"
+    config_unclip["text_enc_params"]["model_path"] = "models/2_1/text_encoder"
+    config_unclip["data"]["train"]["tokenizer_name"] = "models/2_1/text_encoder"
     config_unclip["data"]["train"]["df_path"] = "train/dataset.csv"
-    config_unclip["num_epochs"] = 2
+    config_unclip["num_epochs"] = 100
+    config_unclip["save_every"] = 0
     config_unclip["save_path"] = "train/checkpoint"
     config_unclip["save_name"] = "unclip_ckpt"
     return config_unclip
@@ -43,7 +44,7 @@ def drop_first_layer(path):
 
 
 def get_unclip_model(kubin, inpainting):
-    cache_dir = f"{kubin.root}/{kubin.options.cache_dir}/2_1"
+    cache_dir = "models/2_1"
 
     if not inpainting:
         model_name = "decoder_fp16.ckpt"
@@ -106,8 +107,6 @@ def start_unclip_training(kubin, config):
     device = config["device"]
     model = create_model(**config["model_config"])
     diffusion = create_gaussian_diffusion(**config["diffusion_config"])
-
-    print("start loading")
 
     if config["params_path"] != "":
         if config["drop_first_layer"]:
