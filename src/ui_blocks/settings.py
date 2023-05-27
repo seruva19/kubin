@@ -60,7 +60,7 @@ def settings_ui(kubin: Kubin):
             update_btn = gr.Button(value="Update system info")
             update_btn.click(update_info, outputs=system_info)
             unload_model = gr.Button(value="Unload model")
-            unload_model.click(lambda: kubin.model.flush())
+
             unload_model.click(lambda: kubin.model.flush(), queue=False).then(
                 fn=None, _js='_ => kubin.notify.success("Model unloaded")'
             )
