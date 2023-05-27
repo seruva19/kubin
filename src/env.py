@@ -9,6 +9,9 @@ class Kubin:
     def __init__(self, args):
         self.options = KubinOptions(args)
 
+        self.root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+        print(f"root dir: {self.root}")
+
         self.model = (
             Model_Mock()
             if self.options.mock
@@ -36,7 +39,6 @@ class Kubin:
 
         self.fs_utils = fs_utils
         self.img_utils = img_utils
-        self.root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
     def with_extensions(self):
         if not self.options.safe_mode:
