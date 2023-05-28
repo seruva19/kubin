@@ -105,7 +105,9 @@ def train_unclip(
 
             train_step += 1
             if save_every != 0 and train_step % save_every == 0:
-                print("\nsaving unclip checkpoint")
+                progress.set_postfix({"info": "saving unclip checkpoint"})
+                progress.update()
+
                 torch.save(
                     unet.state_dict(),
                     os.path.join(
@@ -113,16 +115,21 @@ def train_unclip(
                         save_name + f"{epoch + 1}_{str(train_step)}" + ".ckpt",
                     ),
                 )
+
             progress.set_postfix(
-                {"step": f"{train_step}/{len(train_loader)}", "loss": loss.item()}
+                {
+                    "step": f"{train_step}/{len(train_loader)*num_epochs}",
+                    "loss": loss.item(),
+                }
             )
             progress.update()
 
         if (train_epoch == num_epochs) or (
             save_epoch != 0 and train_epoch % save_epoch
         ) == 0:
-            print("\nsaving unclip checkpoint")
             torch.save(
                 unet.state_dict(),
                 os.path.join(save_path, save_name + f"{epoch + 1}" + ".ckpt"),
             )
+            progress.set_postfix({"info": "unclip checkpoint saved"})
+            progress.update()

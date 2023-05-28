@@ -55,19 +55,21 @@ def train_unclip_ui(kubin, tabs):
                                 lambda: gr.Tabs.update(selected="training-tools"),
                                 outputs=tabs,
                             )
-                            clip_image_size = gr.Number(value=default_config_from_path["data"]["train"]["clip_image_size"], label="Clip image size", interactive=True)  # type: ignore
-                            batch_size = gr.Number(value=default_config_from_path["data"]["train"]["batch_size"], label="Batch size", interactive=True)  # type: ignore
+                            with gr.Column():
+                                clip_image_size = gr.Number(value=default_config_from_path["data"]["train"]["clip_image_size"], label="Clip image size", interactive=True)  # type: ignore
+                                batch_size = gr.Number(value=default_config_from_path["data"]["train"]["batch_size"], label="Batch size", interactive=True)  # type: ignore
 
+                    with gr.Column():
+                        seq_len = gr.Number(value=default_config_from_path["data"]["train"]["seq_len"], label="Sequence Length", interactive=True)  # type: ignore
+                        with gr.Column():
+                            drop_text_prob = gr.Number(value=default_config_from_path["data"]["train"]["drop_text_prob"], label="Dropout text probability", interactive=True)  # type: ignore
+                            drop_image_prob = gr.Number(value=default_config_from_path["data"]["train"]["drop_image_prob"], label="Dropout image probability", interactive=True)  # type: ignore
                     with gr.Column():
                         inpainting = gr.Checkbox(value=default_config_from_path["inpainting"], label="Inpainting", interactive=True)  # type: ignore
                         shuffle = gr.Checkbox(value=default_config_from_path["data"]["train"]["shuffle"], label="Shuffle", interactive=True)  # type: ignore
                         drop_first_layer = gr.Checkbox(value=default_config_from_path["drop_first_layer"], label="Drop first layer", interactive=True)  # type: ignore
                         freeze_resblocks = gr.Checkbox(value=default_config_from_path["freeze"]["freeze_resblocks"], label="Freeze Residual Blocks", interactive=True)  # type: ignore
                         freeze_attention = gr.Checkbox(value=default_config_from_path["freeze"]["freeze_attention"], label="Freeze Attention", interactive=True)  # type: ignore
-                    with gr.Column():
-                        seq_len = gr.Number(value=default_config_from_path["data"]["train"]["seq_len"], label="Sequence Length", interactive=True)  # type: ignore
-                        drop_text_prob = gr.Number(value=default_config_from_path["data"]["train"]["drop_text_prob"], label="Dropout text probability", interactive=True)  # type: ignore
-                        drop_image_prob = gr.Number(value=default_config_from_path["data"]["train"]["drop_image_prob"], label="Dropout image probability", interactive=True)  # type: ignore
 
             with gr.Accordion("Optimizer params", open=True):
                 with gr.Row():
