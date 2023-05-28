@@ -30,7 +30,9 @@ def train_unclip_ui(kubin, tabs):
                 with gr.Row():
                     with gr.Column():
                         num_epochs = gr.Number(value=default_config_from_path["num_epochs"], label="Number of epochs", interactive=True)  # type: ignore
-                        save_every = gr.Number(value=default_config_from_path["save_every"], label="Save every steps", interactive=True)  # type: ignore
+                        with gr.Row():
+                            save_every = gr.Number(value=default_config_from_path["save_every"], label="Save every steps", interactive=True)  # type: ignore
+                            save_epoch = gr.Number(value=default_config_from_path["kubin"]["save_epoch"], label="Save after epochs", interactive=True)  # type: ignore
                     with gr.Column():
                         device = gr.Textbox(value=default_config_from_path["device"], label="Device", interactive=True)  # type: ignore
                         num_workers = gr.Number(value=default_config_from_path["data"]["train"]["num_workers"], label="Number of workers", interactive=True)  # type: ignore
@@ -122,6 +124,7 @@ def train_unclip_ui(kubin, tabs):
                 clip_name,
                 num_epochs,
                 save_every,
+                save_epoch,
                 save_name,
                 save_path,
                 device,
@@ -170,6 +173,7 @@ def train_unclip_ui(kubin, tabs):
                     clip_name: current_config["clip_name"],
                     num_epochs: current_config["num_epochs"],
                     save_every: current_config["save_every"],
+                    save_epoch: current_config["kubin"]["save_epoch"],
                     save_name: current_config["save_name"],
                     save_path: current_config["save_path"],
                     device: current_config["device"],
@@ -291,6 +295,7 @@ def train_unclip_ui(kubin, tabs):
                 updated_config["text_enc_params"]["model_name"] = params[model_name]  # type: ignore
                 updated_config["text_enc_params"]["in_features"] = int(params[in_features])  # type: ignore
                 updated_config["text_enc_params"]["out_features"] = int(params[out_features])  # type: ignore
+                updated_config["kubin"]["save_epoch"] = int(params[save_epoch])  # type: ignore
 
                 return updated_config
 

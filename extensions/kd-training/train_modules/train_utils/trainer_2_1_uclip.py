@@ -54,6 +54,7 @@ def train_unclip(
     scale=1,
     num_epochs=2,
     save_every=1000,
+    save_epoch=1,
     save_name="model",
     save_path="",
     inpainting=False,
@@ -61,14 +62,20 @@ def train_unclip(
 ):
     assert train_loader is not None
     assert schedule_sampler is not None
-    train_step = 0
+    train_epoch = 0
 
     for epoch in range(num_epochs):
+        train_epoch += 1
+        train_step = 0
         progress = tqdm(
-            total=len(train_loader), desc=f"finetuning unclip model, epoch {epoch + 1}"
+            total=len(train_loader),
+            desc=f"finetuning unclip model, epoch {train_epoch}",
+            position=0,
+            leave=True,
         )
         for batch in train_loader:
-            progress.set_postfix({"step": train_step + 1})
+            train_step += 1
+
             optimizer.zero_grad()
             image, cond = batch
             image = image.to(device)
@@ -96,6 +103,7 @@ def train_unclip(
             optimizer.step()
             if lr_scheduler is not None:
                 lr_scheduler.step()
+
             train_step += 1
             if save_every != 0 and train_step % save_every == 0:
                 torch.save(
@@ -105,10 +113,13 @@ def train_unclip(
                         save_name + f"{epoch + 1}_{str(train_step)}" + ".ckpt",
                     ),
                 )
+            progress.set_postfix({"step": train_step + 1, "loss": loss.item()})
             progress.update()
-            progress.set_postfix({"loss": loss.item()})
 
-        torch.save(
-            unet.state_dict(),
-            os.path.join(save_path, save_name + f"{epoch + 1}" + ".ckpt"),
-        )
+        if (train_epoch == num_epochs) or (
+            save_epoch != 0 and train_epoch % save_epoch
+        ) == 0:
+            torch.save(
+                unet.state_dict(),
+                os.path.join(save_path, save_name + f"{epoch + 1}" + ".ckpt"),
+            )

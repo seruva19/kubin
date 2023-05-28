@@ -24,7 +24,9 @@ def train_prior_ui(kubin, tabs):
                 with gr.Row().style(equal_height=True):
                     with gr.Column():
                         num_epochs = gr.Number(value=default_config_from_path["num_epochs"], label="Number of epochs", interactive=True)  # type: ignore
-                        save_every = gr.Number(value=default_config_from_path["save_every"], label="Save every steps", interactive=True)  # type: ignore
+                        with gr.Row():
+                            save_every = gr.Number(value=default_config_from_path["save_every"], label="Save after steps", interactive=True)  # type: ignore
+                            save_epoch = gr.Number(value=default_config_from_path["kubin"]["save_epoch"], label="Save after epochs", interactive=True)  # type: ignore
                     with gr.Column():
                         save_name = gr.Textbox(value=default_config_from_path["save_name"], label="Save name", interactive=True)  # type: ignore
                         save_path = gr.Textbox(value=default_config_from_path["save_path"], label="Save path", interactive=True)  # type: ignore
@@ -86,6 +88,7 @@ def train_prior_ui(kubin, tabs):
                 clip_name,
                 num_epochs,
                 save_every,
+                save_epoch,
                 save_name,
                 save_path,
                 inpainting,
@@ -110,6 +113,7 @@ def train_prior_ui(kubin, tabs):
                     clip_name: current_config["clip_name"],
                     num_epochs: current_config["num_epochs"],
                     save_every: current_config["save_every"],
+                    save_epoch: current_config["kubin"]["save_epoch"],
                     save_name: current_config["save_name"],
                     save_path: current_config["save_path"],
                     inpainting: current_config["inpainting"],
@@ -156,6 +160,8 @@ def train_prior_ui(kubin, tabs):
                 updated_config["optim_params"]["params"]["weight_decay"] = int(params[weight_decay])  # type: ignore
                 updated_config["optim_params"]["params"]["scale_parameter"] = params[scale_parameter]  # type: ignore
                 updated_config["optim_params"]["params"]["relative_step"] = params[relative_step]  # type: ignore
+                updated_config["kubin"]["save_epoch"] = int(params[save_epoch])  # type: ignore
+
                 return updated_config
 
             def load_config_values(path, current_config):

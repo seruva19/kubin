@@ -156,6 +156,7 @@ def start_unclip_training(kubin, config):
         scale=config["image_enc_params"]["scale"],
         num_epochs=config["num_epochs"],
         save_every=config["save_every"],
+        save_epoch=config["kubin"]["save_epoch"],
         save_name=config["save_name"],
         save_path=config["save_path"],
         inpainting=config["inpainting"],

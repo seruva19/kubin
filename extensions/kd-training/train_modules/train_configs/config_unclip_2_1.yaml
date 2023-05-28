@@ -99,3 +99,6 @@ data:
     batch_size: 1
     shuffle: true
     num_workers: 4
+      
+kubin:
+  save_epoch: 1
