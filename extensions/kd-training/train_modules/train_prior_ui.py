@@ -261,6 +261,7 @@ def train_prior_ui(kubin, tabs):
                     os.mkdir(path)
 
                 start_prior_training(kubin, training_config)
+                print("finetuning of prior model completed")
                 return "Training finished"
 
             training_config = gr.State(default_config_from_path)

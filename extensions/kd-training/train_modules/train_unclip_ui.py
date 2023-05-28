@@ -396,6 +396,7 @@ def train_unclip_ui(kubin, tabs):
                     os.mkdir(path)
 
                 start_unclip_training(kubin, training_config)
+                print("finetuning of prior model completed")
                 return "Training finished"
 
             training_config = gr.State(default_config_from_path)
