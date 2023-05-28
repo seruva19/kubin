@@ -21,15 +21,17 @@ def train_prior_ui(kubin, tabs):
                     params_path = gr.Textbox(value=default_config_from_path["params_path"], label="Params path", interactive=True)  # type: ignore
                     clip_mean_std_path = gr.Textbox(value=default_config_from_path["clip_mean_std_path"], label="Clip mean standard path", interactive=True)  # type: ignore
                     clip_name = gr.Textbox(value=default_config_from_path["clip_name"], label="Clip Name", interactive=True)  # type: ignore
-                with gr.Row().style(equal_height=True):
+                with gr.Row().style():
                     with gr.Column():
                         num_epochs = gr.Number(value=default_config_from_path["num_epochs"], label="Number of epochs", interactive=True)  # type: ignore
                         with gr.Row():
                             save_every = gr.Number(value=default_config_from_path["save_every"], label="Save after steps", interactive=True)  # type: ignore
                             save_epoch = gr.Number(value=default_config_from_path["kubin"]["save_epoch"], label="Save after epochs", interactive=True)  # type: ignore
                     with gr.Column():
-                        save_name = gr.Textbox(value=default_config_from_path["save_name"], label="Save name", interactive=True)  # type: ignore
-                        save_path = gr.Textbox(value=default_config_from_path["save_path"], label="Save path", interactive=True)  # type: ignore
+                        with gr.Row():
+                            save_name = gr.Textbox(value=default_config_from_path["save_name"], label="Save name", interactive=True)  # type: ignore
+                        with gr.Row():
+                            save_path = gr.Textbox(value=default_config_from_path["save_path"], label="Save path", interactive=True)  # type: ignore
                 with gr.Row():
                     with gr.Column(scale=2):
                         with gr.Row():

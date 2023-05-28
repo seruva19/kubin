@@ -50,19 +50,18 @@ def train_prior(
     assert train_loader is not None
     assert schedule_sampler is not None
     train_epoch = 0
+    train_step = 0
 
     for epoch in range(num_epochs):
         train_epoch += 1
-        train_step = 0
+
         progress = tqdm(
             total=len(train_loader),
-            desc=f"finetuning prior model, epoch {train_epoch}",
+            desc=f"finetuning prior model, epoch {train_epoch}/{num_epochs}",
             position=0,
             leave=True,
         )
         for batch in train_loader:
-            train_step += 1
-
             optimizer.zero_grad()
             image, cond = batch
             image = image.to(device)
@@ -93,8 +92,9 @@ def train_prior(
             if lr_scheduler is not None:
                 lr_scheduler.step()
 
+            train_step += 1
             if save_every != 0 and train_step % save_every == 0:
-                print("saving prior checkpoint")
+                print("\nsaving prior checkpoint")
                 torch.save(
                     model.state_dict(),
                     os.path.join(
@@ -102,13 +102,15 @@ def train_prior(
                         save_name + f"{epoch + 1}_{str(train_step)}" + ".ckpt",
                     ),
                 )
-            progress.set_postfix({"step": train_step + 1, "loss": loss.item()})
+            progress.set_postfix(
+                {"step": f"{train_step}/{len(train_loader)}", "loss": loss.item()}
+            )
             progress.update()
 
         if (train_epoch == num_epochs) or (
             save_epoch != 0 and train_epoch % save_epoch
         ) == 0:
-            print("saving prior checkpoint")
+            print("\nsaving prior checkpoint")
             torch.save(
                 model.state_dict(),
                 os.path.join(save_path, save_name + f"{epoch + 1}" + ".ckpt"),
