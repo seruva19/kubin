@@ -104,8 +104,8 @@ def train_unclip(
             if lr_scheduler is not None:
                 lr_scheduler.step()
 
-            train_step += 1
             if save_every != 0 and train_step % save_every == 0:
+                print("saving unclip checkpoint")
                 torch.save(
                     unet.state_dict(),
                     os.path.join(
@@ -119,6 +119,7 @@ def train_unclip(
         if (train_epoch == num_epochs) or (
             save_epoch != 0 and train_epoch % save_epoch
         ) == 0:
+            print("saving unclip checkpoint")
             torch.save(
                 unet.state_dict(),
                 os.path.join(save_path, save_name + f"{epoch + 1}" + ".ckpt"),
