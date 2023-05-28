@@ -32,7 +32,11 @@ def train_tools_ui(kubin):
                     "train/images_resized", label="Path to folder with resize images"
                 )
         with gr.Row():
-            caption_extension = gr.Textbox(".txt", label="Caption files extension")
+            with gr.Column():
+                caption_extension = gr.Textbox(".txt", label="Caption files extension")
+                extract_caption_from_files = gr.Checkbox(
+                    label="Extract captions from image filenames", default=False
+                )
             output_csv_path = gr.Textbox(
                 "train/dataset.csv", label="Path to output dataset file"
             )
@@ -83,6 +87,7 @@ def train_tools_ui(kubin):
                 output_csv_path,
                 resize_images,
                 resized_images_path,
+                extract_caption_from_files,
             ],
             outputs=[dataframe_result, dataframe_error],
             queue=False,
@@ -159,6 +164,7 @@ def prepare_dataset(
     csv_path,
     resize_enabled,
     resized_path,
+    captions_from_filenames,
 ):
     data = []
 
@@ -171,12 +177,16 @@ def prepare_dataset(
     for filename in os.listdir(image_dir):
         if filename.endswith(tuple(image_extensions)):
             image_path = os.path.join(image_dir, filename)
-            image_file = os.path.splitext(filename)[0]
-            caption_file = image_file + caption_extension
-            caption_path = os.path.join(image_dir, caption_file)
+            image_filename = os.path.splitext(filename)[0]
 
-            with open(caption_path) as f:
-                caption_text = f.read()
+            if captions_from_filenames:
+                caption_text = image_filename
+            else:
+                caption_file = image_filename + caption_extension
+                caption_path = os.path.join(image_dir, caption_file)
+
+                with open(caption_path) as f:
+                    caption_text = f.read()
 
             data.append([image_path, caption_text])
     print(f"{len(data)} images with captions found and added to dataset")
