@@ -22,7 +22,7 @@ def gradio_ui(kubin: Kubin):
 
     with gr.Blocks(
         title="Kubin: Web-GUI for Kandinsky 2.1",
-        theme=ui_shared.select_theme(kubin.options.theme),
+        theme=ui_shared.select_theme(kubin.params.theme),
         css=client.css_styles,
     ) as ui:
         ui.load(fn=None, _js=client.js_loader(ext_client_resources))

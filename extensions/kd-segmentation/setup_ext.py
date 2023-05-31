@@ -63,8 +63,8 @@ def setup(kubin):
                     source_image,
                     prompt,
                     model_type,
-                    gr.State(kubin.options.cache_dir),  # type: ignore
-                    gr.State(kubin.options.device),  # type: ignore
+                    gr.State(kubin.params.cache_dir),  # type: ignore
+                    gr.State(kubin.params.device),  # type: ignore
                 ],
                 outputs=segment_output,
             )

@@ -15,7 +15,7 @@ def setup(kubin):
                 with gr.TabItem("UnCLIP", id="training-unclip"):
                     unclip_ui = train_unclip_ui(kubin, training_tabs)
 
-                with gr.TabItem("Tools", id="training-tools"):
+                with gr.TabItem("Dataset", id="training-tools"):
                     utils_ui = train_tools_ui(kubin)
 
         return training_block

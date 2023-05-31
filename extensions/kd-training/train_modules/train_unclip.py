@@ -29,8 +29,8 @@ def add_default_values(config_unclip):
     config_unclip["data"]["train"]["df_path"] = "train/dataset.csv"
     config_unclip["num_epochs"] = 100
     config_unclip["save_every"] = 0
-    config_unclip["save_path"] = "train/checkpoint"
-    config_unclip["save_name"] = "unclip_ckpt"
+    config_unclip["save_path"] = "train/checkpoints"
+    config_unclip["save_name"] = "trained_decoder"
     return config_unclip
 
 

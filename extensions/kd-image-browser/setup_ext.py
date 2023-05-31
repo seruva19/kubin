@@ -7,7 +7,7 @@ from metadata_extractor import metadata_to_html
 
 # TODO: add paging
 def setup(kubin):
-    image_root = kubin.options.output_dir
+    image_root = kubin.params.output_dir
 
     def get_folders():
         return (

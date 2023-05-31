@@ -42,7 +42,7 @@ def use_patch(kubin):
     BertLMHeadModel.prepare_inputs_for_generation = (
         patched_prepare_inputs_for_generation
     )
-    torch.hub.set_dir(kubin.options.cache_dir)
+    torch.hub.set_dir(kubin.params.cache_dir)
     return old_method, old_torch_dir
 
 
@@ -86,7 +86,7 @@ def setup(kubin):
         interrogator = get_interrogator(
             clip_model=clip_model,
             blip_type=blip_type,
-            cache_path=f"{kubin.options.cache_dir}/clip_cache",
+            cache_path=f"{kubin.params.cache_dir}/clip_cache",
             chunk_size=chunk_size,
         )
         if mode == "best":

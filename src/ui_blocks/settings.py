@@ -8,6 +8,7 @@ import pandas as pd
 from env import Kubin
 from models.model_kd2 import Model_KD2
 from models.model_mock import Model_Mock
+from .settings_ckpt import ckpt_selector
 
 
 def update_info():
@@ -51,29 +52,35 @@ def settings_ui(kubin: Kubin):
     model_config = flatten_model_config(CONFIG_2_1)
 
     with gr.Column() as settings_block:
-        gr.Markdown("## System info")
+        with gr.TabItem("Checkpoints"):
+            ckpt_selector()
 
-        system_info = gr.Textbox(update_info, lines=10, show_label=False).style(
-            show_copy_button=True
-        )
-        with gr.Row():
-            update_btn = gr.Button(value="Update system info")
-            update_btn.click(update_info, outputs=system_info)
-            unload_model = gr.Button(value="Unload model")
+        with gr.TabItem("System"):
+            with gr.Row():
+                system_info = gr.TextArea(
+                    update_info, lines=10, label="System info", interactive=False
+                ).style(show_copy_button=True)
+                textbox_log = gr.TextArea(
+                    label="System  log", lines=10, interactive=False
+                ).style(show_copy_button=True)
 
-            unload_model.click(lambda: kubin.model.flush(), queue=False).then(
-                fn=None, _js='_ => kubin.notify.success("Model unloaded")'
-            )
+            with gr.Row():
+                update_btn = gr.Button(value="Update system info").style(
+                    full_width=False, size="sm"
+                )
+                update_btn.click(update_info, outputs=system_info)
 
-        with gr.Accordion("Model params", open=False):
-            values = []
-            for key in model_config:
-                value = gr.Textbox(label=str(key), value=model_config[key])
-                values.append(value)
+                unload_model = gr.Button(value="Free memory").style(
+                    full_width=False, size="sm"
+                )
+                unload_model.click(lambda: kubin.model.flush(), queue=False).then(
+                    fn=None, _js='_ => kubin.notify.success("Model unloaded")'
+                )
 
-        with gr.Row():
-            textbox_log = gr.TextArea(label="Log", lines=10, interactive=False).style(
-                show_copy_button=True
-            )
+            with gr.Accordion("Model params", open=False):
+                values = []
+                for key in model_config:
+                    value = gr.Textbox(label=str(key), value=model_config[key])
+                    values.append(value)
 
     return settings_block

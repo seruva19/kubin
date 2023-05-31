@@ -1,90 +1,88 @@
 import gc
 import itertools
 import secrets
-from PIL import Image, ImageOps, ImageChops
-import cv2
+from PIL import Image, ImageOps
 import numpy as np
 import torch
 import torch.backends
 
-from kandinsky2 import get_kandinsky2, Kandinsky2, Kandinsky2_1
-
+from params import KubinParams
+from .kandinsky import get_checkpoint
+from kandinsky2 import Kandinsky2_1
 from utils.file_system import save_output
 
 
 class Model_KD2:
-    def __init__(
-        self,
-        device,
-        task_type,
-        cache_dir,
-        model_version,
-        use_flash_attention,
-        output_dir,
-    ):
-        print(f"setting model params")
-        self.device = device
-        self.model_version = model_version
-        self.cache_dir = cache_dir
-        self.task_type = task_type
-        self.use_flash_attention = use_flash_attention
-        self.output_dir = output_dir
+    def __init__(self, params: KubinParams):
+        self.params = params
 
-        self.kandinsky: Kandinsky2 | Kandinsky2_1 | None = None
+        self.kd2: Kandinsky2_1 | None = None
+        self.kd2_inpaint: Kandinsky2_1 | None = None
 
     def prepare(self, task):
-        print(f"preparing model for {task}")
+        print(f"task queued: {task}")
         assert task in ["text2img", "img2img", "mix", "inpainting", "outpainting"]
 
+        clear_vram_on_switch = True
         ready = True
 
-        if task == "img2img":
-            task = "text2img"  # https://github.com/ai-forever/Kandinsky-2/issues/22
+        if task == "text2img" or task == "img2img" or task == "mix":
+            if self.kd2 is None:
+                if clear_vram_on_switch:
+                    self.flush()
 
-        if task == "mix":
-            task = "text2img"
+                self.kd2 = get_checkpoint(
+                    self.params.device,
+                    use_auth_token=None,
+                    task_type="text2img",
+                    cache_dir=self.params.cache_dir,
+                    use_flash_attention=self.params.use_flash_attention,
+                    checkpoint_info=self.params.checkpoint,
+                )
 
-        if task == "outpainting":
-            task = "inpainting"
+                self.kd2.model.to(self.params.device)
+                self.kd2.prior.to(self.params.device)
 
-        if self.task_type != task:
-            self.task_type = task
-            ready = False
+        elif task == "inpainting" or task == "outpainting":
+            if self.kd2_inpaint is None:
+                if clear_vram_on_switch:
+                    self.flush()
 
-        if self.kandinsky is None:
-            ready = False
+                self.kd2_inpaint = get_checkpoint(
+                    self.params.device,
+                    use_auth_token=None,
+                    task_type="inpainting",
+                    cache_dir=self.params.cache_dir,
+                    use_flash_attention=self.params.use_flash_attention,
+                    checkpoint_info=self.params.checkpoint,
+                )
 
-        if not ready:
-            self.flush()
-
-            self.kandinsky = get_kandinsky2(
-                self.device,
-                use_auth_token=None,
-                task_type=self.task_type,
-                cache_dir=self.cache_dir,
-                model_version=self.model_version,
-                use_flash_attention=self.use_flash_attention,
-            )
-
-            self.kandinsky.model.to(self.device)
-            self.kandinsky.prior.to(self.device)  # type: ignore
+                self.kd2_inpaint.model.to(self.params.device)
+                self.kd2_inpaint.prior.to(self.params.device)
 
         return self
 
-    def flush(self):
-        print(f"releasing vram")
+    def flush(self, target=None):
+        print(f"clearing memory")
 
-        if self.kandinsky is not None:
-            self.kandinsky.model.to("cpu")
-            self.kandinsky.prior.to("cpu")  # type: ignore
-            self.kandinsky = None
+        if target is None or target == "kd2":
+            if self.kd2 is not None:
+                self.kd2.model.to("cpu")
+                self.kd2.prior.to("cpu")  # type: ignore
+                self.kd2 = None
 
-            gc.collect()
+        if target is None or target == "kd2_inpaint":
+            if self.kd2_inpaint is not None:
+                self.kd2_inpaint.model.to("cpu")
+                self.kd2_inpaint.prior.to("cpu")  # type: ignore
+                self.kd2_inpaint = None
 
-            if self.device == "cuda":
-                with torch.cuda.device("cuda"):
-                    torch.cuda.empty_cache()
-                    torch.cuda.ipc_collect()
+        gc.collect()
+
+        if self.params.device == "cuda":
+            with torch.cuda.device("cuda"):
+                torch.cuda.empty_cache()
+                torch.cuda.ipc_collect()
 
     def seed(self, params):
         input_seed = params["input_seed"]
@@ -98,11 +96,11 @@ class Model_KD2:
 
     def t2i(self, params):
         params = self.prepare("text2img").seed(params)
-        assert self.kandinsky is not None
+        assert self.kd2 is not None
 
         images = []
         for _ in itertools.repeat(None, params["batch_count"]):
-            current_batch = self.kandinsky.generate_text2img(
+            current_batch = self.kd2.generate_text2img(
                 prompt=params["prompt"],
                 num_steps=params["num_steps"],
                 batch_size=params["batch_size"],
@@ -121,21 +119,21 @@ class Model_KD2:
             )
 
             saved_batch = save_output(
-                self.output_dir, "text2img", current_batch, params
+                self.params.output_dir, "text2img", current_batch, params
             )
             images = images + saved_batch
         return images
 
     def i2i(self, params):
         params = self.prepare("img2img").seed(params)
-        assert self.kandinsky is not None
+        assert self.kd2 is not None
 
         output_size = (params["w"], params["h"])
         image = params["init_image"]
 
         images = []
         for _ in itertools.repeat(None, params["batch_count"]):
-            current_batch = self.kandinsky.generate_img2img(
+            current_batch = self.kd2.generate_img2img(
                 prompt=params["prompt"],
                 pil_img=image,
                 strength=params["strength"],
@@ -149,13 +147,15 @@ class Model_KD2:
                 prior_steps=str(params["prior_steps"]),  # type: ignore
             )
 
-            saved_batch = save_output(self.output_dir, "img2img", current_batch, params)
+            saved_batch = save_output(
+                self.params.output_dir, "img2img", current_batch, params
+            )
             images = images + saved_batch
         return images
 
     def mix(self, params):
         params = self.prepare("mix").seed(params)
-        assert self.kandinsky is not None
+        assert self.kd2 is not None
 
         def images_or_texts(images, texts):
             images_texts = []
@@ -166,7 +166,7 @@ class Model_KD2:
 
         images = []
         for _ in itertools.repeat(None, params["batch_count"]):
-            current_batch = self.kandinsky.mix_images(  # type: ignore
+            current_batch = self.kd2.mix_images(  # type: ignore
                 images_texts=images_or_texts(
                     [params["image_1"], params["image_2"]],
                     [params["text_1"], params["text_2"]],
@@ -184,13 +184,15 @@ class Model_KD2:
                 negative_decoder_prompt=params["negative_decoder_prompt"],
             )
 
-            saved_batch = save_output(self.output_dir, "mix", current_batch, params)
+            saved_batch = save_output(
+                self.params.output_dir, "mix", current_batch, params
+            )
             images = images + saved_batch
         return images
 
     def inpaint(self, params):
         params = self.prepare("inpainting").seed(params)
-        assert self.kandinsky is not None
+        assert self.kd2_inpaint is not None
 
         output_size = (params["w"], params["h"])
         image_mask = params["image_mask"]
@@ -204,7 +206,7 @@ class Model_KD2:
 
         images = []
         for _ in itertools.repeat(None, params["batch_count"]):
-            current_batch = self.kandinsky.generate_inpainting(
+            current_batch = self.kd2_inpaint.generate_inpainting(
                 prompt=params["prompt"],
                 pil_img=pil_img,
                 img_mask=mask_arr,
@@ -221,14 +223,14 @@ class Model_KD2:
             )
 
             saved_batch = save_output(
-                self.output_dir, "inpainting", current_batch, params
+                self.params.output_dir, "inpainting", current_batch, params
             )
             images = images + saved_batch
         return images
 
     def outpaint(self, params):
         params = self.prepare("outpainting").seed(params)
-        assert self.kandinsky is not None
+        assert self.kd2_inpaint is not None
 
         image = params["image"]
         image_w, image_h = image.size
@@ -261,7 +263,7 @@ class Model_KD2:
 
         images = []
         for _ in itertools.repeat(None, params["batch_count"]):
-            current_batch = self.kandinsky.generate_inpainting(
+            current_batch = self.kd2_inpaint.generate_inpainting(
                 prompt=params["prompt"],
                 pil_img=image,
                 img_mask=mask,
@@ -278,7 +280,7 @@ class Model_KD2:
             )
 
             saved_batch = save_output(
-                self.output_dir, "outpainting", current_batch, params
+                self.params.output_dir, "outpainting", current_batch, params
             )
             images = images + saved_batch
         return images

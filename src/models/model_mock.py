@@ -4,10 +4,12 @@ from PIL import Image, ImageOps
 from io import BytesIO
 import numpy as np
 
+from params import KubinParams
+
 
 # intended for testing purposes only
 class Model_Mock:
-    def __init__(self):
+    def __init__(self, params: KubinParams):
         print(f"setting mock model params")
 
     def prepare(self, task):

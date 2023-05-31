@@ -23,8 +23,8 @@ def add_default_values(config_prior):
     config_prior["data"]["train"]["df_path"] = "train/dataset.csv"
     config_prior["num_epochs"] = 100
     config_prior["save_every"] = 0
-    config_prior["save_path"] = "train/checkpoint"
-    config_prior["save_name"] = "prior_ckpt"
+    config_prior["save_path"] = "train/checkpoints"
+    config_prior["save_name"] = "trained_prior"
     return config_prior
 
 

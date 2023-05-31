@@ -43,8 +43,8 @@ def setup(kubin):
                 fn=lambda *p: create_model(kubin, *p),
                 inputs=[
                     source_image,
-                    gr.State(kubin.options.output_dir),  # type: ignore
-                    gr.State(kubin.options.device),  # type: ignore
+                    gr.State(kubin.params.output_dir),  # type: ignore
+                    gr.State(kubin.params.device),  # type: ignore
                 ],
                 outputs=model_output,
             )
@@ -60,7 +60,7 @@ def setup(kubin):
 
 def patch(kubin):
     old_method = download.default_cache_dir
-    download.default_cache_dir = lambda: f"{kubin.options.cache_dir}/shap-e"
+    download.default_cache_dir = lambda: f"{kubin.params.cache_dir}/shap-e"
     return old_method
 
 
