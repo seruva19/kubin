@@ -29,9 +29,9 @@ def train_prior_ui(kubin, tabs):
                             save_epoch = gr.Number(value=default_config_from_path["kubin"]["save_epoch"], label="Save after epochs", interactive=True)  # type: ignore
                     with gr.Column():
                         with gr.Row():
-                            save_name = gr.Textbox(value=default_config_from_path["save_name"], label="Save name", interactive=True)  # type: ignore
-                        with gr.Row():
                             save_path = gr.Textbox(value=default_config_from_path["save_path"], label="Save path", interactive=True)  # type: ignore
+                        with gr.Row():
+                            save_name = gr.Textbox(value=default_config_from_path["save_name"], label="Save name", interactive=True)  # type: ignore
                 with gr.Row():
                     with gr.Column(scale=2):
                         with gr.Row():
@@ -44,7 +44,7 @@ def train_prior_ui(kubin, tabs):
                     with gr.Column(scale=1):
                         with gr.Row():
                             df_path = gr.Textbox(value=default_config_from_path["data"]["train"]["df_path"], label="Dataset path", interactive=True)  # type: ignore
-                            open_tools = gr.Button("Dataset preparation").style(
+                            open_tools = gr.Button("📷 Dataset preparation").style(
                                 size="sm", full_width=False
                             )
                             open_tools.click(
@@ -73,14 +73,14 @@ def train_prior_ui(kubin, tabs):
                     config_path = gr.Textbox(
                         "train/train_prior_config.yaml", label="Config path"
                     )
-                    load_config = gr.Button("Load parameters from file").style(
+                    load_config = gr.Button("📂 Load parameters from file").style(
                         size="sm", full_width=False
                     )
-                    save_config = gr.Button("Save parameters to file").style(
+                    save_config = gr.Button("💾 Save parameters to file").style(
                         size="sm", full_width=False
                     )
                     reset_config = gr.Button(
-                        "Reset parameters to default values"
+                        "🔁 Reset parameters to default values"
                     ).style(size="sm", full_width=False)
 
             config_params = {

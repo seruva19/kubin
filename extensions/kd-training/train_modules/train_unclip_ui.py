@@ -48,7 +48,7 @@ def train_unclip_ui(kubin, tabs):
                     with gr.Column():
                         with gr.Row():
                             df_path = gr.Textbox(value=default_config_from_path["data"]["train"]["df_path"], label="Dataset path", interactive=True)  # type: ignore
-                            open_tools = gr.Button("Dataset preparation").style(
+                            open_tools = gr.Button("📷 Dataset preparation").style(
                                 size="sm", full_width=False
                             )
                             open_tools.click(
@@ -113,14 +113,14 @@ def train_unclip_ui(kubin, tabs):
                     config_path = gr.Textbox(
                         "train/train_unclip_config.yaml", label="Config path"
                     )
-                    load_config = gr.Button("Load parameters from file").style(
+                    load_config = gr.Button("📂 Load parameters from file").style(
                         size="sm", full_width=False
                     )
-                    save_config = gr.Button("Save parameters to file").style(
+                    save_config = gr.Button("💾 Save parameters to file").style(
                         size="sm", full_width=False
                     )
                     reset_config = gr.Button(
-                        "Reset parameters to default values"
+                        "🔁 Reset parameters to default values"
                     ).style(size="sm", full_width=False)
 
             config_params = {

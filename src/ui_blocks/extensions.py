@@ -52,9 +52,8 @@ def create_extensions_info(kubin: Kubin):
 
 def extensions_ui(kubin: Kubin, extensions_data):
     with gr.Column() as extensions_block:
-        gr.HTML(f"Local extensions found: {len(extensions_data)}")
         gr.HTML(
-            f"Activated extensions: {len(list(filter(lambda x: x.enabled, extensions_data)))}"
+            f"Local extensions found: {len(extensions_data)}<br>Activated extensions: {len(list(filter(lambda x: x.enabled, extensions_data)))}"
         )
 
         for index, extension_info in enumerate(extensions_data):
@@ -74,7 +73,7 @@ def extensions_ui(kubin: Kubin, extensions_data):
 
                     with gr.Row():
                         clear_ext_install_btn = gr.Button(
-                            value="Force reinstall",
+                            value="🔧 Force reinstall",
                             interactive=True,
                         ).style(size="sm", full_width=False)
                         clear_ext_install_btn.click(
@@ -88,7 +87,7 @@ def extensions_ui(kubin: Kubin, extensions_data):
                         )
 
         clear_ext_install_all_btn = gr.Button(
-            value="Force reinstall of all extensions on next launch",
+            value="🔧 Force reinstall of all extensions on next launch",
             label="Force reinstall",
             interactive=True,
         )
