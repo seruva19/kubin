@@ -18,21 +18,46 @@ class KandinskyCheckpoint:
     inpaint_model_dir: str = "2_1"
     inpaint_model_name: str = "inpainting_fp16.ckpt"
 
-    def is_default_prior(self) -> bool:
+    def base_checkpoints_path(self, cache_dir):
+        return [
+            os.path.normpath(
+                os.path.join(
+                    cache_dir,
+                    self.prior_model_dir,
+                    self.prior_model_name,
+                )
+            ),
+            os.path.normpath(
+                os.path.join(
+                    cache_dir,
+                    self.decoder_model_dir,
+                    self.decoder_model_name,
+                )
+            ),
+            os.path.normpath(
+                os.path.join(
+                    cache_dir,
+                    self.inpaint_model_dir,
+                    self.inpaint_model_name,
+                )
+            ),
+        ]
+
+    def is_base_prior(self) -> bool:
         default_ckpt = KandinskyCheckpoint()
         return (
             self.prior_model_dir == default_ckpt.prior_model_dir
             and self.prior_model_name == default_ckpt.prior_model_name
         )
 
-    def is_default_decoder(self) -> bool:
+    def is_base_decoder(self) -> bool:
         default_ckpt = KandinskyCheckpoint()
         return (
             self.decoder_model_dir == default_ckpt.decoder_model_dir
             and self.decoder_model_name == default_ckpt.decoder_model_name
         )
 
-    def is_default_inpaint(self) -> bool:
+    def is_base_inpaint(self) -> bool:
         default_ckpt = KandinskyCheckpoint()
         return (
             self.inpaint_model_dir == default_ckpt.inpaint_model_dir
@@ -55,7 +80,7 @@ def get_checkpoint(
 
     if task_type == "text2img":
         model_name = checkpoint_info.decoder_model_name
-        if checkpoint_info.is_default_decoder():
+        if checkpoint_info.is_base_decoder():
             print("loading default decoder model")
             cache_model_name = os.path.join(cache_dir, model_name)
             config_file_url = hf_hub_url(
@@ -69,14 +94,16 @@ def get_checkpoint(
             )
 
         else:
-            print(f"loading custom decoder model {checkpoint_info.decoder_model_name}")
+            print(
+                f"loading custom decoder model '{checkpoint_info.decoder_model_name}' at '{checkpoint_info.decoder_model_dir}'"
+            )
             cache_model_name = os.path.join(
                 checkpoint_info.decoder_model_dir, checkpoint_info.decoder_model_name
             )
 
     elif task_type == "inpainting":
         model_name = checkpoint_info.inpaint_model_name
-        if checkpoint_info.is_default_inpaint():
+        if checkpoint_info.is_base_inpaint():
             print("loading default inpaint decoder model")
             cache_model_name = os.path.join(cache_dir, model_name)
             config_file_url = hf_hub_url(
@@ -91,14 +118,15 @@ def get_checkpoint(
             )
         else:
             print(
-                f"loading custom inpaint decoder model {checkpoint_info.inpaint_model_name}"
+                f"loading custom inpaint decoder model '{checkpoint_info.inpaint_model_name}' at '{checkpoint_info.inpaint_model_dir}'"
             )
+
             cache_model_name = os.path.join(
                 checkpoint_info.inpaint_model_dir, checkpoint_info.inpaint_model_name
             )
 
     prior_name = checkpoint_info.prior_model_name
-    if checkpoint_info.is_default_prior():
+    if checkpoint_info.is_base_prior():
         print("loading default prior model")
         cache_prior_name = os.path.join(cache_dir, prior_name)
         config_file_url = hf_hub_url(
@@ -111,7 +139,9 @@ def get_checkpoint(
             use_auth_token=use_auth_token,  # type: ignore
         )
     else:
-        print(f"loading custom prior model {checkpoint_info.prior_model_name}")
+        print(
+            f"loading custom prior model '{checkpoint_info.prior_model_name}' at '{checkpoint_info.prior_model_dir}'"
+        )
         cache_prior_name = os.path.join(
             checkpoint_info.prior_model_dir, checkpoint_info.prior_model_name
         )

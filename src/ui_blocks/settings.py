@@ -12,6 +12,7 @@ from .settings_ckpt import ckpt_selector
 
 
 def update_info():
+    print("scanning system information")
     torch_version = torch.__version__
     cuda_version = torch.version.cuda
 
@@ -53,7 +54,7 @@ def settings_ui(kubin: Kubin):
 
     with gr.Column() as settings_block:
         with gr.TabItem("Checkpoints"):
-            ckpt_selector()
+            ckpt_selector(kubin)
 
         with gr.TabItem("System"):
             with gr.Row():
