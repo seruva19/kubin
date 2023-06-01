@@ -1,4 +1,4 @@
-from models.kandinsky import KandinskyCheckpoint
+from engine.kandinsky import KandinskyCheckpoint
 
 
 class KubinParams:

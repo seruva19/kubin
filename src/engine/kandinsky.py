@@ -69,7 +69,7 @@ def get_checkpoint(
             )
 
         else:
-            print("custom decoder model will be used")
+            print(f"loading custom decoder model {checkpoint_info.decoder_model_name}")
             cache_model_name = os.path.join(
                 checkpoint_info.decoder_model_dir, checkpoint_info.decoder_model_name
             )
@@ -90,7 +90,9 @@ def get_checkpoint(
                 use_auth_token=use_auth_token,  # type: ignore
             )
         else:
-            print("custom inpaint decoder model will be used")
+            print(
+                f"loading custom inpaint decoder model {checkpoint_info.inpaint_model_name}"
+            )
             cache_model_name = os.path.join(
                 checkpoint_info.inpaint_model_dir, checkpoint_info.inpaint_model_name
             )
@@ -109,7 +111,7 @@ def get_checkpoint(
             use_auth_token=use_auth_token,  # type: ignore
         )
     else:
-        print("custom prior model will be used")
+        print(f"loading custom prior model {checkpoint_info.prior_model_name}")
         cache_prior_name = os.path.join(
             checkpoint_info.prior_model_dir, checkpoint_info.prior_model_name
         )

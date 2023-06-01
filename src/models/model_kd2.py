@@ -7,7 +7,7 @@ import torch
 import torch.backends
 
 from params import KubinParams
-from .kandinsky import get_checkpoint
+from engine.kandinsky import get_checkpoint
 from kandinsky2 import Kandinsky2_1
 from utils.file_system import save_output
 
@@ -24,7 +24,6 @@ class Model_KD2:
         assert task in ["text2img", "img2img", "mix", "inpainting", "outpainting"]
 
         clear_vram_on_switch = True
-        ready = True
 
         if task == "text2img" or task == "img2img" or task == "mix":
             if self.kd2 is None:
