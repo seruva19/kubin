@@ -7,22 +7,23 @@
 
 ## Roadmap
 
-- [x] Txt2img
-- [x] Img2img
-- [x] Mixing
-- [x] Inpainting 
-- [x] Upscaling ([Real-ESRGAN](https://github.com/ai-forever/Real-ESRGAN))
-- [x] Outpainting
-- [x] Support for extensions (initial)
-- [x] Tools for fine-tuning
-- [ ] VRAM usage optimization
-- [x] Img2mesh ([Shape-E](https://github.com/openai/shap-e))
-- [ ] Advanced prompting
-- [x] Interrogation ([CLIP Interrogator](https://github.com/pharmapsychotic/clip-interrogator))
-- [x] Segmentation ([Segment Anything](https://github.com/facebookresearch/segment-anything))
-- [ ] Additional schedulers
-- [ ] Animation
-- [ ] ControlNet 
+✅ Txt2img <br>
+✅ Img2img <br>
+✅ Mixing <br>
+✅ Inpainting  <br>
+✅ Upscaling ([Real-ESRGAN](https://github.com/ai-forever/Real-ESRGAN)) <br>
+✅ Outpainting <br>
+✅ Support for extensions (initial) <br>
+✅ Tools for fine-tuning <br>
+⬜ VRAM usage optimization <br>
+✅ Img2mesh ([Shape-E](https://github.com/openai/shap-e)) <br>
+⬜ Advanced prompting <br>
+✅ Interrogation ([CLIP Interrogator](https://github.com/pharmapsychotic/clip-interrogator)) <br>
+✅ Segmentation ([Segment Anything](https://github.com/facebookresearch/segment-anything)) <br>
+⬜ Additional schedulers <br>
+⬜ Animation <br>
+⬜ ControlNet  <br>
+⬜ Documentation <br>
 
 ## Screenshots
 <details> 
