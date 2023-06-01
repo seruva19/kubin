@@ -113,8 +113,8 @@ def train_prior(
             progress.update()
 
         if (train_epoch == num_epochs) or (
-            save_epoch != 0 and train_epoch % save_epoch
-        ) == 0:
+            save_epoch != 0 and train_epoch % save_epoch == 0
+        ):
             torch.save(
                 model.state_dict(),
                 os.path.join(save_path, save_name + f"{epoch + 1}" + ".ckpt"),
