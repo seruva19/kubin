@@ -24,13 +24,26 @@ def train_tools_ui(kubin):
                 image_extensions = gr.CheckboxGroup(
                     [".jpg", ".jpeg", ".png", ".bmp"],
                     value=[".jpg", ".jpeg", ".png", ".bmp"],
-                    label="Image files",
+                    label="Image files extensions",
                 )
             with gr.Column():
                 resize_images = gr.Checkbox(label="Resize images", default=False)
                 resized_images_path = gr.Textbox(
-                    "train/images_resized", label="Path to folder with resize images"
+                    "train/images_resized",
+                    label="Path to folder to save resized images",
                 )
+                with gr.Row():
+                    resize_width = gr.Number(
+                        label="Width",
+                        value=768,
+                        step=64,
+                        min_value=64,
+                        max_value=2048,
+                    )
+                    resize_height = gr.Number(
+                        label="Height", value=768, step=64, min_value=64, max_value=2048
+                    )
+
         with gr.Row():
             with gr.Column():
                 caption_extension = gr.Textbox(".txt", label="Caption files extension")
@@ -86,6 +99,8 @@ def train_tools_ui(kubin):
                 caption_extension,
                 output_csv_path,
                 resize_images,
+                resize_width,
+                resize_height,
                 resized_images_path,
                 extract_caption_from_files,
             ],
@@ -163,6 +178,8 @@ def prepare_dataset(
     caption_extension,
     csv_path,
     resize_enabled,
+    resize_width,
+    resize_height,
     resized_path,
     captions_from_filenames,
 ):
@@ -185,8 +202,12 @@ def prepare_dataset(
                 caption_file = image_filename + caption_extension
                 caption_path = os.path.join(image_dir, caption_file)
 
-                with open(caption_path) as f:
-                    caption_text = f.read()
+                if os.path.exists(caption_path):
+                    with open(caption_path) as f:
+                        caption_text = f.read()
+                else:
+                    print(f"caption file {caption_path} does not exist")
+                    caption_text = ""
 
             data.append([image_path, caption_text])
     print(f"{len(data)} images with captions found and added to dataset")
@@ -199,7 +220,7 @@ def prepare_dataset(
         if len(os.listdir(resized_path)) == 0:
             for image_path, caption_text in data:
                 image = Image.open(image_path).convert("RGB")
-                resized_image = image.resize((768, 768))
+                resized_image = image.resize((int(resize_width), int(resize_height)))
                 new_image_path = os.path.join(
                     resized_path, os.path.basename(image_path)
                 )
