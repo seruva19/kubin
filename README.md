@@ -17,7 +17,7 @@
 - [ ] Tools for fine-tuning ([dreambooth, textual inversion](https://github.com/TheDenk/Kandinsky-2-textual-inversion))
 - [ ] VRAM usage optimization
 - [x] Img2mesh ([Shape-E](https://github.com/openai/shap-e))
-- [ ] Advanced prompt syntax
+- [ ] Advanced prompting
 - [x] Interrogation ([CLIP Interrogator](https://github.com/pharmapsychotic/clip-interrogator))
 - [x] Segmentation ([Segment Anything](https://github.com/facebookresearch/segment-anything))
 - [ ] Additional schedulers
@@ -83,7 +83,7 @@
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1lx4lQS61hYb02BSoAoJUAVwPr7PhhkJt)
 <br>
 
-Notebooks for Paperspace and Kaggle are in "notebooks" folder.
+Notebook examples for Paperspace and Kaggle are in "notebooks" folder.
 
 ## Documentation
 
