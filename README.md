@@ -11,17 +11,18 @@
 ✅ Img2img <br>
 ✅ Mixing <br>
 ✅ Inpainting  <br>
-✅ Upscaling ([Real-ESRGAN](https://github.com/ai-forever/Real-ESRGAN)) <br>
+✅ Upscaling <br>
 ✅ Outpainting <br>
-✅ Support for extensions (initial) <br>
+✅ Support for extensions <br>
 ✅ Tools for fine-tuning <br>
 ⬜ VRAM usage optimization <br>
-✅ Img2mesh ([Shape-E](https://github.com/openai/shap-e)) <br>
+✅ Img2mesh <br>
 ⬜ Advanced prompting <br>
-✅ Interrogation ([CLIP Interrogator](https://github.com/pharmapsychotic/clip-interrogator)) <br>
-✅ Segmentation ([Segment Anything](https://github.com/facebookresearch/segment-anything)) <br>
+✅ Interrogation <br>
+✅ Segmentation <br>
 ⬜ Additional schedulers <br>
 ⬜ Animation <br>
+⬜ LoRA <br>
 ⬜ ControlNet  <br>
 ⬜ Documentation <br>
 
