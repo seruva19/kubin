@@ -2,8 +2,9 @@ import gradio as gr
 from PIL import Image
 from clip_interrogator import Config, Interrogator
 from blip.models.med import BertLMHeadModel
-import open_clip
+import pandas as pd
 import torch
+import os
 
 
 def patched_prepare_inputs_for_generation(
@@ -101,12 +102,68 @@ def setup(kubin):
         cancel_patch(patch)
         return interrogated_text
 
+    def batch_interrogate(
+        image_dir,
+        batch_mode,
+        image_extensions,
+        output_dir,
+        caption_extension,
+        output_csv,
+        mode,
+        clip_model,
+        blip_type,
+        chunk_size,
+        progress=gr.Progress(),
+    ):
+        if output_dir == "":
+            output_dir = image_dir
+        os.makedirs(output_dir, exist_ok=True)
+
+        relevant_images = []
+
+        progress(0, desc="Starting batch interrogation...")
+        if not os.path.exists(image_dir):
+            return f"Error: image folder {image_dir} does not exists"
+
+        for filename in os.listdir(image_dir):
+            if filename.endswith(tuple(image_extensions)):
+                relevant_images.append([filename, f"{image_dir}/{filename}", ""])
+
+        print(f"found {len(relevant_images)} images to interrogate")
+        image_count = 0
+        for _ in progress.tqdm(relevant_images, unit="images"):
+            filename = relevant_images[image_count][0]
+            filepath = relevant_images[image_count][1]
+
+            image = Image.open(filepath)
+            caption = interrogate(image, mode, clip_model, blip_type, chunk_size)
+
+            if batch_mode == 0:
+                caption_filename = os.path.splitext(filename)[0]
+                with open(
+                    f"{output_dir}/{caption_filename}{caption_extension}",
+                    "w",
+                    encoding="utf-8",
+                ) as file:
+                    file.write(caption)
+            elif batch_mode == 1:
+                relevant_images[image_count][2] = caption
+
+            image_count += 1
+
+        if batch_mode == 1:
+            captions_df = pd.DataFrame(
+                [i[1:] for i in relevant_images], columns=["image_name", "caption"]
+            )
+            csv_path = f"{output_dir}/{output_csv}"
+            captions_df.to_csv(csv_path, index=False)
+            print(f"CSV file with captions saved to {csv_path}")
+
+        return f"Captions for {len(relevant_images)} images created"
+
     def interrogator_ui(ui_shared, ui_tabs):
         with gr.Row() as interrogator_block:
             with gr.Column(scale=1):
-                with gr.Row():
-                    source_image.render()
-
                 with gr.Row():
                     clip_model = gr.Dropdown(
                         choices=["ViT-L-14/openai", "ViT-H-14/laion2b_s32b_b79k"],
@@ -129,26 +186,102 @@ def setup(kubin):
                     )
 
             with gr.Column(scale=1):
-                interrogate_btn = gr.Button("Interrogate", variant="primary")
-                target_text = gr.Textbox(lines=5, label="Interrogated text").style(
-                    show_copy_button=True
-                )
-                interrogate_btn.click(
-                    fn=interrogate,
-                    inputs=[
-                        source_image,
-                        mode,
-                        clip_model,
-                        blip_model_type,
-                        chunk_size,
-                    ],
-                    outputs=[target_text],
-                )
+                with gr.Tabs():
+                    with gr.TabItem("Single image"):
+                        with gr.Column(scale=1):
+                            with gr.Row():
+                                source_image.render()
 
+                        with gr.Column(scale=1):
+                            interrogate_btn = gr.Button(
+                                "Interrogate", variant="primary"
+                            )
+                            target_text = gr.Textbox(
+                                lines=5, label="Interrogated text"
+                            ).style(show_copy_button=True)
+
+                            kubin.ui_utils.click_and_disable(
+                                interrogate_btn,
+                                fn=interrogate,
+                                inputs=[
+                                    source_image,
+                                    mode,
+                                    clip_model,
+                                    blip_model_type,
+                                    chunk_size,
+                                ],
+                                outputs=[target_text],
+                            )
+                    with gr.TabItem("Batch"):
+                        image_dir = gr.Textbox(label="Directory with images")
+
+                        with gr.Row():
+                            image_types = gr.CheckboxGroup(
+                                [".jpg", ".jpeg", ".png", ".bmp"],
+                                value=[".jpg", ".jpeg", ".png", ".bmp"],
+                                label="Files to interrogate",
+                            )
+
+                        caption_mode = gr.Radio(
+                            choices=["text files", "csv dataset"],
+                            info="Save captions to separate text files or to a single csv file",
+                            value="text files",
+                            label="Caption save mode",
+                            type="index",
+                        )
+                        output_dir = gr.Textbox(
+                            label="Output folder",
+                            info="If empty, the same folder will be used",
+                        )
+
+                        caption_extension = gr.Textbox(
+                            ".txt", label="Caption files extension", visible=True
+                        )
+                        output_csv = gr.Textbox(
+                            value="captions.csv",
+                            label="Name of csv file",
+                            visible=False,
+                        )
+
+                        caption_mode.select(
+                            fn=lambda m: [
+                                gr.update(visible=m != 0),
+                                gr.update(visible=m == 0),
+                            ],
+                            inputs=[caption_mode],
+                            outputs=[caption_extension, output_csv],
+                        )
+
+                        batch_interrogate_btn = gr.Button(
+                            "Interrogate", variant="primary"
+                        )
+                        progress = gr.HTML(label="Interrogation progress")
+                        kubin.ui_utils.click_and_disable(
+                            batch_interrogate_btn,
+                            fn=batch_interrogate,
+                            inputs=[
+                                image_dir,
+                                caption_mode,
+                                image_types,
+                                output_dir,
+                                caption_extension,
+                                output_csv,
+                                mode,
+                                clip_model,
+                                blip_model_type,
+                                chunk_size,
+                            ],
+                            outputs=[progress],
+                        )
         return interrogator_block
 
     return {
         "title": "Interrogator",
         "tab_ui": lambda ui_s, ts: interrogator_ui(ui_s, ts),
         "send_target": source_image,
+        "api": {
+            interrogate: lambda image, mode="fast", clip_model="ViT-L-14/openai", blip_type="large", chunks=2048: interrogate(
+                image, mode, clip_model, blip_type, chunks
+            )
+        },
     }
