@@ -192,7 +192,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
 
                 print(f"found {len(i2i_source)} images for i2i processing")
 
-                for imagename in i2i_source:
+                for index, imagename in enumerate(i2i_source):
                     imagepath = f"{input_folder}/{imagename}"
                     image = Image.open(imagepath)
 
@@ -216,7 +216,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                     if output_folder != "":
                         params[".output_dir"] = output_folder
 
-                    print(f"processing {imagepath}")
+                    print(f"{index+1}/{len(i2i_source)}: processing {imagepath}")
                     _ = generate_fn(params)
                 return f"{len(i2i_source)} images successfully processed"
 
