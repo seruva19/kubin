@@ -36,18 +36,21 @@ def create_filename(path, params):
     return filename
 
 
-def save_output(output_dir, task_type, images, params=None):
+def save_output(path, images, params=None):
     output = []
     params_as_json = None
 
     if params:
-        params = {k: v for k, v in params.items() if not isinstance(v, Image.Image)}
+        params = {
+            k: v
+            for k, v in params.items()
+            if not isinstance(v, Image.Image) and not k.startswith(".")
+        }
         params_as_json = json.dumps(
             params, skipkeys=True, default=lambda _: "<parameter cannot be serialized>"
         )
 
     for img in images:
-        path = f"{output_dir}/{task_type}"
         if not os.path.exists(path):
             os.makedirs(path)
 

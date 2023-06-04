@@ -1,5 +1,6 @@
 import gc
 import itertools
+import os
 import secrets
 from PIL import Image, ImageOps
 import numpy as np
@@ -116,10 +117,10 @@ class Model_KD2:
                 negative_prior_prompt=params["negative_prior_prompt"],  # type: ignore
                 negative_decoder_prompt=params["negative_decoder_prompt"],  # type: ignore
             )
-
-            saved_batch = save_output(
-                self.params.output_dir, "text2img", current_batch, params
+            output_dir = params.get(
+                ".output_dir", os.path.join(self.params.output_dir, "text2img")
             )
+            saved_batch = save_output(output_dir, current_batch, params)
             images = images + saved_batch
         return images
 
@@ -146,9 +147,10 @@ class Model_KD2:
                 prior_steps=str(params["prior_steps"]),  # type: ignore
             )
 
-            saved_batch = save_output(
-                self.params.output_dir, "img2img", current_batch, params
+            output_dir = params.get(
+                ".output_dir", os.path.join(self.params.output_dir, "img2img")
             )
+            saved_batch = save_output(output_dir, current_batch, params)
             images = images + saved_batch
         return images
 
@@ -182,10 +184,10 @@ class Model_KD2:
                 negative_prior_prompt=params["negative_prior_prompt"],
                 negative_decoder_prompt=params["negative_decoder_prompt"],
             )
-
-            saved_batch = save_output(
-                self.params.output_dir, "mix", current_batch, params
+            output_dir = params.get(
+                ".output_dir", os.path.join(self.params.output_dir, "mix")
             )
+            saved_batch = save_output(output_dir, current_batch, params)
             images = images + saved_batch
         return images
 
@@ -221,9 +223,10 @@ class Model_KD2:
                 negative_decoder_prompt=params["negative_decoder_prompt"],  # type: ignore
             )
 
-            saved_batch = save_output(
-                self.params.output_dir, "inpainting", current_batch, params
+            output_dir = params.get(
+                ".output_dir", os.path.join(self.params.output_dir, "inpainting")
             )
+            saved_batch = save_output(output_dir, current_batch, params)
             images = images + saved_batch
         return images
 
@@ -278,8 +281,13 @@ class Model_KD2:
                 negative_decoder_prompt=params["negative_decoder_prompt"],  # type: ignore
             )
 
+            output_dir = params.get(
+                ".output_dir", os.path.join(self.params.output_dir, "outpainting")
+            )
             saved_batch = save_output(
-                self.params.output_dir, "outpainting", current_batch, params
+                output_dir,
+                current_batch,
+                params,
             )
             images = images + saved_batch
         return images
