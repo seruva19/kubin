@@ -3,6 +3,7 @@ import torch
 from PIL import Image
 import numpy as np
 from RealESRGAN import RealESRGAN
+import os
 
 
 def setup(kubin):
@@ -75,7 +76,7 @@ def upscale_with(
     if upscaler == "Real-ESRGAN":
         upscaled_image = upscale_esrgan(device, cache_dir, input_image, scale)
         upscaled_image_path = kubin.fs_utils.save_output(
-            output_dir, "upscale", [upscaled_image]
+            os.path.join(output_dir, "upscale"), [upscaled_image]
         )
 
         return upscaled_image_path

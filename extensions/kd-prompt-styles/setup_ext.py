@@ -25,7 +25,7 @@ def write_styles(styles):
 
 
 def setup(kubin):
-    targets = ["t2i", "t2i", "mix", "inpaint", "outpaint"]
+    targets = ["t2i", "i2i", "mix", "inpaint", "outpaint"]
 
     def load_styles():
         initial_styles = get_styles()

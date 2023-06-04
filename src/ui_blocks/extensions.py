@@ -77,8 +77,8 @@ def extensions_ui(kubin: Kubin, extensions_data):
                             interactive=True,
                         ).style(size="sm", full_width=False)
                         clear_ext_install_btn.click(
-                            lambda: kubin.ext_registry.force_reinstall(
-                                extension_info.name
+                            lambda name=extension_info.name: kubin.ext_registry.force_reinstall(
+                                name
                             ),
                             queue=False,
                         ).then(

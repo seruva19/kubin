@@ -86,7 +86,7 @@ class ExtensionRegistry:
                         print(
                             f"{i+1}: extension '{extension}' has requirements.txt, installing"
                         )
-                        self.install_ext_reqs(extension_reqs_path)
+                        self.install_pip_reqs(extension_reqs_path)
                         open(extension_installed, "a").close()
 
                 extension_py_path = f"{self.root}/{extension}/setup_ext.py"
@@ -112,7 +112,7 @@ class ExtensionRegistry:
                         f"{i+1}: setup_ext.py not found for '{extension}', extension will not be registered"
                     )
 
-    def install_ext_reqs(self, reqs_path):
+    def install_pip_reqs(self, reqs_path):
         subprocess.check_call(
             [sys.executable, "-m", "pip", "install", "-r", f"{reqs_path}"]
         )
