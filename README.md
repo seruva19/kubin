@@ -7,24 +7,24 @@
 
 ## Roadmap
 
-✅ Txt2img <br>
-✅ Img2img <br>
-✅ Mixing <br>
-✅ Inpainting  <br>
-✅ Upscaling <br>
-✅ Outpainting <br>
-✅ Support for extensions <br>
-✅ Tools for fine-tuning <br>
-⬜ VRAM usage optimization <br>
-✅ Img2mesh <br>
-⬜ Advanced prompting <br>
-✅ Interrogation <br>
-✅ Segmentation <br>
-⬜ Additional schedulers <br>
-⬜ Animation <br>
-⬜ LoRA <br>
-⬜ ControlNet  <br>
-⬜ Documentation <br>
+✔ Txt2img <br>
+✔ Img2img <br>
+✔ Mixing <br>
+✔ Inpainting  <br>
+✔ Upscaling <br>
+✔ Outpainting <br>
+✔ Support for extensions <br>
+✔ Tools for fine-tuning <br>
+🕒 VRAM usage optimization <br>
+✔ Img2mesh <br>
+🕒 Advanced prompting <br>
+✔ Interrogation <br>
+✔ Segmentation <br>
+🕒 Additional schedulers <br>
+🕒 Animation <br>
+🕒 LoRA <br>
+🕒 ControlNet  <br>
+🕒 Documentation <br>
 
 ## Screenshots
 <details> 
