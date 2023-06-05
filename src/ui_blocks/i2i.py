@@ -34,7 +34,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                             label="Folder with output images",
                             info="If empty, the default img2img folder will be used",
                         )
-                    prompt = gr.Textbox("", placeholder="", label="Prompt")
+                    batch_prompt = gr.Textbox("", placeholder="", label="Prompt")
                     img_extension = gr.Textbox(
                         ".jpg;.jpeg;.png;.bmp", label="File extension filter"
                     )
@@ -165,7 +165,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                 input_folder,
                 output_folder,
                 extensions,
-                prompt,
+                batch_prompt,
                 strength,
                 steps,
                 batch_count,
@@ -198,7 +198,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
 
                     params = {
                         "init_image": image,
-                        "prompt": prompt,
+                        "prompt": batch_prompt,
                         "strength": strength,
                         "num_steps": steps,
                         "batch_count": batch_count,
@@ -227,7 +227,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                     input_folder,
                     output_folder,
                     img_extension,
-                    prompt,
+                    batch_prompt,
                     strength,
                     steps,
                     batch_count,
