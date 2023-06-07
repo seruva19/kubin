@@ -2,6 +2,7 @@ import os
 from extension.ext_registry import ExtensionRegistry
 from models.model_mock import Model_Mock
 from models.model_kd2 import Model_KD2
+from models.model_diffusers import Model_Diffusers
 from params import KubinParams
 
 
@@ -13,7 +14,11 @@ class Kubin:
         print(f"root dir: {self.root}")
 
         self.model = (
-            Model_Mock(self.params) if self.params.mock else Model_KD2(self.params)
+            Model_Mock(self.params)
+            if self.params.mock
+            else Model_Diffusers(self.params)
+            if self.params.pipeline == "diffusers"
+            else Model_KD2(self.params)
         )
 
         self.ext_registry = ExtensionRegistry(
