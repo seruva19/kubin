@@ -58,7 +58,7 @@ class Model_Diffusers:
                 self.t2i_pipe.to(self.params.device)
 
         elif task == "img2img":
-            if self.t2i_pipe is None:
+            if self.i2i_pipe is None:
                 if clear_vram_on_switch:
                     self.flush()
 
