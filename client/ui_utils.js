@@ -59,20 +59,42 @@
     } else {
       return Promise.resolve()
     }
-  })))
-    .then(() => {
-      kubin.notify.lib = new Notyf({
-        duration: 5000,
-        ripple: false,
-        position: { x: 'right', y: 'bottom' },
-        types: [
-          { type: 'warning', background: 'orange', icon: false },
-          { type: 'success', background: 'seagreen', icon: false },
-          { type: 'error', background: 'indianred', icon: false }
-        ]
-      })
-
-      kubin.notify.success('kubin client library: loaded')
-      console.log('kubin client library: loaded')
+  }))).then(() => {
+    kubin.notify.lib = new Notyf({
+      duration: 5000,
+      ripple: false,
+      position: { x: 'right', y: 'bottom' },
+      types: [
+        { type: 'warning', background: 'orange', icon: false },
+        { type: 'success', background: 'seagreen', icon: false },
+        { type: 'error', background: 'indianred', icon: false }
+      ]
     })
+
+    kubin.notify.success('kubin client library: loaded')
+    initEventListeners.options()
+
+    console.log('kubin client library: loaded')
+  })
+
+  const initEventListeners = {
+    options: () => {
+      window.document.onclick = e => {
+        if (e.target.classList.contains('options-select')) {
+          Array.from(document.querySelectorAll('.options-select')).forEach(option => {
+            option.classList.remove('selected')
+          })
+
+          e.target.classList.add('selected')
+          const id = e.target.id
+
+          Array.from(document.querySelectorAll('.options-block')).forEach(option => {
+            option.classList.remove('active')
+          })
+
+          document.querySelector(`.${id}`).classList.add('active')
+        }
+      }
+    }
+  }
 })(window)

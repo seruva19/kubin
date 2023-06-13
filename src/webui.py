@@ -1,6 +1,5 @@
 import gradio as gr
 from env import Kubin
-from ui_blocks.extensions import create_extensions_info, extensions_ui
 from ui_blocks.i2i import i2i_ui
 from ui_blocks.inpaint import inpaint_ui
 from ui_blocks.mix import mix_ui
@@ -8,7 +7,7 @@ from ui_blocks.outpaint import outpaint_ui
 from ui_blocks.settings import settings_ui
 from ui_blocks.shared.ui_shared import SharedUI
 from ui_blocks.t2i import t2i_ui
-from shared import client
+from ui_blocks.shared.client import css_styles, js_loader
 
 
 def gradio_ui(kubin: Kubin):
@@ -22,10 +21,10 @@ def gradio_ui(kubin: Kubin):
 
     with gr.Blocks(
         title="Kubin: Web-GUI for Kandinsky 2.1",
-        theme=ui_shared.select_theme(kubin.params.theme),
-        css=client.css_styles,
+        theme=ui_shared.select_theme(kubin.params("gradio", "theme")),
+        css=css_styles,
     ) as ui:
-        ui.load(fn=None, _js=client.js_loader(ext_client_resources))
+        ui.load(fn=None, _js=js_loader(ext_client_resources))
 
         with gr.Tabs() as ui_tabs:
             with gr.TabItem("Text To Image", id=0):
@@ -64,10 +63,7 @@ def gradio_ui(kubin: Kubin):
                 )
 
             create_ext_tabs(ext_standalone, ext_start_tab_index, ui_shared, ui_tabs)
-
             next_id = len(ext_standalone) + ext_start_tab_index
-            with gr.TabItem("Extensions", id=next_id + 1):
-                extensions_ui(kubin, create_extensions_info(kubin))
 
             with gr.TabItem("Settings", id=next_id + 2):
                 settings_ui(kubin)

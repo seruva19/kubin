@@ -2,28 +2,25 @@ import gc
 import torch
 import torch
 import torch.backends
-
 from diffusers import (
-    DiffusionPipeline,
     KandinskyPipeline,
     KandinskyImg2ImgPipeline,
     KandinskyPriorPipeline,
     KandinskyInpaintPipeline,
 )
-
+from diffusers.models.attention_processor import AttnAddedKVProcessor2_0
 import itertools
 import os
 import secrets
 from PIL import Image, ImageOps
 import numpy as np
-
 from params import KubinParams
-from engine.kandinsky import get_checkpoint
 from utils.file_system import save_output
 
 
 class Model_Diffusers:
     def __init__(self, params: KubinParams):
+        print("activating pipeline: diffusers")
         self.params = params
 
         self.pipe_prior: KandinskyPriorPipeline | None = None
@@ -37,13 +34,29 @@ class Model_Diffusers:
 
         clear_vram_on_switch = False
 
+        if self.params("diffusers", "use_deterministic_algorithms"):
+            os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+            torch.use_deterministic_algorithms(True)
+
+        if self.params("diffusers", "use_tf32_mode"):
+            torch.backends.cuda.matmul.allow_tf32 = True
+
+        cache_dir = self.params("general", "cache_dir")
+        device = self.params("general", "device")
+
         if self.pipe_prior is None:
             self.pipe_prior = KandinskyPriorPipeline.from_pretrained(
                 "kandinsky-community/kandinsky-2-1-prior",
-                torch_dtype=torch.float16,
-                cache_dir=self.params.cache_dir,
+                torch_dtype=torch.float16
+                if self.params("diffusers", "half_precision_weights")
+                else "auto",
+                cache_dir=cache_dir,
             )
-            self.pipe_prior.to(self.params.device)
+
+            self.pipe_prior.to(device)
+
+            if self.params("diffusers", "sequential_cpu_offload"):
+                self.pipe_prior.enable_sequential_cpu_offload()
 
         if task == "text2img" or task == "mix":
             if self.t2i_pipe is None:
@@ -52,10 +65,30 @@ class Model_Diffusers:
 
                 self.t2i_pipe = KandinskyPipeline.from_pretrained(
                     "kandinsky-community/kandinsky-2-1",
-                    torch_dtype=torch.float16,
-                    cache_dir=self.params.cache_dir,
+                    torch_dtype=torch.float16
+                    if self.params("diffusers", "half_precision_weights")
+                    else "auto",
+                    cache_dir=cache_dir,
                 )
-                self.t2i_pipe.to(self.params.device)
+
+                self.t2i_pipe.to(device)
+
+                if self.params("diffusers", "enable_xformers"):
+                    self.t2i_pipe.enable_xformers_memory_efficient_attention()
+                if self.params("diffusers", "enable_sdpa_attention"):
+                    self.t2i_pipe.unet.set_attn_processor(AttnAddedKVProcessor2_0())
+                if self.params("diffusers", "enable_sliced_attention"):
+                    self.t2i_pipe.enable_attention_slicing()
+                if self.params("diffusers", "channels_last_memory"):
+                    self.t2i_pipe.unet.to(memory_format=torch.channels_last)
+                if self.params("diffusers", "torch_code_compilation"):
+                    self.t2i_pipe.unet = torch.compile(
+                        self.t2i_pipe.unet, mode="reduce-overhead", fullgraph=True
+                    )
+                if self.params("diffusers", "sequential_cpu_offload"):
+                    self.t2i_pipe.enable_sequential_cpu_offload()
+                if self.params("diffusers", "full_model_offload"):
+                    self.t2i_pipe.enable_model_cpu_offload()
 
         elif task == "img2img":
             if self.i2i_pipe is None:
@@ -64,10 +97,30 @@ class Model_Diffusers:
 
                 self.i2i_pipe = KandinskyImg2ImgPipeline.from_pretrained(
                     "kandinsky-community/kandinsky-2-1",
-                    torch_dtype=torch.float16,
-                    cache_dir=self.params.cache_dir,
+                    torch_dtype=torch.float16
+                    if self.params("diffusers", "half_precision_weights")
+                    else "auto",
+                    cache_dir=cache_dir,
                 )
-                self.i2i_pipe.to(self.params.device)
+
+                self.i2i_pipe.to(device)
+
+                if self.params("diffusers", "enable_xformers"):
+                    self.i2i_pipe.enable_xformers_memory_efficient_attention()
+                if self.params("diffusers", "enable_sdpa_attention"):
+                    self.i2i_pipe.unet.set_attn_processor(AttnAddedKVProcessor2_0())
+                if self.params("diffusers", "enable_sliced_attention"):
+                    self.i2i_pipe.enable_attention_slicing()
+                if self.params("diffusers", "channels_last_memory"):
+                    self.i2i_pipe.unet.to(memory_format=torch.channels_last)
+                if self.params("diffusers", "torch_code_compilation"):
+                    self.i2i_pipe.unet = torch.compile(
+                        self.i2i_pipe.unet, mode="reduce-overhead", fullgraph=True
+                    )
+                if self.params("diffusers", "sequential_cpu_offload"):
+                    self.i2i_pipe.enable_sequential_cpu_offload()
+                if self.params("diffusers", "full_model_offload"):
+                    self.i2i_pipe.enable_model_cpu_offload()
 
         elif task == "inpainting" or task == "outpainting":
             if self.inpaint_pipe is None:
@@ -76,10 +129,30 @@ class Model_Diffusers:
 
                 self.inpaint_pipe = KandinskyInpaintPipeline.from_pretrained(
                     "kandinsky-community/kandinsky-2-1-inpaint",
-                    torch_dtype=torch.float16,
-                    cache_dir=self.params.cache_dir,
+                    torch_dtype=torch.float16
+                    if self.params("diffusers", "half_precision_weights")
+                    else "auto",
+                    cache_dir=cache_dir,
                 )
-                self.inpaint_pipe.to(self.params.device)
+
+                self.inpaint_pipe.to(device)
+
+                if self.params("diffusers", "enable_xformers"):
+                    self.inpaint_pipe.enable_xformers_memory_efficient_attention()
+                if self.params("diffusers", "enable_sdpa_attention"):
+                    self.inpaint_pipe.unet.set_attn_processor(AttnAddedKVProcessor2_0())
+                if self.params("diffusers", "enable_sliced_attention"):
+                    self.inpaint_pipe.enable_attention_slicing()
+                if self.params("diffusers", "channels_last_memory"):
+                    self.inpaint_pipe.unet.to(memory_format=torch.channels_last)
+                if self.params("diffusers", "torch_code_compilation"):
+                    self.inpaint_pipe.unet = torch.compile(
+                        self.inpaint_pipe.unet, mode="reduce-overhead", fullgraph=True
+                    )
+                if self.params("diffusers", "sequential_cpu_offload"):
+                    self.inpaint_pipe.enable_sequential_cpu_offload()
+                if self.params("diffusers", "full_model_offload"):
+                    self.inpaint_pipe.enable_model_cpu_offload()
 
         return self
 
@@ -106,10 +179,11 @@ class Model_Diffusers:
 
         gc.collect()
 
-        if self.params.device == "cuda":
-            with torch.cuda.device("cuda"):
-                torch.cuda.empty_cache()
-                torch.cuda.ipc_collect()
+        if self.params("general", "device") == "cuda":
+            if torch.cuda.is_available():
+                with torch.cuda.device("cuda"):
+                    torch.cuda.empty_cache()
+                    torch.cuda.ipc_collect()
 
     def seed(self, params):
         input_seed = params["input_seed"]
@@ -154,7 +228,8 @@ class Model_Diffusers:
             ).images
 
             output_dir = params.get(
-                ".output_dir", os.path.join(self.params.output_dir, "text2img")
+                ".output_dir",
+                os.path.join(self.params("general", "output_dir"), "text2img"),
             )
             saved_batch = save_output(output_dir, current_batch, params)
             images = images + saved_batch
@@ -198,7 +273,8 @@ class Model_Diffusers:
             ).images
 
             output_dir = params.get(
-                ".output_dir", os.path.join(self.params.output_dir, "img2img")
+                ".output_dir",
+                os.path.join(self.params("general", "output_dir"), "img2img"),
             )
             saved_batch = save_output(output_dir, current_batch, params)
             images = images + saved_batch
@@ -252,7 +328,7 @@ class Model_Diffusers:
             ).images
 
             output_dir = params.get(
-                ".output_dir", os.path.join(self.params.output_dir, "mix")
+                ".output_dir", os.path.join(self.params("general", "output_dir"), "mix")
             )
             saved_batch = save_output(output_dir, current_batch, params)
             images = images + saved_batch
@@ -303,7 +379,8 @@ class Model_Diffusers:
             ).images
 
             output_dir = params.get(
-                ".output_dir", os.path.join(self.params.output_dir, "inpainting")
+                ".output_dir",
+                os.path.join(self.params("general", "output_dir"), "inpainting"),
             )
             saved_batch = save_output(output_dir, current_batch, params)
             images = images + saved_batch
@@ -373,7 +450,8 @@ class Model_Diffusers:
             ).images
 
             output_dir = params.get(
-                ".output_dir", os.path.join(self.params.output_dir, "outpainting")
+                ".output_dir",
+                os.path.join(self.params("general", "output_dir"), "outpainting"),
             )
             saved_batch = save_output(output_dir, current_batch, params)
             images = images + saved_batch

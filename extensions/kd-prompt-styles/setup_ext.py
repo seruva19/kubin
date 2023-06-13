@@ -232,21 +232,20 @@ def setup(kubin):
 
 
 def append_style(target, params, current_style, default_style):
-    with gr.Blocks():
-        style_not_chosen = current_style["name"] == default_style["name"]
-        style_prompt = current_style["prompt"]
-        style_negative_prompt = current_style["negative"]
+    style_not_chosen = current_style["name"] == default_style["name"]
+    style_prompt = current_style["prompt"]
+    style_negative_prompt = current_style["negative"]
 
-        if "prompt" in params:
-            params["prompt"] += (
-                "" if style_not_chosen or style_prompt is None else f", {style_prompt}"
-            )
+    if "prompt" in params:
+        params["prompt"] += (
+            "" if style_not_chosen or style_prompt is None else f", {style_prompt}"
+        )
 
-        if "negative_decoder_prompt" in params:
-            params["negative_decoder_prompt"] += (
-                ""
-                if style_not_chosen or style_negative_prompt is None
-                else f", {style_negative_prompt}"
-            )
+    if "negative_decoder_prompt" in params:
+        params["negative_decoder_prompt"] += (
+            ""
+            if style_not_chosen or style_negative_prompt is None
+            else f", {style_negative_prompt}"
+        )
 
     return params

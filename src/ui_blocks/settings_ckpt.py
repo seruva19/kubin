@@ -19,7 +19,9 @@ def ckpt_selector(kubin: Kubin):
         default_prior_path,
         default_decoder_path,
         default_inpaint_decoder_path,
-    ) = kubin.params.checkpoint.base_checkpoints_path(kubin.params.cache_dir)
+    ) = kubin.params.checkpoint.base_checkpoints_path(
+        kubin.params("general", "cache_dir")
+    )
 
     with gr.Row() as selector:
         with gr.Column():
@@ -171,7 +173,7 @@ def show_current_checkpoints(kubin: Kubin):
         default_prior_path,
         default_decoder_path,
         default_inpaint_decoder_path,
-    ) = checkpoint.base_checkpoints_path(kubin.params.cache_dir)
+    ) = checkpoint.base_checkpoints_path(kubin.params("general", "cache_dir"))
 
     if (
         checkpoint.prior_model_dir == default_checkpoint.prior_model_dir

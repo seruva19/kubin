@@ -16,7 +16,7 @@ class ExtensionInfo:
 
 def create_extensions_info(kubin: Kubin):
     extensions = [(key, value) for key, value in kubin.ext_registry.extensions.items()]
-    get_path = lambda x: f"{kubin.params.extensions_path}/{x}"
+    get_path = lambda x: f"{kubin.params('general','extensions_path')}/{x}"
 
     extensions_info = []
     if len(extensions) > 0:
@@ -50,7 +50,9 @@ def create_extensions_info(kubin: Kubin):
     return extensions_info
 
 
-def extensions_ui(kubin: Kubin, extensions_data):
+def extensions_ui(kubin: Kubin):
+    extensions_data = create_extensions_info(kubin)
+
     with gr.Column() as extensions_block:
         gr.HTML(
             f"Local extensions found: {len(extensions_data)}<br>Activated extensions: {len(list(filter(lambda x: x.enabled, extensions_data)))}"

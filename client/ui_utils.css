@@ -5,3 +5,30 @@
 .notyf__message {
   font-family: var(--font);
 }
+
+.options-left {
+  max-width: 150px;
+  min-width: 0 !important;
+}
+
+.options-select {
+  font-size: large !important;
+  padding: 0 5px 0 5px;
+  cursor: pointer;
+  height: 50px;
+  line-height: 50px !important;
+  border-radius: var(--block-radius);
+  text-align: center;
+}
+
+.options-select.selected {
+  background: var(--button-secondary-background-fill);
+}
+
+.options-block {
+  display: none !important;
+}
+
+.options-block.active {
+  display: block !important;
+}

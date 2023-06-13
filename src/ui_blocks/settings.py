@@ -8,7 +8,9 @@ import pandas as pd
 from env import Kubin
 from models.model_kd2 import Model_KD2
 from models.model_mock import Model_Mock
+from .settings_options import options_ui
 from .settings_ckpt import ckpt_selector
+from .settings_ext import extensions_ui
 
 
 def update_info():
@@ -55,6 +57,12 @@ def settings_ui(kubin: Kubin):
     with gr.Column() as settings_block:
         with gr.TabItem("Checkpoints"):
             ckpt_selector(kubin)
+
+        with gr.TabItem("Options"):
+            options_ui(kubin)
+
+        with gr.TabItem("Extensions"):
+            extensions_ui(kubin)
 
         with gr.TabItem("System"):
             with gr.Row():

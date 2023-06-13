@@ -10,7 +10,7 @@ from params import KubinParams
 # intended for testing purposes only
 class Model_Mock:
     def __init__(self, params: KubinParams):
-        print(f"setting mock model params")
+        print("activating pipeline: mock")
 
     def prepare(self, task):
         print(f"preparing mock for {task}")
