@@ -117,7 +117,7 @@ class KubinParams:
             self.conf["general"]["mock"] = self.args.mock == "use"
 
         if self.args.flash_attention is not None:
-            self.conf["general"]["flash_attention"] = self.args.flash_attention == "use"
+            self.conf["native"]["flash_attention"] = self.args.flash_attention == "use"
 
         if self.args.skip_install is not None:
             self.conf["general"]["skip_install"] = self.args.skip_install == "use"

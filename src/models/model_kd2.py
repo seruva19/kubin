@@ -29,7 +29,7 @@ class Model_KD2:
 
         cache_dir = self.params("general", "cache_dir")
         device = self.params("general", "device")
-        use_flash_attention = self.params("general", "flash_attention")
+        use_flash_attention = self.params("native", "flash_attention")
 
         if task == "text2img" or task == "img2img" or task == "mix":
             if self.kd2 is None:

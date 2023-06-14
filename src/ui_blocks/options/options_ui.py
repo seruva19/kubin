@@ -6,10 +6,10 @@ from env import Kubin
 def options_tab_ui(kubin: Kubin):
     updated_config = kubin.params._updated
 
-    with gr.Column(elem_classes=["options-block", "options-ui"]) as ui:
+    with gr.Column(elem_classes=["options-block", "options-ui"]) as ui_options:
         None
 
     def change_value(key, value):
         updated_config["ui"][key] = value
 
-    return ui
+    return ui_options

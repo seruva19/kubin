@@ -6,7 +6,7 @@ from env import Kubin
 def options_tab_gradio(kubin: Kubin):
     updated_config = kubin.params._updated
 
-    with gr.Column(elem_classes=["options-block", "options-gradio"]) as gradio:
+    with gr.Column(elem_classes=["options-block", "options-gradio"]) as gradio_options:
         theme = gr.Dropdown(
             value=kubin.params("gradio", "theme"),
             choices=["base", "default", "glass", "monochrome", "soft"],
@@ -18,4 +18,4 @@ def options_tab_gradio(kubin: Kubin):
 
     theme.change(change_value, inputs=[gr.State("theme"), theme])
 
-    return gradio
+    return gradio_options

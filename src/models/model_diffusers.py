@@ -71,8 +71,6 @@ class Model_Diffusers:
                     cache_dir=cache_dir,
                 )
 
-                self.t2i_pipe.to(device)
-
                 if self.params("diffusers", "enable_xformers"):
                     self.t2i_pipe.enable_xformers_memory_efficient_attention()
                 if self.params("diffusers", "enable_sdpa_attention"):
@@ -85,6 +83,9 @@ class Model_Diffusers:
                     self.t2i_pipe.unet = torch.compile(
                         self.t2i_pipe.unet, mode="reduce-overhead", fullgraph=True
                     )
+
+                self.t2i_pipe.to(device)
+
                 if self.params("diffusers", "sequential_cpu_offload"):
                     self.t2i_pipe.enable_sequential_cpu_offload()
                 if self.params("diffusers", "full_model_offload"):
@@ -103,8 +104,6 @@ class Model_Diffusers:
                     cache_dir=cache_dir,
                 )
 
-                self.i2i_pipe.to(device)
-
                 if self.params("diffusers", "enable_xformers"):
                     self.i2i_pipe.enable_xformers_memory_efficient_attention()
                 if self.params("diffusers", "enable_sdpa_attention"):
@@ -117,6 +116,9 @@ class Model_Diffusers:
                     self.i2i_pipe.unet = torch.compile(
                         self.i2i_pipe.unet, mode="reduce-overhead", fullgraph=True
                     )
+
+                self.i2i_pipe.to(device)
+
                 if self.params("diffusers", "sequential_cpu_offload"):
                     self.i2i_pipe.enable_sequential_cpu_offload()
                 if self.params("diffusers", "full_model_offload"):
@@ -135,8 +137,6 @@ class Model_Diffusers:
                     cache_dir=cache_dir,
                 )
 
-                self.inpaint_pipe.to(device)
-
                 if self.params("diffusers", "enable_xformers"):
                     self.inpaint_pipe.enable_xformers_memory_efficient_attention()
                 if self.params("diffusers", "enable_sdpa_attention"):
@@ -149,6 +149,9 @@ class Model_Diffusers:
                     self.inpaint_pipe.unet = torch.compile(
                         self.inpaint_pipe.unet, mode="reduce-overhead", fullgraph=True
                     )
+
+                self.inpaint_pipe.to(device)
+
                 if self.params("diffusers", "sequential_cpu_offload"):
                     self.inpaint_pipe.enable_sequential_cpu_offload()
                 if self.params("diffusers", "full_model_offload"):
@@ -158,23 +161,29 @@ class Model_Diffusers:
 
     def flush(self, target=None):
         print(f"clearing memory")
+        offload_enabled = self.params("diffusers", "sequential_cpu_offload")
+
         if self.pipe_prior is not None:
-            self.pipe_prior.to("cpu")
+            if not offload_enabled:
+                self.pipe_prior.to("cpu")
             self.pipe_prior = None
 
         if target is None or target in ["text2img", "mix"]:
             if self.t2i_pipe is not None:
-                self.t2i_pipe.to("cpu")
+                if not offload_enabled:
+                    self.t2i_pipe.to("cpu")
                 self.t2i_pipe = None
 
         if target is None or target in ["img2img"]:
             if self.i2i_pipe is not None:
-                self.i2i_pipe.to("cpu")
+                if not offload_enabled:
+                    self.i2i_pipe.to("cpu")
                 self.i2i_pipe = None
 
         if target is None or target in ["inpainting", "outpainting"]:
             if self.inpaint_pipe is not None:
-                self.inpaint_pipe.to("cpu")
+                if not offload_enabled:
+                    self.inpaint_pipe.to("cpu")
                 self.inpaint_pipe = None
 
         gc.collect()

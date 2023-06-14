@@ -4,7 +4,7 @@
 **/__pycache__
 **/.installed
 /flagged
-/configs/*
+/configs/*.yaml
 !/configs/kubin.default.yaml
 /models
 /output

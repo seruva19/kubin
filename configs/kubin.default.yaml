@@ -1,6 +1,5 @@
 general:
   device: cuda
-  flash_attention: false
   cache_dir: models
   output_dir: output
   pipeline: native
@@ -30,6 +29,9 @@ ui:
   image_height_step: 64
   image_height_default: 768
 
+native:
+  flash_attention: false
+  
 diffusers:
   half_precision_weights: true
   enable_xformers: false

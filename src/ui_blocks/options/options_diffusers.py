@@ -6,7 +6,9 @@ from env import Kubin
 def options_tab_diffusers(kubin: Kubin):
     updated_config = kubin.params._updated
 
-    with gr.Column(elem_classes=["options-block", "options-diffusers"]) as diffusers:
+    with gr.Column(
+        elem_classes=["options-block", "options-diffusers"]
+    ) as diffusers_options:
         half_precision_weights = gr.Checkbox(
             value=kubin.params("diffusers", "half_precision_weights"),
             label="Enable half precision weights",
@@ -91,4 +93,4 @@ def options_tab_diffusers(kubin: Kubin):
         use_tf32_mode.change(
             change_value, inputs=[gr.State("use_tf32_mode"), use_tf32_mode]
         )
-    return diffusers
+    return diffusers_options
