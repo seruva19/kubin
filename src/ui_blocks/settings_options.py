@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import gradio as gr
+from deepdiff import DeepDiff
 from env import Kubin
 from utils.gradio_ui import click_and_disable
 from ui_blocks.options.options_native import options_tab_native
@@ -58,17 +59,16 @@ def options_ui(kubin: Kubin):
         )
 
     with gr.Row():
-        options_info = gr.HTML("")
+        options_info = gr.HTML("", elem_classes=["block-info", "options-info"])
 
     def apply():
+        diff = DeepDiff(kubin.params.conf, kubin.params._updated, ignore_order=True)
+        print(f"applying changes: {diff}")
         requires_reload = kubin.params.apply_config_changes()
         if requires_reload:
             kubin.with_pipeline()
 
-    click_and_disable(
-        apply_changes,
-        fn=apply,
-    ).then(
+    click_and_disable(apply_changes, fn=apply).then(
         fn=lambda: (gr.update(interactive=True), gr.update(interactive=True)),
         outputs=[save_changes, reset_changes],
     ).then(

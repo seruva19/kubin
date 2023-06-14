@@ -5,6 +5,7 @@ from env import Kubin
 
 def options_tab_diffusers(kubin: Kubin):
     updated_config = kubin.params._updated
+    current_config = kubin.params.conf
 
     with gr.Column(
         elem_classes=["options-block", "options-diffusers"]
@@ -49,39 +50,54 @@ def options_tab_diffusers(kubin: Kubin):
             value=kubin.params("diffusers", "use_tf32_mode"),
             label="Enable TensorFloat32 mode",
         )
+        with gr.Row():
+            options_log = gr.HTML(
+                "No changes", elem_classes=["block-info", "options-info"]
+            )
 
         def change_value(key, value):
             updated_config["diffusers"][key] = value
+            return f'Config key "diffusers.{key}" changed to "{value}" (old value: "{current_config["diffusers"][key]}"). Press "Apply changes" for them to take effect.'
 
         half_precision_weights.change(
             change_value,
             inputs=[gr.State("half_precision_weights"), half_precision_weights],
+            outputs=options_log,
         )
         enable_xformers.change(
-            change_value, inputs=[gr.State("enable_xformers"), enable_xformers]
+            change_value,
+            inputs=[gr.State("enable_xformers"), enable_xformers],
+            outputs=options_log,
         )
         enable_sdpa_attention.change(
             change_value,
             inputs=[gr.State("enable_sdpa_attention"), enable_sdpa_attention],
+            outputs=options_log,
         )
         enable_sliced_attention.change(
             change_value,
             inputs=[gr.State("enable_sliced_attention"), enable_sliced_attention],
+            outputs=options_log,
         )
         sequential_cpu_offload.change(
             change_value,
             inputs=[gr.State("sequential_cpu_offload"), sequential_cpu_offload],
+            outputs=options_log,
         )
         full_model_offload.change(
-            change_value, inputs=[gr.State("full_model_offload"), full_model_offload]
+            change_value,
+            inputs=[gr.State("full_model_offload"), full_model_offload],
+            outputs=options_log,
         )
         channels_last_memory.change(
             change_value,
             inputs=[gr.State("channels_last_memory"), channels_last_memory],
+            outputs=options_log,
         )
         torch_code_compilation.change(
             change_value,
             inputs=[gr.State("torch_code_compilation"), torch_code_compilation],
+            outputs=options_log,
         )
         use_deterministic_algorithms.change(
             change_value,
@@ -89,8 +105,11 @@ def options_tab_diffusers(kubin: Kubin):
                 gr.State("use_deterministic_algorithms"),
                 use_deterministic_algorithms,
             ],
+            outputs=options_log,
         )
         use_tf32_mode.change(
-            change_value, inputs=[gr.State("use_tf32_mode"), use_tf32_mode]
+            change_value,
+            inputs=[gr.State("use_tf32_mode"), use_tf32_mode],
+            outputs=options_log,
         )
     return diffusers_options

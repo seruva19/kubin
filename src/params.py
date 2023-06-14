@@ -2,7 +2,6 @@ import os
 from omegaconf import OmegaConf
 from engine.kandinsky import KandinskyCheckpoint
 
-
 default_value = "__default__"
 
 

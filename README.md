@@ -15,7 +15,7 @@
 ✔ Outpainting <br>
 ✔ Support for extensions <br>
 ✔ Tools for fine-tuning <br>
-🕒 VRAM usage optimization <br>
+✔ Diffusers integration <br>
 ✔ Img2mesh <br>
 🕒 Advanced prompting <br>
 ✔ Interrogation <br>
@@ -26,7 +26,7 @@
 🕒 ControlNet  <br>
 🕒 Documentation <br>
 
-## Screenshots
+## Screenshots (outdated)
 <details> 
 <summary>Click to expand</summary>
 
