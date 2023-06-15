@@ -27,6 +27,7 @@ parser.add_argument("--safe-mode", type=str, default=None)
 parser.add_argument("--pipeline", type=str, default=None)
 parser.add_argument("--mock", type=str, default=None)
 parser.add_argument("--theme", type=str, default=None)
+parser.add_argument("--optimize", type=str, default=None)
 
 args = parser.parse_args()
 args_preview = {key: value for key, value in vars(args).items() if value is not None}

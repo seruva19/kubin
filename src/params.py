@@ -123,3 +123,16 @@ class KubinParams:
 
         if self.args.safe_mode is not None:
             self.conf["general"]["safe_mode"] = self.args.safe_mode == "use"
+
+        if self.args.optimize is not None:
+            for optimize_param in [x.strip() for x in self.args.optimize.split(",")]:
+                if optimize_param == "half_weights":
+                    self.conf["diffusers"]["half_precision_weights"] = True
+                if optimize_param == "xformers":
+                    self.conf["diffusers"]["enable_xformers"] = True
+                if optimize_param == "sliced_attention":
+                    self.conf["diffusers"]["enable_sliced_attention"] = True
+                if optimize_param == "sequential_offload":
+                    self.conf["diffusers"]["sequential_cpu_offload"] = True
+                if optimize_param == "channels_last":
+                    self.conf["diffusers"]["channels_last_memory"] = True
