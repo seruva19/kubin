@@ -23,6 +23,30 @@ def update_info():
     else:
         torch_free, torch_total = 0, 0
 
+    xformers_info = ""
+    try:
+        import xformers
+
+        xformers_info = f"xformers: {xformers.__version__}\n"
+    except:
+        pass
+
+    diffusers_info = ""
+    try:
+        import diffusers
+
+        diffusers_info = f"diffusers: {diffusers.__version__}\n"
+    except:
+        pass
+
+    transformers_info = ""
+    try:
+        import transformers
+
+        transformers_info = f"transformers: {transformers.__version__}\n"
+    except:
+        pass
+
     vmem = psutil.virtual_memory()
     ram_total = vmem.total
     ram_available = vmem.available
@@ -40,7 +64,9 @@ def update_info():
         f"RAM (total): {ram_total_mb}\n"
         f"RAM (free): {ram_available_mb}\n"
         f"VRAM (total): {torch_total_mb}\n"
-        f"VRAM (free): {torch_free_mb}"
+        f"VRAM (free): {torch_free_mb}\n"
+        f"gradio: {gr.__version__}\n",
+        f"{xformers_info}" f"{diffusers_info}" f"{transformers_info}",
     )
 
 

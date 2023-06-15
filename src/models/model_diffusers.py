@@ -10,13 +10,13 @@ try:
         KandinskyPriorPipeline,
         KandinskyInpaintPipeline,
     )
+    from diffusers.models.attention_processor import AttnAddedKVProcessor2_0
 except:
     print(
         "warning: seems like diffusers are not installed, run 'pip install -r diffusers/requirements.txt' to install"
     )
     print("warning: if you are not going to use diffusers, just ignore this message")
 
-from diffusers.models.attention_processor import AttnAddedKVProcessor2_0
 import itertools
 import os
 import secrets
