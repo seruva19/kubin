@@ -2,12 +2,19 @@ import gc
 import torch
 import torch
 import torch.backends
-from diffusers import (
-    KandinskyPipeline,
-    KandinskyImg2ImgPipeline,
-    KandinskyPriorPipeline,
-    KandinskyInpaintPipeline,
-)
+
+try:
+    from diffusers import (
+        KandinskyPipeline,
+        KandinskyImg2ImgPipeline,
+        KandinskyPriorPipeline,
+        KandinskyInpaintPipeline,
+    )
+except:
+    print(
+        "Seems like diffusers are not installed, run 'pip install diffusers/requirements.txt' to install. If you are not going to use diffusers, just ignore this message."
+    )
+
 from diffusers.models.attention_processor import AttnAddedKVProcessor2_0
 import itertools
 import os
