@@ -3,6 +3,7 @@ import sys
 import os
 import importlib.util
 import sys
+import yaml
 
 
 class ExtensionRegistry:
@@ -88,11 +89,12 @@ class ExtensionRegistry:
                         )
 
                         arguments = []
-                        pip_args = f"{self.root}/{extension}/pip.args.txt"
+                        ext_config = f"{self.root}/{extension}/setup_ext.yaml"
 
-                        if os.path.exists(pip_args):
-                            with open(pip_args) as file:
-                                arguments = [line.rstrip() for line in file]
+                        if os.path.exists(ext_config):
+                            with open(ext_config, "r") as stream:
+                                ext_conf = yaml.safe_load(stream)
+                                arguments = ext_conf.get("pip_args", [])
 
                         self.install_pip_reqs(extension_reqs_path, arguments=arguments)
                         open(extension_installed, "a").close()
@@ -119,6 +121,18 @@ class ExtensionRegistry:
                     print(
                         f"{i+1}: setup_ext.py not found for '{extension}', extension will not be registered"
                     )
+
+        postinstall_reqs_installed = f"{self.root}/.installed"
+        if os.path.exists(postinstall_reqs_installed):
+            print(
+                "extension post-install phase skipped because extensions/requirements.txt was already applied"
+            )
+        else:
+            print(
+                "extension post-install phase, installing from extensions/requirements.txt"
+            )
+            self.install_pip_reqs(f"{self.root}/requirements.txt")
+            open(postinstall_reqs_installed, "a").close()
 
     def install_pip_reqs(self, reqs_path, arguments=[]):
         subprocess.check_call(
