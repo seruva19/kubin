@@ -95,11 +95,9 @@ class ExtensionRegistry:
                             with open(ext_config, "r") as stream:
                                 ext_conf = yaml.safe_load(stream)
                                 arguments = ext_conf.get("pip_args", None)
+                                arguments = [arguments] if arguments is not None else []
 
-                        self.install_pip_reqs(
-                            extension_reqs_path,
-                            arguments=[arguments] if arguments is not None else [],
-                        )
+                        self.install_pip_reqs(extension_reqs_path, arguments=arguments)
                         open(extension_installed, "a").close()
 
                 extension_py_path = f"{self.root}/{extension}/setup_ext.py"
