@@ -15,6 +15,7 @@ from utils.file_system import save_output
 
 class Model_KD2:
     def __init__(self, params: KubinParams):
+        print("activating pipeline: native")
         self.params = params
 
         self.kd2: Kandinsky2_1 | None = None
@@ -26,22 +27,26 @@ class Model_KD2:
 
         clear_vram_on_switch = True
 
+        cache_dir = self.params("general", "cache_dir")
+        device = self.params("general", "device")
+        use_flash_attention = self.params("native", "flash_attention")
+
         if task == "text2img" or task == "img2img" or task == "mix":
             if self.kd2 is None:
                 if clear_vram_on_switch:
                     self.flush()
 
                 self.kd2 = get_checkpoint(
-                    self.params.device,
+                    device,
                     use_auth_token=None,
                     task_type="text2img",
-                    cache_dir=self.params.cache_dir,
-                    use_flash_attention=self.params.use_flash_attention,
+                    cache_dir=cache_dir,
+                    use_flash_attention=use_flash_attention,
                     checkpoint_info=self.params.checkpoint,
                 )
 
-                self.kd2.model.to(self.params.device)
-                self.kd2.prior.to(self.params.device)
+                self.kd2.model.to(device)
+                self.kd2.prior.to(device)
 
         elif task == "inpainting" or task == "outpainting":
             if self.kd2_inpaint is None:
@@ -49,40 +54,41 @@ class Model_KD2:
                     self.flush()
 
                 self.kd2_inpaint = get_checkpoint(
-                    self.params.device,
+                    device,
                     use_auth_token=None,
                     task_type="inpainting",
-                    cache_dir=self.params.cache_dir,
-                    use_flash_attention=self.params.use_flash_attention,
+                    cache_dir=cache_dir,
+                    use_flash_attention=use_flash_attention,
                     checkpoint_info=self.params.checkpoint,
                 )
 
-                self.kd2_inpaint.model.to(self.params.device)
-                self.kd2_inpaint.prior.to(self.params.device)
+                self.kd2_inpaint.model.to(device)
+                self.kd2_inpaint.prior.to(device)
 
         return self
 
     def flush(self, target=None):
         print(f"clearing memory")
 
-        if target is None or target == "kd2":
+        if target is None or target in ["text2img", "img2img", "mix"]:
             if self.kd2 is not None:
                 self.kd2.model.to("cpu")
-                self.kd2.prior.to("cpu")  # type: ignore
+                self.kd2.prior.to("cpu")
                 self.kd2 = None
 
-        if target is None or target == "kd2_inpaint":
+        if target is None or target in ["inpainting", "outpainting"]:
             if self.kd2_inpaint is not None:
                 self.kd2_inpaint.model.to("cpu")
-                self.kd2_inpaint.prior.to("cpu")  # type: ignore
+                self.kd2_inpaint.prior.to("cpu")
                 self.kd2_inpaint = None
 
         gc.collect()
 
-        if self.params.device == "cuda":
-            with torch.cuda.device("cuda"):
-                torch.cuda.empty_cache()
-                torch.cuda.ipc_collect()
+        if self.params("general", "device") == "cuda":
+            if torch.cuda.is_available():
+                with torch.cuda.device("cuda"):
+                    torch.cuda.empty_cache()
+                    torch.cuda.ipc_collect()
 
     def seed(self, params):
         input_seed = params["input_seed"]
@@ -118,7 +124,8 @@ class Model_KD2:
                 negative_decoder_prompt=params["negative_decoder_prompt"],  # type: ignore
             )
             output_dir = params.get(
-                ".output_dir", os.path.join(self.params.output_dir, "text2img")
+                ".output_dir",
+                os.path.join(self.params("general", "output_dir"), "text2img"),
             )
             saved_batch = save_output(output_dir, current_batch, params)
             images = images + saved_batch
@@ -148,7 +155,8 @@ class Model_KD2:
             )
 
             output_dir = params.get(
-                ".output_dir", os.path.join(self.params.output_dir, "img2img")
+                ".output_dir",
+                os.path.join(self.params("general", "output_dir"), "img2img"),
             )
             saved_batch = save_output(output_dir, current_batch, params)
             images = images + saved_batch
@@ -185,7 +193,7 @@ class Model_KD2:
                 negative_decoder_prompt=params["negative_decoder_prompt"],
             )
             output_dir = params.get(
-                ".output_dir", os.path.join(self.params.output_dir, "mix")
+                ".output_dir", os.path.join(self.params("general", "output_dir"), "mix")
             )
             saved_batch = save_output(output_dir, current_batch, params)
             images = images + saved_batch
@@ -224,7 +232,8 @@ class Model_KD2:
             )
 
             output_dir = params.get(
-                ".output_dir", os.path.join(self.params.output_dir, "inpainting")
+                ".output_dir",
+                os.path.join(self.params("general", "output_dir"), "inpainting"),
             )
             saved_batch = save_output(output_dir, current_batch, params)
             images = images + saved_batch
@@ -282,7 +291,8 @@ class Model_KD2:
             )
 
             output_dir = params.get(
-                ".output_dir", os.path.join(self.params.output_dir, "outpainting")
+                ".output_dir",
+                os.path.join(self.params("general", "output_dir"), "outpainting"),
             )
             saved_batch = save_output(
                 output_dir,

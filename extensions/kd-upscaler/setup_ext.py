@@ -41,10 +41,14 @@ def setup(kubin):
                 fn=lambda *p: upscale_with(kubin, *p),
                 inputs=[
                     upscaler,
-                    gr.Textbox(value=kubin.params.device, visible=False),
-                    gr.Textbox(value=kubin.params.cache_dir, visible=False),
+                    gr.Textbox(value=kubin.params("general", "device"), visible=False),
+                    gr.Textbox(
+                        value=kubin.params("general", "cache_dir"), visible=False
+                    ),
                     scale,
-                    gr.Textbox(value=kubin.params.output_dir, visible=False),
+                    gr.Textbox(
+                        value=kubin.params("general", "output_dir"), visible=False
+                    ),
                     source_image,
                     clear_memory,
                 ],

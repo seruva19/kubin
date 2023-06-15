@@ -3,6 +3,7 @@ import sys
 import os
 import importlib.util
 import sys
+import yaml
 
 
 class ExtensionRegistry:
@@ -86,7 +87,17 @@ class ExtensionRegistry:
                         print(
                             f"{i+1}: extension '{extension}' has requirements.txt, installing"
                         )
-                        self.install_pip_reqs(extension_reqs_path)
+
+                        arguments = []
+                        ext_config = f"{self.root}/{extension}/setup_ext.yaml"
+
+                        if os.path.exists(ext_config):
+                            with open(ext_config, "r") as stream:
+                                ext_conf = yaml.safe_load(stream)
+                                arguments = ext_conf.get("pip_args", None)
+                                arguments = [arguments] if arguments is not None else []
+
+                        self.install_pip_reqs(extension_reqs_path, arguments=arguments)
                         open(extension_installed, "a").close()
 
                 extension_py_path = f"{self.root}/{extension}/setup_ext.py"
@@ -112,9 +123,21 @@ class ExtensionRegistry:
                         f"{i+1}: setup_ext.py not found for '{extension}', extension will not be registered"
                     )
 
-    def install_pip_reqs(self, reqs_path):
+        postinstall_reqs_installed = f"{self.root}/.installed"
+        if os.path.exists(postinstall_reqs_installed):
+            print(
+                "extension post-install phase skipped because extensions/requirements.txt was already applied"
+            )
+        else:
+            print(
+                "extension post-install phase, installing from extensions/requirements.txt"
+            )
+            self.install_pip_reqs(f"{self.root}/requirements.txt")
+            open(postinstall_reqs_installed, "a").close()
+
+    def install_pip_reqs(self, reqs_path, arguments=[]):
         subprocess.check_call(
-            [sys.executable, "-m", "pip", "install", "-r", f"{reqs_path}"]
+            [sys.executable, "-m", "pip", "install", "-r", f"{reqs_path}"] + arguments
         )
 
     def standalone(self):  # collect extensions with dedicated tab

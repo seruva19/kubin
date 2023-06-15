@@ -34,8 +34,8 @@ def patched_prepare_inputs_for_generation(
     }
 
 
-# monkey patching to prevent https://github.com/huggingface/transformers/issues/19290
-# and force download of CLIP/BLIP models into app models folder
+# 1) monkey patch to prevent https://github.com/huggingface/transformers/issues/19290
+# 2) force download of CLIP/BLIP models into app models folder
 def use_patch(kubin):
     old_method = BertLMHeadModel.prepare_inputs_for_generation
     old_torch_dir = torch.hub.get_dir()
@@ -43,7 +43,7 @@ def use_patch(kubin):
     BertLMHeadModel.prepare_inputs_for_generation = (
         patched_prepare_inputs_for_generation
     )
-    torch.hub.set_dir(kubin.params.cache_dir)
+    torch.hub.set_dir(kubin.params("general", "cache_dir"))
     return old_method, old_torch_dir
 
 
@@ -87,7 +87,7 @@ def setup(kubin):
         interrogator = get_interrogator(
             clip_model=clip_model,
             blip_type=blip_type,
-            cache_path=f"{kubin.params.cache_dir}/clip_cache",
+            cache_path=f"{kubin.params('general','cache_dir')}/clip_cache",
             chunk_size=chunk_size,
         )
         if mode == "best":

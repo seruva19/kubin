@@ -1,13 +1,11 @@
 import gradio as gr
 import os
-from PIL import Image
-import json
 from metadata_extractor import metadata_to_html
 
 
 # TODO: add paging
 def setup(kubin):
-    image_root = kubin.params.output_dir
+    image_root = kubin.params("general", "output_dir")
 
     def get_folders():
         return (

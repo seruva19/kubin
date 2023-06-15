@@ -90,7 +90,7 @@ def get_checkpoint(
                 config_file_url,
                 cache_dir=cache_dir,
                 force_filename=model_name,
-                use_auth_token=use_auth_token,  # type: ignore
+                use_auth_token=use_auth_token,
             )
 
         else:
@@ -114,7 +114,7 @@ def get_checkpoint(
                 config_file_url,
                 cache_dir=cache_dir,
                 force_filename=model_name,
-                use_auth_token=use_auth_token,  # type: ignore
+                use_auth_token=use_auth_token,
             )
         else:
             print(
@@ -136,7 +136,7 @@ def get_checkpoint(
             config_file_url,
             cache_dir=cache_dir,
             force_filename=prior_name,
-            use_auth_token=use_auth_token,  # type: ignore
+            use_auth_token=use_auth_token,
         )
     else:
         print(
@@ -162,7 +162,7 @@ def get_checkpoint(
             config_file_url,
             cache_dir=cache_dir_text_en,
             force_filename=name,
-            use_auth_token=use_auth_token,  # type: ignore
+            use_auth_token=use_auth_token,
         )
 
     config_file_url = hf_hub_url(
@@ -172,7 +172,7 @@ def get_checkpoint(
         config_file_url,
         cache_dir=cache_dir,
         force_filename="movq_final.ckpt",
-        use_auth_token=use_auth_token,  # type: ignore
+        use_auth_token=use_auth_token,
     )
 
     config_file_url = hf_hub_url(
@@ -182,7 +182,7 @@ def get_checkpoint(
         config_file_url,
         cache_dir=cache_dir,
         force_filename="ViT-L-14_stats.th",
-        use_auth_token=use_auth_token,  # type: ignore
+        use_auth_token=use_auth_token,
     )
 
     config["tokenizer_name"] = cache_dir_text_en
@@ -191,7 +191,7 @@ def get_checkpoint(
     config["image_enc_params"]["ckpt_path"] = os.path.join(cache_dir, "movq_final.ckpt")
 
     model = Kandinsky2_1(
-        config, cache_model_name, cache_prior_name, device, task_type=task_type  # type: ignore
+        config, cache_model_name, cache_prior_name, device, task_type=task_type
     )
 
     return model

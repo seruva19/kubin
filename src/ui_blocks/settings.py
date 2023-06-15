@@ -6,9 +6,9 @@ import platform
 from kandinsky2 import CONFIG_2_1
 import pandas as pd
 from env import Kubin
-from models.model_kd2 import Model_KD2
-from models.model_mock import Model_Mock
+from .settings_options import options_ui
 from .settings_ckpt import ckpt_selector
+from .settings_ext import extensions_ui
 
 
 def update_info():
@@ -20,6 +20,30 @@ def update_info():
         torch_free, torch_total = torch.cuda.mem_get_info()
     else:
         torch_free, torch_total = 0, 0
+
+    xformers_info = ""
+    try:
+        import xformers
+
+        xformers_info = f"xformers: {xformers.__version__}\n"
+    except:
+        pass
+
+    diffusers_info = ""
+    try:
+        import diffusers
+
+        diffusers_info = f"diffusers: {diffusers.__version__}\n"
+    except:
+        pass
+
+    transformers_info = ""
+    try:
+        import transformers
+
+        transformers_info = f"transformers: {transformers.__version__}\n"
+    except:
+        pass
 
     vmem = psutil.virtual_memory()
     ram_total = vmem.total
@@ -38,7 +62,11 @@ def update_info():
         f"RAM (total): {ram_total_mb}\n"
         f"RAM (free): {ram_available_mb}\n"
         f"VRAM (total): {torch_total_mb}\n"
-        f"VRAM (free): {torch_free_mb}"
+        f"VRAM (free): {torch_free_mb}\n"
+        f"gradio: {gr.__version__}\n"
+        f"{xformers_info}"
+        f"{diffusers_info}"
+        f"{transformers_info}"
     )
 
 
@@ -55,6 +83,12 @@ def settings_ui(kubin: Kubin):
     with gr.Column() as settings_block:
         with gr.TabItem("Checkpoints"):
             ckpt_selector(kubin)
+
+        with gr.TabItem("Options"):
+            options_ui(kubin)
+
+        with gr.TabItem("Extensions"):
+            extensions_ui(kubin)
 
         with gr.TabItem("System"):
             with gr.Row():

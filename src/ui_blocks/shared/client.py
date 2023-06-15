@@ -5,6 +5,10 @@ css_styles = """
 html {overflow-y: scroll;}
 .block.block-info .min {min-height: initial;}
 .block.full-height {height: initial !important;}
+.block.block-options {display: block}
+.block.block-options span.sr-only + div.wrap {display: block;}
+.block.block-options span.sr-only + div.wrap {display: block;}
+.block.block-options span.sr-only + div.wrap label {margin: 0 0 5px 0;}
 """
 
 random_hash = "".join(random.choices(string.ascii_letters + string.digits, k=8))

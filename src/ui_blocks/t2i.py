@@ -1,6 +1,5 @@
 import gradio as gr
 from ui_blocks.shared.ui_shared import SharedUI
-from shared import params
 
 
 def t2i_gallery_select(evt: gr.SelectData):
@@ -26,17 +25,17 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                     batch_size = gr.Slider(1, 16, 1, step=1, label="Batch size")
                 with gr.Row():
                     width = gr.Slider(
-                        params.image_width_min,
-                        params.image_width_max,
-                        params.image_width_default,
-                        step=params.image_width_step,
+                        shared.ui_params("image_width_min"),
+                        shared.ui_params("image_width_max"),
+                        shared.ui_params("image_width_default"),
+                        step=shared.ui_params("image_width_step"),
                         label="Width",
                     )
                     height = gr.Slider(
-                        params.image_height_min,
-                        params.image_height_max,
-                        params.image_height_default,
-                        step=params.image_height_step,
+                        shared.ui_params("image_height_min"),
+                        shared.ui_params("image_height_max"),
+                        shared.ui_params("image_height_default"),
+                        step=shared.ui_params("image_height_step"),
                         label="Height",
                     )
                 with gr.Row():

@@ -1,0 +1,45 @@
+general:
+  device: cuda
+  cache_dir: models
+  output_dir: output
+  pipeline: native
+  mock: false
+  extensions_path: extensions
+  enabled_extensions: null
+  disabled_extensions: null
+  extensions_order: kd-upscaler,kd-image-editor;kd-image-browser,kd-training
+  skip_install: false
+  safe_mode: false
+  share: none
+
+gradio:
+  server_name: 127.0.0.1
+  server_port: 7860
+  concurrency_count: 2
+  debug: true
+  theme: default
+
+ui:
+  image_width_min: 64
+  image_width_max: 2048
+  image_width_step: 64
+  image_width_default: 768
+  image_height_min: 64
+  image_height_max: 2048
+  image_height_step: 64
+  image_height_default: 768
+
+native:
+  flash_attention: false
+  
+diffusers:
+  half_precision_weights: true
+  enable_xformers: false
+  enable_sdpa_attention: false
+  enable_sliced_attention: false
+  channels_last_memory: false
+  sequential_cpu_offload: false
+  full_model_offload: false
+  torch_code_compilation: false
+  use_deterministic_algorithms: false 
+  use_tf32_mode: false 
