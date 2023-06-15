@@ -22,6 +22,11 @@ def options_tab_gradio(kubin: Kubin):
             updated_config["gradio"][key] = value
             return f'Config key "gradio.{key}" changed to "{value}" (old value: "{current_config["gradio"][key]}"). Press "Apply changes" for them to take effect.'
 
-    theme.change(change_value, inputs=[gr.State("theme"), theme], outputs=options_log)
+    theme.change(
+        change_value,
+        inputs=[gr.State("theme"), theme],
+        outputs=options_log,
+        show_progress=False,
+    )
 
     return gradio_options

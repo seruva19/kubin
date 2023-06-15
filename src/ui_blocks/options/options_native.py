@@ -24,6 +24,7 @@ def options_tab_native(kubin: Kubin):
             change_value,
             inputs=[gr.State("flash_attention"), native],
             outputs=options_log,
+            show_progress=False,
         )
 
     return native_options

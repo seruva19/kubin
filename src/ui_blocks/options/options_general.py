@@ -24,7 +24,10 @@ def options_tab_general(kubin: Kubin):
             return f'Config key "general.{key}" changed to "{value}" (old value: "{current_config["general"][key]}"). Press "Apply changes" for them to take effect.'
 
         pipeline.change(
-            change_value, inputs=[gr.State("pipeline"), pipeline], outputs=options_log
+            change_value,
+            inputs=[gr.State("pipeline"), pipeline],
+            outputs=options_log,
+            show_progress=False,
         )
 
     return general_options

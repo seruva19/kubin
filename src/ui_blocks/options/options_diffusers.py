@@ -63,41 +63,49 @@ def options_tab_diffusers(kubin: Kubin):
             change_value,
             inputs=[gr.State("half_precision_weights"), half_precision_weights],
             outputs=options_log,
+            show_progress=False,
         )
         enable_xformers.change(
             change_value,
             inputs=[gr.State("enable_xformers"), enable_xformers],
             outputs=options_log,
+            show_progress=False,
         )
         enable_sdpa_attention.change(
             change_value,
             inputs=[gr.State("enable_sdpa_attention"), enable_sdpa_attention],
             outputs=options_log,
+            show_progress=False,
         )
         enable_sliced_attention.change(
             change_value,
             inputs=[gr.State("enable_sliced_attention"), enable_sliced_attention],
             outputs=options_log,
+            show_progress=False,
         )
         sequential_cpu_offload.change(
             change_value,
             inputs=[gr.State("sequential_cpu_offload"), sequential_cpu_offload],
             outputs=options_log,
+            show_progress=False,
         )
         full_model_offload.change(
             change_value,
             inputs=[gr.State("full_model_offload"), full_model_offload],
             outputs=options_log,
+            show_progress=False,
         )
         channels_last_memory.change(
             change_value,
             inputs=[gr.State("channels_last_memory"), channels_last_memory],
             outputs=options_log,
+            show_progress=False,
         )
         torch_code_compilation.change(
             change_value,
             inputs=[gr.State("torch_code_compilation"), torch_code_compilation],
             outputs=options_log,
+            show_progress=False,
         )
         use_deterministic_algorithms.change(
             change_value,
@@ -106,10 +114,12 @@ def options_tab_diffusers(kubin: Kubin):
                 use_deterministic_algorithms,
             ],
             outputs=options_log,
+            show_progress=False,
         )
         use_tf32_mode.change(
             change_value,
             inputs=[gr.State("use_tf32_mode"), use_tf32_mode],
             outputs=options_log,
+            show_progress=False,
         )
     return diffusers_options
