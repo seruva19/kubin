@@ -12,9 +12,7 @@ def options_tab_native(kubin: Kubin):
             label="Use Flash Attention",
         )
         with gr.Row():
-            options_log = gr.HTML(
-                "No changes", elem_classes=["block-info", "options-info"]
-            )
+            options_log = gr.HTML("", elem_classes=["block-info", "options-info"])
 
         def change_value(key, value):
             updated_config["native"][key] = value

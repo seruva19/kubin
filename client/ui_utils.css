@@ -35,4 +35,6 @@
 
 .options-info {
   margin-top: 10px;
+  height: 20px;
+  display: block;
 }
