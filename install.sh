@@ -1,3 +1,4 @@
 python -m venv venv
 source venv/bin/activate
-python src/kubin.py
+pip install -r requirements.txt
+pip install -r diffusers/requirements.txt
