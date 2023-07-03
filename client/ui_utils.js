@@ -2,24 +2,27 @@
   const kubin = global.kubin = {
     client_prefix: '/file=',
     client_id: String(Date.now().toString(32) + Math.random().toString(16)).replace(/\./g, ''),
-    utils: {}
+    utils: {},
+    options: {}
   }
 
-  const randomHash = () => {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let randomHash = '';
+  const randomString = () => {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    let randomHash = ''
+    let length = 8
+
     for (let i = 0; i < length; i++) {
-      const randomIndex = Math.floor(Math.random() * characters.length);
-      randomHash += characters.charAt(randomIndex);
+      const randomIndex = Math.floor(Math.random() * characters.length)
+      randomHash += characters.charAt(randomIndex)
     }
 
-    return randomHash;
+    return randomHash
   }
 
   const loadJs = kubin.utils.loadJs = async url => {
     return new Promise(resolve => {
       const script = document.createElement('script')
-      script.src = `${url}?${randomHash()}`
+      script.src = `${url}?${randomString()}`
       script.async = false
       script.onload = resolve
 
@@ -30,7 +33,7 @@
 
   const loadCss = kubin.utils.loadCss = url => {
     const style = document.createElement('link')
-    style.href = `${url}?${randomHash()}`
+    style.href = `${url}?${randomString()}`
     style.rel = 'stylesheet'
 
     const head = document.getElementsByTagName("head")[0]
@@ -50,8 +53,11 @@
     loadCss(`${kubin.client_prefix}client/ui_utils.css`),
     loadJs(`${kubin.client_prefix}client/3party/notyf.min.js`),
     loadCss(`${kubin.client_prefix}client/3party/notyf.min.css`),
+    loadJs(`${kubin.client_prefix}client/3party/simple-lightbox.min.js`),
+    loadCss(`${kubin.client_prefix}client/3party/simple-lightbox.min.css`),
   ].concat(extensionResources.map(resource => {
     const resourceUrl = `${kubin.client_prefix}${resource}`
+
     if (resource.endsWith('.css')) {
       return loadCss(resourceUrl)
     } else if (resource.endsWith('.js')) {
@@ -71,15 +77,15 @@
       ]
     })
 
-    kubin.notify.success('kubin client library: loaded')
-    initEventListeners.options()
+    kubin.UI.loadParams(window._kubinParams)
+    customEventListeners.init()
 
-    console.log('kubin client library: loaded')
+    kubin.notify.success('UI successfully loaded')
   })
 
-  const initEventListeners = {
-    options: () => {
-      window.document.onclick = e => {
+  const customEventListeners = {
+    init: () => {
+      window.document.addEventListener('click', e => {
         if (e.target.classList.contains('options-select')) {
           Array.from(document.querySelectorAll('.options-select')).forEach(option => {
             option.classList.remove('selected')
@@ -93,8 +99,156 @@
           })
 
           document.querySelector(`.${id}`).classList.add('active')
+        } else if (e.target.nextElementSibling?.classList.contains('thumbnails')) {
+          const targetGallery = e.target.nextElementSibling
+          const thumbnailsSelector = `.gallery-active button img`
+          targetGallery.classList.add('gallery-active')
+
+          let position = 0
+          Array.from(e.target.nextElementSibling.querySelectorAll(thumbnailsSelector)).forEach((image, index, images) => {
+            if (image.src === e.target.src) {
+              position = index == 0 ? images.length - 1 : index - 1
+            }
+          })
+
+          const gallery = window._kubinGallery = new SimpleLightbox(thumbnailsSelector, {
+            sourceAttr: 'src',
+            download: 'Download image',
+            animationSlide: false,
+            swipeTolerance: Number.MAX_VALUE
+          })
+
+          gallery.on('closed.simplelightbox', function () {
+            targetGallery.classList.remove('gallery-active')
+            window._kubinGallery = undefined
+            gallery.destroy()
+          })
+
+          gallery.openPosition(position)
+        } else if (e.target.parentNode?.classList.contains('sl-image')) {
+          window._kubinGallery?.next()
         }
-      }
+      })
     }
+  }
+
+  kubin.UI = {
+    loadParams: params => {
+      const panelResize = params['ui.allow_params_panel_resize']
+      if (undefined !== panelResize) {
+        kubin.UI.resizablePanels(panelResize)
+      }
+
+      const verticalAlignment = params['ui.enable_vertical_alignment']
+      if (undefined !== verticalAlignment) {
+        kubin.UI.verticalAlignment(verticalAlignment)
+      }
+
+      const fullScreenPanel = params['ui.full_screen_panel']
+      if (undefined !== fullScreenPanel) {
+        kubin.UI.fullScreenUI(fullScreenPanel)
+      }
+
+      const pipeline = params['general.pipeline']
+      pipeline == 'native' && (document.body.classList.add('pipeline-native'), document.body.classList.remove('pipeline-diffusers'))
+      pipeline == 'diffusers' && (document.body.classList.add('pipeline-diffusers'), document.body.classList.remove('pipeline-native'))
+    },
+
+    resizablePanels: panelResize => {
+      panelResize && Array.from(document.getElementsByClassName('block-params')).forEach(paramsBlock => {
+        const anchor = document.createElement('div')
+        const randomClass = `block-resizable-anchor-${randomString()}`
+        anchor.className = `block-resizable-anchor ${randomClass}`
+        anchor.title = 'Drag to resize main panel'
+
+        const pb = paramsBlock
+        pb.appendChild(anchor)
+
+        let resizing = false
+        let initialWidth
+        let startX
+
+        window.document.addEventListener('mousedown', e => {
+          if (e.target.classList.contains(randomClass)) {
+            anchor.classList.add('activated')
+            document.body.classList.add('unselectable')
+            initialWidth = pb.clientWidth
+            resizing = true
+            startX = e.clientX
+          }
+        })
+
+        window.document.addEventListener('mousemove', e => {
+          if (resizing) {
+            const distanceX = e.clientX - startX
+            pb.style.maxWidth = `${initialWidth + distanceX}px`
+          }
+        })
+
+        window.document.addEventListener('mouseup', e => {
+          anchor.classList.remove('activated')
+          document.body.classList.remove('unselectable')
+          resizing = false
+        })
+      })
+
+      !panelResize && Array.from(document.getElementsByClassName('block-resizable-anchor')).forEach(anchor => {
+        anchor.remove
+      })
+    },
+
+    verticalAlignment: verticalAlignment => {
+      Array.from(document.getElementsByClassName('block-params')).forEach(paramsBlock => {
+        verticalAlignment && paramsBlock.parentElement.classList.add('block-params-vertical-alignment')
+        !verticalAlignment && paramsBlock.parentElement.classList.remove('block-params-vertical-alignment')
+      })
+    },
+
+    fullScreenUI: fullScreenUI => {
+      fullScreenUI && document.body.classList.add('gradio-full')
+      !fullScreenUI && document.body.classList.remove('gradio-full')
+    }
+  }
+
+  let changes = {}
+  kubin.utils.optionsChanged = (key, value, requiresRestart) => {
+    changes[key] = { value, requiresRestart }
+  }
+
+  kubin.utils.changedOptions = () => {
+    const serverChanges = {}
+    Object.keys(changes).forEach(key => {
+      serverChanges[key] = changes[key].value
+    })
+
+    return JSON.stringify(serverChanges)
+  }
+
+  kubin.utils.processOptionsChanges = (success, _) => {
+    const changeInfo = document.getElementById('options-info')
+
+    if (success) {
+      kubin.notify.success('Changes successfully applied')
+      kubin.UI.loadParams(JSON.parse(kubin.utils.changedOptions()))
+
+      changeInfo.innerHTML = (cs => {
+        return cs.map(key => {
+          const { value, requiresRestart } = changes[key]
+          return `
+            <span style='font-weight: bold'>${key}</span>
+            <span>was successfully changed to</span>
+            <span style='font-weight: bold'>${value}</span>
+            <span style='color: red'>${requiresRestart ? ' restart required' : ''}</span>
+          `
+        }).join('<br>')
+      })(Object.keys(changes))
+
+      changes = {}
+    } else {
+      kubin.notify.error('Failed to save changes!')
+      changeInfo.innerHTML = 'Failed to save changes!'
+    }
+
+    return [success]
   }
 })(window)

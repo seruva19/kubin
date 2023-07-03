@@ -4,8 +4,8 @@ import torch
 import psutil
 import platform
 from kandinsky2 import CONFIG_2_1
-import pandas as pd
 from env import Kubin
+from utils.yaml import flatten_yaml
 from .settings_options import options_ui
 from .settings_ckpt import ckpt_selector
 from .settings_ext import extensions_ui
@@ -70,15 +70,8 @@ def update_info():
     )
 
 
-def flatten_model_config(config):
-    normalized = pd.json_normalize(config, sep=".")
-    values = normalized.to_dict(orient="records")[0]
-
-    return values
-
-
 def settings_ui(kubin: Kubin):
-    model_config = flatten_model_config(CONFIG_2_1)
+    model_config = flatten_yaml(CONFIG_2_1)
 
     with gr.Column() as settings_block:
         with gr.TabItem("Checkpoints"):

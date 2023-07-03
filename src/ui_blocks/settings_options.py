@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import gradio as gr
+import json
 from deepdiff import DeepDiff
 from env import Kubin
 from utils.gradio_ui import click_and_disable
@@ -52,35 +53,53 @@ def options_ui(kubin: Kubin):
             interactive=False,
         )
 
-        reset_changes = gr.Button(
-            value="⏮️ Reset to default",
-            label="Reset to default",
-            interactive=False,
-        )
+        reset_changes = gr.Button(value="⏮️ Reset to default", label="Reset to default")
 
     with gr.Row():
-        options_info = gr.HTML("", elem_classes=["block-info", "options-info"])
+        options_info = gr.HTML("", elem_id="options-info", elem_classes=["block-info"])
 
-    def apply():
+    def apply(json_changes):
+        changes = json.loads(json_changes)
+        for key, value in changes.items():
+            key_path = key.split(".")
+            updated_conf = kubin.params._updated
+
+            for key_item in key_path[:-1]:
+                updated_conf = updated_conf[key_item]
+            updated_conf[key_path[-1]] = value
+
         diff = DeepDiff(kubin.params.conf, kubin.params._updated, ignore_order=True)
         print(f"applying changes: {diff}")
+
         requires_reload = kubin.params.apply_config_changes()
         if requires_reload:
             kubin.with_pipeline()
 
-    click_and_disable(apply_changes, fn=apply).then(
-        fn=lambda: (gr.update(interactive=True), gr.update(interactive=True)),
-        outputs=[save_changes, reset_changes],
-    ).then(
-        fn=None,
-        _js='(e) => kubin.notify.success("Changes applied")',
+        return [True]
+
+    apply_changes_success = gr.Checkbox(False, visible=False)
+    applied_changes = gr.Text("", visible=False)
+
+    apply_changes.click(
+        _js="(c) => kubin.utils.changedOptions()",
+        inputs=[applied_changes],
+        fn=apply,
         queue=False,
+        outputs=[apply_changes_success],
+    ).then(
+        _js="(res) => kubin.utils.processOptionsChanges(res)",
+        inputs=[apply_changes_success],
+        fn=lambda success: gr.update(interactive=success),
+        outputs=[save_changes],
     )
 
     save_changes.click(
         fn=lambda: kubin.params.save_user_config(), queue=False, show_progress=False
     ).then(
-        fn=None, _js='(e) => kubin.notify.success("Custom configuration file saved")'
+        fn=None,
+        _js='(s) => (kubin.notify.success("Custom configuration file saved"), s)',
+        inputs=[apply_changes_success],
+        outputs=[apply_changes_success],
     )
 
     reset_changes.click(

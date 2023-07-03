@@ -7,7 +7,10 @@ from models.model_diffusers import Model_Diffusers
 
 
 class Kubin:
-    def __init__(self, args):
+    def __init__(self):
+        pass
+
+    def with_args(self, args):
         self.model = None
 
         self.root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))

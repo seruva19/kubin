@@ -36,6 +36,17 @@ class Model_Diffusers:
         self.i2i_pipe: KandinskyImg2ImgPipeline | None = None
         self.inpaint_pipe: KandinskyInpaintPipeline | None = None
 
+        self.optimizations = {
+            "use_tf32_mode": False,
+            "sequential_cpu_offload": False,
+            "enable_xformers": False,
+            "enable_sliced_attention": False,
+            "torch_code_compilation": False,
+            "channels_last_memory": False,
+        }
+
+        self.cublas_config = os.environ.get("CUBLAS_WORKSPACE_CONFIG", None)
+
     def prepare(self, task):
         print(f"task queued: {task}")
         assert task in ["text2img", "img2img", "mix", "inpainting", "outpainting"]
@@ -45,9 +56,14 @@ class Model_Diffusers:
         if self.params("diffusers", "use_deterministic_algorithms"):
             os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
             torch.use_deterministic_algorithms(True)
+        else:
+            if self.cublas_config is not None:
+                os.environ["CUBLAS_WORKSPACE_CONFIG"] = self.cublas_config
+            torch.use_deterministic_algorithms(False)
 
-        if self.params("diffusers", "use_tf32_mode"):
-            torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cuda.matmul.allow_tf32 = self.params(
+            "diffusers", "use_tf32_mode"
+        )
 
         cache_dir = self.params("general", "cache_dir")
         device = self.params("general", "device")
@@ -81,12 +97,20 @@ class Model_Diffusers:
 
                 if self.params("diffusers", "enable_xformers"):
                     self.t2i_pipe.enable_xformers_memory_efficient_attention()
+                else:
+                    self.t2i_pipe.disable_xformers_memory_efficient_attention()
+
                 if self.params("diffusers", "enable_sdpa_attention"):
                     self.t2i_pipe.unet.set_attn_processor(AttnAddedKVProcessor2_0())
+
                 if self.params("diffusers", "enable_sliced_attention"):
                     self.t2i_pipe.enable_attention_slicing()
+                else:
+                    self.t2i_pipe.disable_attention_slicing()
+
                 if self.params("diffusers", "channels_last_memory"):
                     self.t2i_pipe.unet.to(memory_format=torch.channels_last)
+
                 if self.params("diffusers", "torch_code_compilation"):
                     self.t2i_pipe.unet = torch.compile(
                         self.t2i_pipe.unet, mode="reduce-overhead", fullgraph=True
@@ -96,6 +120,7 @@ class Model_Diffusers:
 
                 if self.params("diffusers", "sequential_cpu_offload"):
                     self.t2i_pipe.enable_sequential_cpu_offload()
+
                 if self.params("diffusers", "full_model_offload"):
                     self.t2i_pipe.enable_model_cpu_offload()
 
@@ -114,12 +139,20 @@ class Model_Diffusers:
 
                 if self.params("diffusers", "enable_xformers"):
                     self.i2i_pipe.enable_xformers_memory_efficient_attention()
+                else:
+                    self.i2i_pipe.disable_xformers_memory_efficient_attention()
+
                 if self.params("diffusers", "enable_sdpa_attention"):
                     self.i2i_pipe.unet.set_attn_processor(AttnAddedKVProcessor2_0())
+
                 if self.params("diffusers", "enable_sliced_attention"):
                     self.i2i_pipe.enable_attention_slicing()
+                else:
+                    self.i2i_pipe.disable_attention_slicing()
+
                 if self.params("diffusers", "channels_last_memory"):
                     self.i2i_pipe.unet.to(memory_format=torch.channels_last)
+
                 if self.params("diffusers", "torch_code_compilation"):
                     self.i2i_pipe.unet = torch.compile(
                         self.i2i_pipe.unet, mode="reduce-overhead", fullgraph=True
@@ -129,6 +162,7 @@ class Model_Diffusers:
 
                 if self.params("diffusers", "sequential_cpu_offload"):
                     self.i2i_pipe.enable_sequential_cpu_offload()
+
                 if self.params("diffusers", "full_model_offload"):
                     self.i2i_pipe.enable_model_cpu_offload()
 
@@ -147,12 +181,20 @@ class Model_Diffusers:
 
                 if self.params("diffusers", "enable_xformers"):
                     self.inpaint_pipe.enable_xformers_memory_efficient_attention()
+                else:
+                    self.inpaint_pipe.disable_xformers_memory_efficient_attention()
+
                 if self.params("diffusers", "enable_sdpa_attention"):
                     self.inpaint_pipe.unet.set_attn_processor(AttnAddedKVProcessor2_0())
+
                 if self.params("diffusers", "enable_sliced_attention"):
                     self.inpaint_pipe.enable_attention_slicing()
+                else:
+                    self.inpaint_pipe.disable_attention_slicing()
+
                 if self.params("diffusers", "channels_last_memory"):
                     self.inpaint_pipe.unet.to(memory_format=torch.channels_last)
+
                 if self.params("diffusers", "torch_code_compilation"):
                     self.inpaint_pipe.unet = torch.compile(
                         self.inpaint_pipe.unet, mode="reduce-overhead", fullgraph=True
@@ -162,6 +204,7 @@ class Model_Diffusers:
 
                 if self.params("diffusers", "sequential_cpu_offload"):
                     self.inpaint_pipe.enable_sequential_cpu_offload()
+
                 if self.params("diffusers", "full_model_offload"):
                     self.inpaint_pipe.enable_model_cpu_offload()
 
@@ -212,7 +255,9 @@ class Model_Diffusers:
 
     def t2i(self, params):
         params = self.prepare("text2img").seed(params)
-        generator = torch.Generator(device="cuda").manual_seed(params["input_seed"])
+        generator = torch.Generator(
+            device=self.params("general", "device")
+        ).manual_seed(params["input_seed"])
 
         image_embeds, negative_image_embeds = self.pipe_prior(
             prompt=params["prompt"],
@@ -254,7 +299,9 @@ class Model_Diffusers:
 
     def i2i(self, params):
         params = self.prepare("img2img").seed(params)
-        generator = torch.Generator(device="cuda").manual_seed(params["input_seed"])
+        generator = torch.Generator(
+            device=self.params("general", "device")
+        ).manual_seed(params["input_seed"])
 
         image_embeds, negative_image_embeds = self.pipe_prior(
             prompt=params["prompt"],
@@ -299,7 +346,9 @@ class Model_Diffusers:
 
     def mix(self, params):
         params = self.prepare("mix").seed(params)
-        generator = torch.Generator(device="cuda").manual_seed(params["input_seed"])
+        generator = torch.Generator(
+            device=self.params("general", "device")
+        ).manual_seed(params["input_seed"])
 
         def images_or_texts(images, texts):
             images_texts = []
@@ -353,7 +402,9 @@ class Model_Diffusers:
 
     def inpaint(self, params):
         params = self.prepare("inpainting").seed(params)
-        generator = torch.Generator(device="cuda").manual_seed(params["input_seed"])
+        generator = torch.Generator(
+            device=self.params("general", "device")
+        ).manual_seed(params["input_seed"])
 
         prior_output = self.pipe_prior(
             prompt=params["prompt"],
@@ -405,7 +456,9 @@ class Model_Diffusers:
 
     def outpaint(self, params):
         params = self.prepare("outpainting").seed(params)
-        generator = torch.Generator(device="cuda").manual_seed(params["input_seed"])
+        generator = torch.Generator(
+            device=self.params("general", "device")
+        ).manual_seed(params["input_seed"])
 
         prior_output = self.pipe_prior(
             prompt=params["prompt"],

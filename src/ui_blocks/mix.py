@@ -22,18 +22,18 @@ def mix_ui(generate_fn, shared: SharedUI, tabs):
     augmentations = shared.create_ext_augment_blocks("mix")
 
     with gr.Row() as mix_block:
-        with gr.Column(scale=2):
+        with gr.Column(scale=2) as mix_params:
             with gr.Row():
                 with gr.Column(scale=1):
                     shared.input_mix_image_1.render()
-                    text_1 = gr.Textbox("", placeholder="", label="Prompt")
+                    text_1 = gr.TextArea("", placeholder="", label="Prompt", lines=2)
                     shared.input_mix_image_1.change(
                         fn=update, inputs=shared.input_mix_image_1, outputs=text_1
                     )
                     weight_1 = gr.Slider(0, 1, 0.5, step=0.05, label="Weight")
                 with gr.Column(scale=1):
                     shared.input_mix_image_2.render()
-                    text_2 = gr.Textbox("", placeholder="", label="Prompt")
+                    text_2 = gr.TextArea("", placeholder="", label="Prompt", lines=2)
                     shared.input_mix_image_2.change(
                         fn=update, inputs=shared.input_mix_image_2, outputs=text_2
                     )
@@ -42,8 +42,10 @@ def mix_ui(generate_fn, shared: SharedUI, tabs):
                 with gr.Row():
                     add_btn = gr.Button("Add another mix image", interactive=False)
                     remove_btn = gr.Button("Remove last mix image", interactive=False)
-            negative_prompt = gr.Textbox("", label="Negative prompt")
-            with gr.Accordion("Advanced params", open=True):
+            negative_prompt = gr.TextArea("", label="Negative prompt", lines=2)
+            with gr.Accordion(
+                "Advanced params", open=not shared.ui_params("collapse_advanced_params")
+            ) as mix_advanced_params:
                 with gr.Row():
                     steps = gr.Slider(1, 200, 100, step=1, label="Steps")
                     guidance_scale = gr.Slider(1, 30, 4, step=1, label="Guidance scale")
@@ -71,6 +73,14 @@ def mix_ui(generate_fn, shared: SharedUI, tabs):
                         value="p_sampler",
                         label="Sampler",
                     )
+                    sampler_diffusers = gr.Radio(
+                        ["ddim_sampler"], value="ddim_sampler", label="Sampler"
+                    )
+                    sampler.elem_classes = ["t2i_sampler", "native-sampler"]
+                    sampler_diffusers.elem_classes = [
+                        "t2i_sampler",
+                        "diffusers-sampler",
+                    ]
                     seed = gr.Number(-1, label="Seed", precision=0)
                 with gr.Row():
                     prior_scale = gr.Slider(1, 100, 4, step=1, label="Prior scale")
@@ -167,4 +177,6 @@ def mix_ui(generate_fn, shared: SharedUI, tabs):
             outputs=mix_output,
         )
 
+        mix_params.elem_classes = ["block-params mix_params"]
+        mix_advanced_params.elem_classes = ["block-advanced-params mix_advanced_params"]
     return mix_block

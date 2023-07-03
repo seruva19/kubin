@@ -28,6 +28,10 @@ ui:
   image_height_max: 2048
   image_height_step: 64
   image_height_default: 768
+  allow_params_panel_resize: true
+  enable_vertical_alignment: false
+  collapse_advanced_params: false
+  full_screen_panel: false
 
 native:
   flash_attention: false

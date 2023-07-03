@@ -12,7 +12,7 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs):
     augmentations = shared.create_ext_augment_blocks("outpaint")
 
     with gr.Row() as outpaint_block:
-        with gr.Column(scale=2):
+        with gr.Column(scale=2) as outpaint_params:
             with gr.Row():
                 with gr.Column(scale=1):
                     shared.input_outpaint_image.render()
@@ -68,12 +68,14 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs):
                     )
 
             with gr.Column():
-                prompt = gr.Textbox("", placeholder="", label="Prompt")
-                negative_prompt = gr.Textbox(
-                    "", placeholder="", label="Negative prompt"
+                prompt = gr.TextArea("", placeholder="", label="Prompt", lines=2)
+                negative_prompt = gr.TextArea(
+                    "", placeholder="", label="Negative prompt", lines=2
                 )
 
-            with gr.Accordion("Advanced params", open=True):
+            with gr.Accordion(
+                "Advanced params", open=not shared.ui_params("collapse_advanced_params")
+            ) as outpaint_advanced_params:
                 with gr.Row():
                     steps = gr.Slider(1, 200, 100, step=1, label="Steps")
                     guidance_scale = gr.Slider(
@@ -105,6 +107,14 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs):
                         value="p_sampler",
                         label="Sampler",
                     )
+                    sampler_diffusers = gr.Radio(
+                        ["ddim_sampler"], value="ddim_sampler", label="Sampler"
+                    )
+                    sampler.elem_classes = ["t2i_sampler", "native-sampler"]
+                    sampler_diffusers.elem_classes = [
+                        "t2i_sampler",
+                        "diffusers-sampler",
+                    ]
                     seed = gr.Number(-1, label="Seed", precision=0)
                 with gr.Row():
                     prior_scale = gr.Slider(1, 100, 4, step=1, label="Prior scale")
@@ -218,4 +228,8 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs):
             outputs=outpaint_output,
         )
 
+        outpaint_params.elem_classes = ["block-params outpaint_params"]
+        outpaint_advanced_params.elem_classes = [
+            "block-advanced-params outpaint_advanced_params"
+        ]
     return outpaint_block

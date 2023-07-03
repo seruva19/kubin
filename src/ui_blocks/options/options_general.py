@@ -3,8 +3,7 @@ from env import Kubin
 
 
 def options_tab_general(kubin: Kubin):
-    updated_config = kubin.params._updated
-    current_config = kubin.params.conf
+    on_change = "(key, value, requiresRestart) => kubin.utils.optionsChanged(key, value, requiresRestart)"
 
     with gr.Column(
         elem_classes=["options-block", "options-general", "active"]
@@ -14,18 +13,26 @@ def options_tab_general(kubin: Kubin):
             choices=["native", "diffusers"],
             label="Pipeline",
         )
-        with gr.Row():
-            options_log = gr.HTML("", elem_classes=["block-info", "options-info"])
-
-        def change_value(key, value):
-            updated_config["general"][key] = value
-            return f'Config key "general.{key}" changed to "{value}" (old value: "{current_config["general"][key]}"). Press "Apply changes" for them to take effect.'
+        device = gr.Textbox(value=kubin.params("general", "device"), label="Device")
 
         pipeline.change(
-            change_value,
-            inputs=[gr.State("pipeline"), pipeline],
-            outputs=options_log,
+            fn=None,
+            _js=on_change,
+            inputs=[
+                gr.Text("general.pipeline", visible=False),
+                pipeline,
+                gr.Checkbox(False, visible=False),
+            ],
             show_progress=False,
         )
-
+        device.change(
+            fn=None,
+            _js=on_change,
+            inputs=[
+                gr.Text("general.device", visible=False),
+                device,
+                gr.Checkbox(False, visible=False),
+            ],
+            show_progress=False,
+        )
     return general_options
