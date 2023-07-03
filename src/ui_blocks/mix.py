@@ -42,7 +42,7 @@ def mix_ui(generate_fn, shared: SharedUI, tabs):
                 with gr.Row():
                     add_btn = gr.Button("Add another mix image", interactive=False)
                     remove_btn = gr.Button("Remove last mix image", interactive=False)
-            negative_prompt = gr.TextArea("", label="Negative prompt", lines=2)
+            negative_prompt = gr.TextArea("", label="Negative decoder prompt", lines=2)
             with gr.Accordion(
                 "Advanced params", open=not shared.ui_params("collapse_advanced_params")
             ) as mix_advanced_params:

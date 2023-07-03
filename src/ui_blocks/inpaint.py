@@ -18,7 +18,7 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs):
                 with gr.Column():
                     prompt = gr.TextArea("", placeholder="", label="Prompt", lines=2)
                     negative_prompt = gr.TextArea(
-                        "", placeholder="", label="Negative prompt", lines=2
+                        "", placeholder="", label="Negative decoder prompt", lines=2
                     )
 
             with gr.Accordion(

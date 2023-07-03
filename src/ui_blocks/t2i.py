@@ -14,7 +14,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
         with gr.Column(scale=2) as t2i_params:
             prompt = gr.TextArea("", label="Prompt", placeholder="", lines=2)
             negative_decoder_prompt = gr.TextArea(
-                "", placeholder="", label="Negative prompt", lines=2
+                "", placeholder="", label="Negative decoder prompt", lines=2
             )
             with gr.Accordion(
                 "Advanced params", open=not shared.ui_params("collapse_advanced_params")
