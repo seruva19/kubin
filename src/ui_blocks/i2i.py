@@ -97,7 +97,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                         "diffusers-sampler",
                     ]
                     seed = gr.Number(-1, label="Seed", precision=0)
-                with gr.Row():
+                with gr.Row() as prior_block:
                     prior_scale = gr.Slider(1, 100, 4, step=1, label="Prior scale")
                     prior_steps = gr.Slider(1, 100, 5, step=1, label="Prior steps")
 
@@ -277,6 +277,8 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                 inputs=[output_folder, img_extension],
                 outputs=[i2i_output, batch_progress],
             )
+
+        batch_size.elem_classes = prior_block.elem_classes = ["unsupported2_0"]
 
         i2i_params.elem_classes = ["block-params i2i_params"]
         i2i_advanced_params.elem_classes = ["block-advanced-params i2i_advanced_params"]

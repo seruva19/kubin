@@ -17,7 +17,7 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs):
                 shared.input_inpaint_image.render()
                 with gr.Column():
                     prompt = gr.TextArea("", placeholder="", label="Prompt", lines=2)
-                    negative_prompt = gr.TextArea(
+                    negative_decoder_prompt = gr.TextArea(
                         "", placeholder="", label="Negative decoder prompt", lines=2
                     )
 
@@ -75,7 +75,7 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs):
                         "diffusers-sampler",
                     ]
                     seed = gr.Number(-1, label="Seed", precision=0)
-                with gr.Row():
+                with gr.Row() as prior_block:
                     prior_scale = gr.Slider(1, 100, 4, step=1, label="Prior scale")
                     prior_steps = gr.Slider(1, 100, 5, step=1, label="Prior steps")
                     negative_prior_prompt = gr.Textbox(
@@ -106,7 +106,7 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs):
             def generate(
                 image_mask,
                 prompt,
-                negative_prompt,
+                negative_decoder_prompt,
                 inpainting_target,
                 inpainting_region,
                 steps,
@@ -125,7 +125,7 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs):
                 params = {
                     "image_mask": image_mask,
                     "prompt": prompt,
-                    "negative_decoder_prompt": negative_prompt,
+                    "negative_decoder_prompt": negative_decoder_prompt,
                     "target": inpainting_target,
                     "region": inpainting_region,
                     "num_steps": steps,
@@ -149,7 +149,7 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs):
             inputs=[
                 shared.input_inpaint_image,
                 prompt,
-                negative_prompt,
+                negative_decoder_prompt,
                 inpainting_target,
                 inpainting_region,
                 steps,
@@ -168,6 +168,9 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs):
             outputs=inpaint_output,
         )
 
+        batch_size.elem_classes = (
+            negative_decoder_prompt.elem_classes
+        ) = prior_block.elem_classes = ["unsupported2_0"]
         inpaint_params.elem_classes = ["block-params inpaint_params"]
         inpaint_advanced_params.elem_classes = [
             "block-advanced-params inpaint_advanced_params"

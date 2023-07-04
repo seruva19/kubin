@@ -72,7 +72,7 @@ def setup(kubin):
         return segment_block
 
     return {
-        "title": "Image Segmentation",
+        "title": "Segmentation",
         "tab_ui": lambda ui_s, ts: segment_anything_ui(ui_s, ts),
         "send_target": source_image,
     }

@@ -14,7 +14,10 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
         with gr.Column(scale=2) as t2i_params:
             prompt = gr.TextArea("", label="Prompt", placeholder="", lines=2)
             negative_decoder_prompt = gr.TextArea(
-                "", placeholder="", label="Negative decoder prompt", lines=2
+                "",
+                placeholder="",
+                label="Negative decoder prompt",
+                lines=2,
             )
             with gr.Accordion(
                 "Advanced params", open=not shared.ui_params("collapse_advanced_params")
@@ -55,7 +58,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                         "diffusers-sampler",
                     ]
                     seed = gr.Number(-1, label="Seed", precision=0)
-                with gr.Row():
+                with gr.Row() as prior_block:
                     prior_scale = gr.Slider(1, 100, 4, step=1, label="Prior scale")
                     prior_steps = gr.Slider(1, 100, 5, step=1, label="Prior steps")
                     negative_prior_prompt = gr.Textbox(
@@ -136,6 +139,9 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                 outputs=t2i_output,
             )
 
+        prior_block.elem_classes = (
+            batch_size.elem_classes
+        ) = negative_decoder_prompt.elem_classes = ["unsupported2_0"]
         t2i_params.elem_classes = ["block-params t2i_params"]
         t2i_advanced_params.elem_classes = ["block-advanced-params t2i_advanced_params"]
     return t2i_block

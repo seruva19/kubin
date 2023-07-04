@@ -8,6 +8,7 @@ def options_tab_native(kubin: Kubin):
     with gr.Column(elem_classes=["options-block", "options-native"]) as native_options:
         native = gr.Checkbox(
             value=kubin.params("native", "flash_attention"),
+            info="Flash Attention is only available for 2.1 model",
             label="Use Flash Attention",
         )
 

@@ -152,6 +152,14 @@
       const pipeline = params['general.pipeline']
       pipeline == 'native' && (document.body.classList.add('pipeline-native'), document.body.classList.remove('pipeline-diffusers'))
       pipeline == 'diffusers' && (document.body.classList.add('pipeline-diffusers'), document.body.classList.remove('pipeline-native'))
+
+      const model_name = params['general.model_name']
+      model_name == 'kd20' && document.body.classList.add('pipeline-native2_0')
+      model_name != 'kd20' && document.body.classList.remove('pipeline-native2_0')
+
+      if (window._kubinParams['general.model_name'] == 'kd20' && window._kubinParams['general.pipeline'] == 'diffusers') {
+        kubin.notify.error('You cannot use a 2.0 model with the diffusers pipeline! Native 2.0 pipeline will be used')
+      }
     },
 
     resizablePanels: panelResize => {
@@ -213,6 +221,7 @@
   let changes = {}
   kubin.utils.optionsChanged = (key, value, requiresRestart) => {
     changes[key] = { value, requiresRestart }
+    window._kubinParams[key] = value
   }
 
   kubin.utils.changedOptions = () => {

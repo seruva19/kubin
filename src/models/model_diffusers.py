@@ -28,7 +28,7 @@ from utils.file_system import save_output
 
 class Model_Diffusers:
     def __init__(self, params: KubinParams):
-        print("activating pipeline: diffusers")
+        print("activating pipeline: diffusers (2.1)")
         self.params = params
 
         self.pipe_prior: KandinskyPriorPipeline | None = None
@@ -38,7 +38,7 @@ class Model_Diffusers:
 
         self.cublas_config = os.environ.get("CUBLAS_WORKSPACE_CONFIG", None)
 
-    def prepare(self, task):
+    def prepareModel(self, task):
         print(f"task queued: {task}")
         assert task in ["text2img", "img2img", "mix", "inpainting", "outpainting"]
 
@@ -236,16 +236,17 @@ class Model_Diffusers:
                     torch.cuda.empty_cache()
                     torch.cuda.ipc_collect()
 
-    def seed(self, params):
+    def prepareParams(self, params):
         input_seed = params["input_seed"]
         seed = secrets.randbelow(99999999999) if input_seed == -1 else input_seed
 
         print(f"seed generated: {seed}")
         params["input_seed"] = seed
+        params["model_name"] = "diffusers2.1"
         return params
 
     def t2i(self, params):
-        params = self.prepare("text2img").seed(params)
+        params = self.prepareModel("text2img").prepareParams(params)
         generator = torch.Generator(
             device=self.params("general", "device")
         ).manual_seed(params["input_seed"])
@@ -289,7 +290,7 @@ class Model_Diffusers:
         return images
 
     def i2i(self, params):
-        params = self.prepare("img2img").seed(params)
+        params = self.prepareModel("img2img").prepareParams(params)
         generator = torch.Generator(
             device=self.params("general", "device")
         ).manual_seed(params["input_seed"])
@@ -336,7 +337,7 @@ class Model_Diffusers:
         return images
 
     def mix(self, params):
-        params = self.prepare("mix").seed(params)
+        params = self.prepareModel("mix").prepareParams(params)
         generator = torch.Generator(
             device=self.params("general", "device")
         ).manual_seed(params["input_seed"])
@@ -392,7 +393,7 @@ class Model_Diffusers:
         return images
 
     def inpaint(self, params):
-        params = self.prepare("inpainting").seed(params)
+        params = self.prepareModel("inpainting").prepareParams(params)
         generator = torch.Generator(
             device=self.params("general", "device")
         ).manual_seed(params["input_seed"])
@@ -446,7 +447,7 @@ class Model_Diffusers:
         return images
 
     def outpaint(self, params):
-        params = self.prepare("outpainting").seed(params)
+        params = self.prepareModel("outpainting").prepareParams(params)
         generator = torch.Generator(
             device=self.params("general", "device")
         ).manual_seed(params["input_seed"])

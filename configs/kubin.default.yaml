@@ -1,6 +1,7 @@
 general:
   device: cuda
   cache_dir: models
+  model_name: kd21
   output_dir: output
   pipeline: native
   mock: false

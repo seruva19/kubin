@@ -14,6 +14,12 @@ body.pipeline-diffusers .native-sampler {
   display: none;
 }
 
+body.pipeline-native2_0 .unsupported2_0,
+body.pipeline-native2_0 .ui-tabs>.tab-nav>button:nth-child(3),
+body.pipeline-native2_0 .ui-tabs>.tab-nav>button:nth-child(5) {
+  display: none;
+}
+
 body.unselectable * {
   user-select: none;
 }

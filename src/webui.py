@@ -20,42 +20,42 @@ def gradio_ui(kubin: Kubin, start_fn):
     ui_shared = SharedUI(kubin, ext_target_images, kubin.ext_registry.injectable())
 
     with gr.Blocks(
-        title="Kubin: Web-GUI for Kandinsky 2.1",
+        title="Kubin: Web-GUI for Kandinsky 2.x",
         theme=ui_shared.select_theme(kubin.params("gradio", "theme")),
         css=css_styles,
     ) as ui:
         ui.load(fn=None, _js=js_loader(ext_client_resources, kubin.params.to_json()))
 
         with gr.Tabs() as ui_tabs:
-            with gr.TabItem("Text To Image", id=0):
+            with gr.TabItem("Text To Image", id=0) as t2i_tabitem:
                 t2i_ui(
                     generate_fn=lambda params: kubin.model.t2i(params),
                     shared=ui_shared,
                     tabs=ui_tabs,
                 )
 
-            with gr.TabItem("Image To Image", id=1):
+            with gr.TabItem("Image To Image", id=1) as i2i_tabitem:
                 i2i_ui(
                     generate_fn=lambda params: kubin.model.i2i(params),
                     shared=ui_shared,
                     tabs=ui_tabs,
                 )
 
-            with gr.TabItem("Mix Images", id=2):
+            with gr.TabItem("Mix Images", id=2) as mix_tabitem:
                 mix_ui(
                     generate_fn=lambda params: kubin.model.mix(params),
                     shared=ui_shared,
                     tabs=ui_tabs,
                 )
 
-            with gr.TabItem("Inpaint Image", id=3):
+            with gr.TabItem("Inpainting", id=3) as inpaint_tabitem:
                 inpaint_ui(
                     generate_fn=lambda params: kubin.model.inpaint(params),
                     shared=ui_shared,
                     tabs=ui_tabs,
                 )
 
-            with gr.TabItem("Outpaint Image", id=4):
+            with gr.TabItem("Outpainting", id=4) as outpaint_tabitem:
                 outpaint_ui(
                     generate_fn=lambda params: kubin.model.outpaint(params),
                     shared=ui_shared,
@@ -65,9 +65,9 @@ def gradio_ui(kubin: Kubin, start_fn):
             create_ext_tabs(ext_standalone, ext_start_tab_index, ui_shared, ui_tabs)
             next_id = len(ext_standalone) + ext_start_tab_index
 
-            with gr.TabItem("Settings", id=next_id + 2):
+            with gr.TabItem("Settings", id=next_id + 2) as settings_tabitem:
                 settings_ui(kubin)
-
+        ui_tabs.elem_classes = ["ui-tabs"]
     return ui, ext_client_folders
 
 

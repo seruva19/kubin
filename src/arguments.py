@@ -4,6 +4,7 @@ import argparse
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Run Kubin")
     parser.add_argument("--from-config", type=str, default=None)
+    parser.add_argument("--model-name", type=str, default=None)
     parser.add_argument("--device", type=str, default=None)
     parser.add_argument("--flash-attention", type=str, default=None)
     parser.add_argument("--cache-dir", type=str, default=None)

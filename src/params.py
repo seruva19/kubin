@@ -64,6 +64,8 @@ class KubinParams:
             or self.conf["general"]["device"] != self._updated["general"]["device"]
             or self.conf["diffusers"]["half_precision_weights"]
             != self._updated["diffusers"]["half_precision_weights"]
+            or self.conf["general"]["model_name"]
+            != self._updated["general"]["model_name"]
         ):
             reload_model = True
 
@@ -80,6 +82,9 @@ class KubinParams:
             os.remove(user_config)
 
     def merge_with_cli(self):
+        if self.args.model_name is not None:
+            self.conf["general"]["model_name"] = self.args.model_name
+
         if self.args.device is not None:
             self.conf["general"]["device"] = self.args.device
 

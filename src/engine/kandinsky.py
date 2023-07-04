@@ -77,6 +77,7 @@ def get_checkpoint(
 
     config = DictConfig(deepcopy(CONFIG_2_1))
     config["model_config"]["use_flash_attention"] = use_flash_attention
+    config["model_config"]["use_fp16"] = device != "cpu"
 
     if task_type == "text2img":
         model_name = checkpoint_info.decoder_model_name

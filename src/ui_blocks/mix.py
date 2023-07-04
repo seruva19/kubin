@@ -38,11 +38,10 @@ def mix_ui(generate_fn, shared: SharedUI, tabs):
                         fn=update, inputs=shared.input_mix_image_2, outputs=text_2
                     )
                     weight_2 = gr.Slider(0, 1, 0.5, step=0.05, label="Weight")
-            with gr.Column(scale=1, visible=False):
-                with gr.Row():
-                    add_btn = gr.Button("Add another mix image", interactive=False)
-                    remove_btn = gr.Button("Remove last mix image", interactive=False)
-            negative_prompt = gr.TextArea("", label="Negative decoder prompt", lines=2)
+
+            negative_decoder_prompt = gr.TextArea(
+                "", label="Negative decoder prompt", lines=2
+            )
             with gr.Accordion(
                 "Advanced params", open=not shared.ui_params("collapse_advanced_params")
             ) as mix_advanced_params:
@@ -113,7 +112,7 @@ def mix_ui(generate_fn, shared: SharedUI, tabs):
                 text_2,
                 weight_1,
                 weight_2,
-                negative_prompt,
+                negative_decoder_prompt,
                 steps,
                 batch_count,
                 batch_size,
@@ -134,7 +133,7 @@ def mix_ui(generate_fn, shared: SharedUI, tabs):
                     "text_2": text_2,
                     "weight_1": weight_1,
                     "weight_2": weight_2,
-                    "negative_decoder_prompt": negative_prompt,
+                    "negative_decoder_prompt": negative_decoder_prompt,
                     "num_steps": steps,
                     "batch_count": batch_count,
                     "batch_size": batch_size,
@@ -160,7 +159,7 @@ def mix_ui(generate_fn, shared: SharedUI, tabs):
                 text_2,
                 weight_1,
                 weight_2,
-                negative_prompt,
+                negative_decoder_prompt,
                 steps,
                 batch_count,
                 batch_size,

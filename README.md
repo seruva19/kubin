@@ -1,5 +1,5 @@
 
-# Kubin: Web-GUI for [Kandinsky 2.1](https://github.com/ai-forever/Kandinsky-2/)
+# Kubin: Web-GUI for [Kandinsky 2.x](https://github.com/ai-forever/Kandinsky-2/)
 
 ## Disclaimer
 
