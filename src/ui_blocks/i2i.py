@@ -14,14 +14,16 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
     augmentations = shared.create_ext_augment_blocks("i2i")
 
     with gr.Row() as i2i_block:
-        with gr.Column(scale=2):
+        with gr.Column(scale=2) as i2i_params:
             with gr.Tabs():
                 with gr.TabItem("Single image"):
                     with gr.Row():
                         with gr.Column(scale=1):
                             shared.input_i2i_image.render()
                         with gr.Column(scale=1):
-                            prompt = gr.Textbox("", placeholder="", label="Prompt")
+                            prompt = gr.TextArea(
+                                "", placeholder="", label="Prompt", lines=2
+                            )
 
                 with gr.TabItem("Batch"):
                     with gr.Row():
@@ -33,7 +35,9 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                             label="Folder with output images",
                             info="If empty, the default img2img folder will be used",
                         )
-                    batch_prompt = gr.Textbox("", placeholder="", label="Prompt")
+                    batch_prompt = gr.TextArea(
+                        "", placeholder="", label="Prompt", lines=2
+                    )
                     img_extension = gr.Textbox(
                         ".jpg;.jpeg;.png;.bmp", label="File extension filter"
                     )
@@ -46,7 +50,9 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                         )
                     batch_progress = gr.HTML(label="Batch progress")
 
-            with gr.Accordion("Advanced params", open=True):
+            with gr.Accordion(
+                "Advanced params", open=not shared.ui_params("collapse_advanced_params")
+            ) as i2i_advanced_params:
                 with gr.Row():
                     steps = gr.Slider(1, 200, 100, step=1, label="Steps")
                     guidance_scale = gr.Slider(1, 30, 7, step=1, label="Guidance scale")
@@ -79,11 +85,19 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                 with gr.Row():
                     sampler = gr.Radio(
                         ["ddim_sampler", "p_sampler", "plms_sampler"],
-                        value="ddim_sampler",
+                        value="p_sampler",
                         label="Sampler",
                     )
+                    sampler_diffusers = gr.Radio(
+                        ["ddim_sampler"], value="ddim_sampler", label="Sampler"
+                    )
+                    sampler.elem_classes = ["t2i_sampler", "native-sampler"]
+                    sampler_diffusers.elem_classes = [
+                        "t2i_sampler",
+                        "diffusers-sampler",
+                    ]
                     seed = gr.Number(-1, label="Seed", precision=0)
-                with gr.Row():
+                with gr.Row() as prior_block:
                     prior_scale = gr.Slider(1, 100, 4, step=1, label="Prior scale")
                     prior_steps = gr.Slider(1, 100, 5, step=1, label="Prior steps")
 
@@ -263,4 +277,9 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                 inputs=[output_folder, img_extension],
                 outputs=[i2i_output, batch_progress],
             )
+
+        batch_size.elem_classes = prior_block.elem_classes = ["unsupported2_0"]
+
+        i2i_params.elem_classes = ["block-params i2i_params"]
+        i2i_advanced_params.elem_classes = ["block-advanced-params i2i_advanced_params"]
     return i2i_block

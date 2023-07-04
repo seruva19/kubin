@@ -4,8 +4,7 @@ from env import Kubin
 
 
 def options_tab_gradio(kubin: Kubin):
-    updated_config = kubin.params._updated
-    current_config = kubin.params.conf
+    on_change = "(key, value, requiresRestart) => kubin.utils.optionsChanged(key, value, requiresRestart)"
 
     with gr.Column(elem_classes=["options-block", "options-gradio"]) as gradio_options:
         theme = gr.Dropdown(
@@ -13,17 +12,15 @@ def options_tab_gradio(kubin: Kubin):
             choices=["base", "default", "glass", "monochrome", "soft"],
             label="Gradio theme",
         )
-        with gr.Row():
-            options_log = gr.HTML("", elem_classes=["block-info", "options-info"])
-
-        def change_value(key, value):
-            updated_config["gradio"][key] = value
-            return f'Config key "gradio.{key}" changed to "{value}" (old value: "{current_config["gradio"][key]}"). Press "Apply changes" for them to take effect.'
 
     theme.change(
-        change_value,
-        inputs=[gr.State("theme"), theme],
-        outputs=options_log,
+        fn=None,
+        _js=on_change,
+        inputs=[
+            gr.Text("gradio.theme", visible=False),
+            theme,
+            gr.Checkbox(True, visible=False),
+        ],
         show_progress=False,
     )
 

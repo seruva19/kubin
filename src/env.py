@@ -2,12 +2,16 @@ import os
 from extension.ext_registry import ExtensionRegistry
 from params import KubinParams
 from models.model_mock import Model_Mock
-from models.model_kd2 import Model_KD2
+from models.model_kd20 import Model_KD20
+from models.model_kd21 import Model_KD21
 from models.model_diffusers import Model_Diffusers
 
 
 class Kubin:
-    def __init__(self, args):
+    def __init__(self):
+        pass
+
+    def with_args(self, args):
         self.model = None
 
         self.root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -26,6 +30,7 @@ class Kubin:
 
     def with_pipeline(self):
         use_mock = self.params("general", "mock")
+        model_name = self.params("general", "model_name")
         pipeline = self.params("general", "pipeline")
 
         if self.model is not None:
@@ -35,8 +40,10 @@ class Kubin:
             Model_Mock(self.params)
             if use_mock
             else Model_Diffusers(self.params)
-            if pipeline == "diffusers"
-            else Model_KD2(self.params)
+            if pipeline == "diffusers" and model_name == "kd21"
+            else Model_KD21(self.params)
+            if pipeline == "native" and model_name == "kd21"
+            else Model_KD20(self.params)
         )
 
     def with_utils(self):

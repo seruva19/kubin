@@ -6,6 +6,47 @@
   font-family: var(--font);
 }
 
+body.pipeline-native .diffusers-sampler {
+  display: none;
+}
+
+body.pipeline-diffusers .native-sampler {
+  display: none;
+}
+
+body.pipeline-native2_0 .unsupported2_0,
+body.pipeline-native2_0 .ui-tabs>.tab-nav>button:nth-child(3),
+body.pipeline-native2_0 .ui-tabs>.tab-nav>button:nth-child(5) {
+  display: none;
+}
+
+body.unselectable * {
+  user-select: none;
+}
+
+body.gradio-full .gradio-container {
+  max-width: 100% !important;
+}
+
+html.has-lightbox {
+  overflow-x: hidden;
+}
+
+html.has-lightbox body {
+  height: 0;
+  overflow: hidden;
+}
+
+.sl-overlay {
+  background: black !important;
+}
+
+.sl-wrapper * {
+  font-family: var(--font) !important;
+  color: white !important;
+  text-decoration: none !important;
+}
+
 .options-left {
   max-width: 150px;
   min-width: 0 !important;
@@ -37,4 +78,34 @@
   margin: 10px 0;
   height: 30px;
   display: block;
+}
+
+.block-resizable-anchor {
+  max-width: 6px;
+  margin-left: -11px;
+  height: 100%;
+  background: radial-gradient(lightgray, transparent);
+  opacity: 0;
+}
+
+.block-resizable-anchor:hover {
+  opacity: 1;
+  transition: all 1s;
+}
+
+.block-resizable-anchor.activated {
+  background: radial-gradient(#2a73fb, transparent);
+  opacity: 1;
+}
+
+.block-params-vertical-alignment {
+  display: initial !important;
+}
+
+.block-params-vertical-alignment .block-params {
+  margin-bottom: 20px;
+}
+
+.block-params-vertical-alignment .block-resizable-anchor {
+  display: none;
 }

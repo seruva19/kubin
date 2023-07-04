@@ -7,6 +7,7 @@ from collections.abc import Iterable
 
 class SharedUI:
     def __init__(self, kubin: Kubin, extension_targets, injected_exts):
+        self.general_params = lambda a: kubin.params("general", a)
         self.ui_params = lambda a: kubin.params("ui", a)
 
         self.input_i2i_image = gr.Image(

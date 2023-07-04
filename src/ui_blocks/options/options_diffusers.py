@@ -4,8 +4,7 @@ from env import Kubin
 
 
 def options_tab_diffusers(kubin: Kubin):
-    updated_config = kubin.params._updated
-    current_config = kubin.params.conf
+    on_change = "(key, value, requiresRestart) => kubin.utils.optionsChanged(key, value, requiresRestart)"
 
     with gr.Column(
         elem_classes=["options-block", "options-diffusers"]
@@ -17,10 +16,6 @@ def options_tab_diffusers(kubin: Kubin):
         enable_xformers = gr.Checkbox(
             value=kubin.params("diffusers", "enable_xformers"),
             label="Enable xformers memory efficient attention",
-        )
-        enable_sdpa_attention = gr.Checkbox(
-            value=kubin.params("diffusers", "enable_sdpa_attention"),
-            label="Enable SDPA attention",
         )
         enable_sliced_attention = gr.Checkbox(
             value=kubin.params("diffusers", "enable_sliced_attention"),
@@ -46,78 +41,113 @@ def options_tab_diffusers(kubin: Kubin):
             value=kubin.params("diffusers", "use_deterministic_algorithms"),
             label="Enable torch deterministic algorithms",
         )
+        enable_sdpa_attention = gr.Checkbox(
+            value=kubin.params("diffusers", "enable_sdpa_attention"),
+            label="Enable forced SDPA attention",
+        )
         use_tf32_mode = gr.Checkbox(
             value=kubin.params("diffusers", "use_tf32_mode"),
             label="Enable TensorFloat32 mode",
         )
-        with gr.Row():
-            options_log = gr.HTML("", elem_classes=["block-info", "options-info"])
-
-        def change_value(key, value):
-            updated_config["diffusers"][key] = value
-            return f'Config key "diffusers.{key}" changed to "{value}" (old value: "{current_config["diffusers"][key]}"). Press "Apply changes" for them to take effect.'
 
         half_precision_weights.change(
-            change_value,
-            inputs=[gr.State("half_precision_weights"), half_precision_weights],
-            outputs=options_log,
+            fn=None,
+            _js=on_change,
+            inputs=[
+                gr.Text("diffusers.half_precision_weights", visible=False),
+                half_precision_weights,
+                gr.Checkbox(False, visible=False),
+            ],
             show_progress=False,
         )
         enable_xformers.change(
-            change_value,
-            inputs=[gr.State("enable_xformers"), enable_xformers],
-            outputs=options_log,
+            fn=None,
+            _js=on_change,
+            inputs=[
+                gr.Text("diffusers.enable_xformers", visible=False),
+                enable_xformers,
+                gr.Checkbox(False, visible=False),
+            ],
             show_progress=False,
         )
         enable_sdpa_attention.change(
-            change_value,
-            inputs=[gr.State("enable_sdpa_attention"), enable_sdpa_attention],
-            outputs=options_log,
+            fn=None,
+            _js=on_change,
+            inputs=[
+                gr.Text("diffusers.enable_sdpa_attention", visible=False),
+                enable_sdpa_attention,
+                gr.Checkbox(True, visible=False),
+            ],
             show_progress=False,
         )
         enable_sliced_attention.change(
-            change_value,
-            inputs=[gr.State("enable_sliced_attention"), enable_sliced_attention],
-            outputs=options_log,
+            fn=None,
+            _js=on_change,
+            inputs=[
+                gr.Text("diffusers.enable_sliced_attention", visible=False),
+                enable_sliced_attention,
+                gr.Checkbox(False, visible=False),
+            ],
             show_progress=False,
         )
         sequential_cpu_offload.change(
-            change_value,
-            inputs=[gr.State("sequential_cpu_offload"), sequential_cpu_offload],
-            outputs=options_log,
+            fn=None,
+            _js=on_change,
+            inputs=[
+                gr.Text("diffusers.sequential_cpu_offload", visible=False),
+                sequential_cpu_offload,
+                gr.Checkbox(True, visible=False),
+            ],
             show_progress=False,
         )
         full_model_offload.change(
-            change_value,
-            inputs=[gr.State("full_model_offload"), full_model_offload],
-            outputs=options_log,
+            fn=None,
+            _js=on_change,
+            inputs=[
+                gr.Text("diffusers.full_model_offload", visible=False),
+                full_model_offload,
+                gr.Checkbox(True, visible=False),
+            ],
             show_progress=False,
         )
         channels_last_memory.change(
-            change_value,
-            inputs=[gr.State("channels_last_memory"), channels_last_memory],
-            outputs=options_log,
+            fn=None,
+            _js=on_change,
+            inputs=[
+                gr.Text("diffusers.channels_last_memory", visible=False),
+                channels_last_memory,
+                gr.Checkbox(True, visible=False),
+            ],
             show_progress=False,
         )
         torch_code_compilation.change(
-            change_value,
-            inputs=[gr.State("torch_code_compilation"), torch_code_compilation],
-            outputs=options_log,
+            fn=None,
+            _js=on_change,
+            inputs=[
+                gr.Text("diffusers.torch_code_compilation", visible=False),
+                torch_code_compilation,
+                gr.Checkbox(True, visible=False),
+            ],
             show_progress=False,
         )
         use_deterministic_algorithms.change(
-            change_value,
+            fn=None,
+            _js=on_change,
             inputs=[
-                gr.State("use_deterministic_algorithms"),
+                gr.Text("diffusers.use_deterministic_algorithms", visible=False),
                 use_deterministic_algorithms,
+                gr.Checkbox(False, visible=False),
             ],
-            outputs=options_log,
             show_progress=False,
         )
         use_tf32_mode.change(
-            change_value,
-            inputs=[gr.State("use_tf32_mode"), use_tf32_mode],
-            outputs=options_log,
+            fn=None,
+            _js=on_change,
+            inputs=[
+                gr.Text("diffusers.use_tf32_mode", visible=False),
+                use_tf32_mode,
+                gr.Checkbox(False, visible=False),
+            ],
             show_progress=False,
         )
     return diffusers_options

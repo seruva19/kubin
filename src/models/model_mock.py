@@ -12,14 +12,14 @@ class Model_Mock:
     def __init__(self, params: KubinParams):
         print("activating pipeline: mock")
 
-    def prepare(self, task):
+    def prepareModel(self, task):
         print(f"preparing mock for {task}")
         return self
 
     def flush(self):
         print(f"mock memory freed")
 
-    def withSeed(self, seed):
+    def prepareParams(self, seed):
         print("mock seed generated")
 
     def t2i(self, params):
@@ -41,12 +41,12 @@ class Model_Mock:
         image_with_mask = params["image_mask"]
 
         image = image_with_mask["image"]
-        image = image.convert("RGB")
         image = image.resize(output_size, resample=Image.LANCZOS)
+        image = image.convert("RGB")
 
         mask = image_with_mask["mask"]
-        mask = mask.convert("L")
         mask = mask.resize(output_size, resample=Image.LANCZOS)
+        mask = mask.convert("L")
 
         return [image, mask]
 

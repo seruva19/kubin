@@ -11,20 +11,22 @@ html {overflow-y: scroll;}
 .block.block-options span.sr-only + div.wrap label {margin: 0 0 5px 0;}
 """
 
-random_hash = "".join(random.choices(string.ascii_letters + string.digits, k=8))
+session_id = "".join(random.choices(string.ascii_letters + string.digits, k=8))
 
 
-def js_loader(resources):
+def js_loader(resources, params):
     return """
     () => {{
       window._kubinResources = {resources}
+      window._kubinParams = {params}
+      window._kubinSessionId = '{session_id}'
 
       const script = document.createElement('script')
-      script.src = '/file=client/ui_utils.js?{random_hash}'
+      script.src = '/file=client/ui_utils.js?{session_id}'
       script.async = false
 
       const head = document.getElementsByTagName("head")[0]
       head.appendChild(script)
     }}""".format(
-        random_hash=random_hash, resources=resources
+        session_id=session_id, resources=resources, params=params
     )

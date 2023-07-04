@@ -1,6 +1,8 @@
 import os
+import json
 from omegaconf import OmegaConf
 from engine.kandinsky import KandinskyCheckpoint
+from utils.yaml import flatten_yaml
 
 default_value = "__default__"
 
@@ -29,6 +31,9 @@ class KubinParams:
 
         return value
 
+    def to_json(self):
+        return json.dumps(flatten_yaml(OmegaConf.to_container(self.conf)))
+
     def load_config(self):
         default_config = "configs/kubin.default.yaml"
         user_config = "configs/kubin.yaml"
@@ -54,7 +59,14 @@ class KubinParams:
 
     def apply_config_changes(self):
         reload_model = False
-        if self.conf["general"]["pipeline"] != self._updated["general"]["pipeline"]:
+        if (
+            self.conf["general"]["pipeline"] != self._updated["general"]["pipeline"]
+            or self.conf["general"]["device"] != self._updated["general"]["device"]
+            or self.conf["diffusers"]["half_precision_weights"]
+            != self._updated["diffusers"]["half_precision_weights"]
+            or self.conf["general"]["model_name"]
+            != self._updated["general"]["model_name"]
+        ):
             reload_model = True
 
         self.conf = self._updated.copy()
@@ -70,6 +82,9 @@ class KubinParams:
             os.remove(user_config)
 
     def merge_with_cli(self):
+        if self.args.model_name is not None:
+            self.conf["general"]["model_name"] = self.args.model_name
+
         if self.args.device is not None:
             self.conf["general"]["device"] = self.args.device
 
