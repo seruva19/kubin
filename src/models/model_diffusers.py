@@ -36,15 +36,6 @@ class Model_Diffusers:
         self.i2i_pipe: KandinskyImg2ImgPipeline | None = None
         self.inpaint_pipe: KandinskyInpaintPipeline | None = None
 
-        self.optimizations = {
-            "use_tf32_mode": False,
-            "sequential_cpu_offload": False,
-            "enable_xformers": False,
-            "enable_sliced_attention": False,
-            "torch_code_compilation": False,
-            "channels_last_memory": False,
-        }
-
         self.cublas_config = os.environ.get("CUBLAS_WORKSPACE_CONFIG", None)
 
     def prepare(self, task):
