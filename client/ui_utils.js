@@ -105,11 +105,15 @@
           targetGallery.classList.add('gallery-active')
 
           let position = 0
-          Array.from(e.target.nextElementSibling.querySelectorAll(thumbnailsSelector)).forEach((image, index, images) => {
+          const allImages = Array.from(e.target.nextElementSibling.querySelectorAll(thumbnailsSelector))
+          allImages.forEach((image, index) => {
             if (image.src === e.target.src) {
-              position = index == 0 ? images.length - 1 : index - 1
+              position = index - 1 == -1 ? allImages.length - 1 : index - 1
             }
           })
+
+          window._kubinGalleryThumbnails = allImages
+          window._kubinThumbnailIndex = position
 
           const gallery = window._kubinGallery = new SimpleLightbox(thumbnailsSelector, {
             sourceAttr: 'src',
@@ -118,15 +122,37 @@
             swipeTolerance: Number.MAX_VALUE
           })
 
-          gallery.on('closed.simplelightbox', function () {
+          gallery.on('closed.simplelightbox', () => {
             targetGallery.classList.remove('gallery-active')
             window._kubinGallery = undefined
             gallery.destroy()
           })
 
           gallery.openPosition(position)
+          window._kubinGalleryThumbnails[position].click()
         } else if (e.target.parentNode?.classList.contains('sl-image')) {
           window._kubinGallery?.next()
+
+          window._kubinThumbnailIndex++
+          if (window._kubinThumbnailIndex == window.window._kubinGalleryThumbnails.length) {
+            window._kubinThumbnailIndex = 0
+          }
+
+          window._kubinGalleryThumbnails[window._kubinThumbnailIndex]?.click()
+        } else if (e.target.classList.contains('sl-prev')) {
+          window._kubinThumbnailIndex--
+          if (window._kubinThumbnailIndex == -1) {
+            window._kubinThumbnailIndex = window.window._kubinGalleryThumbnails.length - 1
+          }
+
+          window._kubinGalleryThumbnails[window._kubinThumbnailIndex].click()
+        } else if (e.target.classList.contains('sl-next')) {
+          window._kubinThumbnailIndex++
+          if (window._kubinThumbnailIndex == window.window._kubinGalleryThumbnails.length) {
+            window._kubinThumbnailIndex = 0
+          }
+
+          window._kubinGalleryThumbnails[window._kubinThumbnailIndex].click()
         }
       })
     }

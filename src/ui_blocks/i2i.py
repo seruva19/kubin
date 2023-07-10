@@ -54,8 +54,22 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                 "Advanced params", open=not shared.ui_params("collapse_advanced_params")
             ) as i2i_advanced_params:
                 with gr.Row():
-                    steps = gr.Slider(1, 200, 100, step=1, label="Steps")
-                    guidance_scale = gr.Slider(1, 30, 7, step=1, label="Guidance scale")
+                    steps = gr.Slider(
+                        1,
+                        200,
+                        100,
+                        step=1,
+                        label="Steps",
+                        elem_classes=["inline-flex"],
+                    )
+                    guidance_scale = gr.Slider(
+                        1,
+                        30,
+                        7,
+                        step=1,
+                        label="Guidance scale",
+                        elem_classes=["inline-flex"],
+                    )
                     strength = gr.Slider(
                         0,
                         1,

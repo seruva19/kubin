@@ -1,7 +1,7 @@
 import os
 import json
 from omegaconf import OmegaConf
-from engine.kandinsky import KandinskyCheckpoint
+from model_utils.kandinsky_utils import KandinskyCheckpoint
 from utils.yaml import flatten_yaml
 
 default_value = "__default__"
@@ -66,7 +66,10 @@ class KubinParams:
             != self._updated["diffusers"]["half_precision_weights"]
             or self.conf["general"]["model_name"]
             != self._updated["general"]["model_name"]
+            or self.conf["diffusers"]["use_compel_encoder"]
+            != self._updated["diffusers"]["use_compel_encoder"]
         ):
+            print("model will be reloaded")
             reload_model = True
 
         self.conf = self._updated.copy()
@@ -78,8 +81,11 @@ class KubinParams:
 
     def reset_config(self):
         user_config = "configs/kubin.yaml"
+        user_config_bak = "configs/kubin.yaml.bak"
         if os.path.exists(user_config):
-            os.remove(user_config)
+            if os.path.isfile(user_config_bak):
+                os.remove(user_config_bak)
+            os.rename(user_config, user_config_bak)
 
     def merge_with_cli(self):
         if self.args.model_name is not None:

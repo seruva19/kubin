@@ -8,9 +8,10 @@ import torch
 import torch.backends
 
 from params import KubinParams
-from engine.kandinsky import get_checkpoint
+from model_utils.kandinsky_utils import get_checkpoint
 from kandinsky2 import Kandinsky2_1
 from utils.file_system import save_output
+from utils.image import create_inpaint_targets, create_outpaint_targets
 
 
 class Model_KD21:
@@ -200,26 +201,28 @@ class Model_KD21:
         params = self.prepareModel("inpainting").prepareParams(params)
         assert self.kd21_inpaint is not None
 
-        output_size = (params["w"], params["h"])
         image_mask = params["image_mask"]
 
-        pil_img = image_mask["image"].resize(output_size, resample=Image.LANCZOS)
-        pil_img = pil_img.convert("RGB")
+        pil_img = image_mask["image"]
+        width, height = (
+            pil_img.width if params["infer_size"] else params["w"],
+            pil_img.height if params["infer_size"] else params["h"],
+        )
+        output_size = (width, height)
+        mask = image_mask["mask"]
+        inpaint_region = params["region"]
+        inpaint_target = params["target"]
 
-        mask_img = image_mask["mask"].resize(output_size)
-        mask_img = mask_img.convert("L")
-
-        mask_arr = np.array(mask_img).astype(np.float32) / 255.0
-
-        if params["target"] == "only mask":
-            mask_arr = 1.0 - mask_arr
+        image, mask = create_inpaint_targets(
+            pil_img, mask, output_size, inpaint_region, inpaint_target
+        )
 
         images = []
         for _ in itertools.repeat(None, params["batch_count"]):
             current_batch = self.kd21_inpaint.generate_inpainting(
                 prompt=params["prompt"],
-                pil_img=pil_img,
-                img_mask=mask_arr,
+                pil_img=image,
+                img_mask=mask,
                 num_steps=params["num_steps"],
                 batch_size=params["batch_size"],  # type: ignore
                 guidance_scale=params["guidance_scale"],
@@ -245,33 +248,14 @@ class Model_KD21:
         assert self.kd21_inpaint is not None
 
         image = params["image"]
-        image_w, image_h = image.size
-
         offset = params["offset"]
-
-        if offset is not None:
-            top, right, bottom, left = offset
-            inferred_mask_size = tuple(
-                a + b for a, b in zip(image.size, (left + right, top + bottom))  # type: ignore
-            )[::-1]
-            mask = np.zeros(inferred_mask_size, dtype=np.float32)  # type: ignore
-            mask[top : image_h + top, left : image_w + left] = 1
-            image = ImageOps.expand(image, border=(left, top, right, bottom), fill=0)
-
-        else:
-            x1, y1, x2, y2 = image.getbbox()
-            mask = np.ones((image_h, image_w), dtype=np.float32)
-            mask[0:y1, :] = 0
-            mask[:, 0:x1] = 0
-            mask[y2:image_h, :] = 0
-            mask[:, x2:image_w] = 0
-
         infer_size = params["infer_size"]
-        if infer_size:
-            height, width = mask.shape[:2]
-        else:
-            width = params["w"]
-            height = params["h"]
+        width = params["w"]
+        height = params["h"]
+
+        image, mask, width, height = create_outpaint_targets(
+            image, offset, infer_size, width, height
+        )
 
         images = []
         for _ in itertools.repeat(None, params["batch_count"]):

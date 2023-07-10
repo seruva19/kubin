@@ -14,7 +14,9 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs):
     with gr.Row() as inpaint_block:
         with gr.Column(scale=2) as inpaint_params:
             with gr.Row():
-                shared.input_inpaint_image.render()
+                with gr.Column(scale=1):
+                    shared.input_inpaint_image.render()
+
                 with gr.Column():
                     prompt = gr.TextArea("", placeholder="", label="Prompt", lines=2)
                     negative_decoder_prompt = gr.TextArea(
@@ -46,12 +48,18 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs):
                     batch_size = gr.Slider(1, 16, 1, step=1, label="Batch size")
                     # TODO: fix https://github.com/ai-forever/Kandinsky-2/issues/53
                 with gr.Row():
+                    infer_size = gr.Checkbox(
+                        True,
+                        label="Infer image size from input image",
+                        elem_classes=["inline-flex"],
+                    )
                     width = gr.Slider(
                         shared.ui_params("image_width_min"),
                         shared.ui_params("image_width_max"),
                         shared.ui_params("image_width_default"),
                         step=shared.ui_params("image_width_step"),
                         label="Width",
+                        interactive=False,
                     )
                     height = gr.Slider(
                         shared.ui_params("image_height_min"),
@@ -59,6 +67,7 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs):
                         shared.ui_params("image_height_default"),
                         step=shared.ui_params("image_height_step"),
                         label="Height",
+                        interactive=False,
                     )
                 with gr.Row():
                     sampler = gr.Radio(
@@ -76,8 +85,22 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs):
                     ]
                     seed = gr.Number(-1, label="Seed", precision=0)
                 with gr.Row() as prior_block:
-                    prior_scale = gr.Slider(1, 100, 4, step=1, label="Prior scale")
-                    prior_steps = gr.Slider(1, 100, 5, step=1, label="Prior steps")
+                    prior_scale = gr.Slider(
+                        1,
+                        100,
+                        4,
+                        step=1,
+                        label="Prior scale",
+                        elem_classes=["inline-flex"],
+                    )
+                    prior_steps = gr.Slider(
+                        1,
+                        100,
+                        5,
+                        step=1,
+                        label="Prior steps",
+                        elem_classes=["inline-flex"],
+                    )
                     negative_prior_prompt = gr.Textbox(
                         "", label="Negative prior prompt"
                     )
@@ -103,6 +126,15 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs):
                 inpaint_output, selected_inpaint_image_index, tabs
             )
 
+            infer_size.change(
+                fn=lambda x: [
+                    gr.update(interactive=not x),
+                    gr.update(interactive=not x),
+                ],
+                inputs=[infer_size],
+                outputs=[width, height],
+            )
+
             def generate(
                 image_mask,
                 prompt,
@@ -120,6 +152,7 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs):
                 prior_steps,
                 negative_prior_prompt,
                 input_seed,
+                infer_size,
                 *injections,
             ):
                 params = {
@@ -139,6 +172,7 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs):
                     "prior_steps": prior_steps,
                     "negative_prior_prompt": negative_prior_prompt,
                     "input_seed": input_seed,
+                    "infer_size": infer_size,
                 }
 
                 params = augmentations["exec"](params, injections)
@@ -163,6 +197,7 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs):
                 prior_steps,
                 negative_prior_prompt,
                 seed,
+                infer_size,
             ]
             + augmentations["injections"],
             outputs=inpaint_output,

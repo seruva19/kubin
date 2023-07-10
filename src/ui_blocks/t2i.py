@@ -59,10 +59,26 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                     ]
                     seed = gr.Number(-1, label="Seed", precision=0)
                 with gr.Row() as prior_block:
-                    prior_scale = gr.Slider(1, 100, 4, step=1, label="Prior scale")
-                    prior_steps = gr.Slider(1, 100, 5, step=1, label="Prior steps")
+                    prior_scale = gr.Slider(
+                        1,
+                        100,
+                        4,
+                        step=1,
+                        label="Prior scale",
+                        elem_classes=["inline-flex"],
+                    )
+                    prior_steps = gr.Slider(
+                        1,
+                        100,
+                        5,
+                        step=1,
+                        label="Prior steps",
+                        elem_classes=["inline-flex"],
+                    )
                     negative_prior_prompt = gr.Textbox(
-                        "", label="Negative prior prompt"
+                        "",
+                        label="Negative prior prompt",
+                        elem_classes=["inline-flex"],
                     )
 
             augmentations["ui"]()

@@ -9,6 +9,10 @@ html {overflow-y: scroll;}
 .block.block-options span.sr-only + div.wrap {display: block;}
 .block.block-options span.sr-only + div.wrap {display: block;}
 .block.block-options span.sr-only + div.wrap label {margin: 0 0 5px 0;}
+.ui-tabs.left>.tab-nav {position: fixed; left: 0; width: 0;}
+.ui-tabs.left>.tab-nav button {width: 200px;text-align: left;border: none;}
+.ui-tabs.left>.tab-nav button.selected {font-weight: bold;}
+.ui-tabs.left>.tabitem {border: none;}
 """
 
 session_id = "".join(random.choices(string.ascii_letters + string.digits, k=8))

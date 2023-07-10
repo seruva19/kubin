@@ -109,3 +109,11 @@ html.has-lightbox body {
 .block-params-vertical-alignment .block-resizable-anchor {
   display: none;
 }
+
+.block.inline-flex {
+  display: inline-flex;
+}
+
+.thumbnail-item {
+  aspect-ratio: initial !important;
+}

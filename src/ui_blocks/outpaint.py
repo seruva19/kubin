@@ -16,9 +16,6 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs):
             with gr.Row():
                 with gr.Column(scale=1):
                     shared.input_outpaint_image.render()
-                    infer_size = gr.Checkbox(
-                        True, label="Infer image size from mask input"
-                    )
 
                 with gr.Column(scale=1):
                     manual_control = gr.Checkbox(True, label="Expansion offset")
@@ -85,6 +82,11 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs):
                     batch_count = gr.Slider(1, 16, 4, step=1, label="Batch count")
                     batch_size = gr.Slider(1, 16, 1, step=1, label="Batch size")
                 with gr.Row():
+                    infer_size = gr.Checkbox(
+                        True,
+                        label="Infer image size from mask input",
+                        elem_classes=["inline-flex"],
+                    )
                     width = gr.Slider(
                         shared.ui_params("image_width_min"),
                         shared.ui_params("image_width_max"),
@@ -117,8 +119,22 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs):
                     ]
                     seed = gr.Number(-1, label="Seed", precision=0)
                 with gr.Row():
-                    prior_scale = gr.Slider(1, 100, 4, step=1, label="Prior scale")
-                    prior_steps = gr.Slider(1, 100, 5, step=1, label="Prior steps")
+                    prior_scale = gr.Slider(
+                        1,
+                        100,
+                        4,
+                        step=1,
+                        label="Prior scale",
+                        elem_classes=["inline-flex"],
+                    )
+                    prior_steps = gr.Slider(
+                        1,
+                        100,
+                        5,
+                        step=1,
+                        label="Prior steps",
+                        elem_classes=["inline-flex"],
+                    )
                     negative_prior_prompt = gr.Textbox(
                         "", label="Negative prior prompt"
                     )

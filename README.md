@@ -14,16 +14,22 @@
 ✔ Upscaling <br>
 ✔ Outpainting <br>
 ✔ Support for extensions <br>
-✔ Tools for fine-tuning <br>
-✔ Diffusers integration <br>
-✔ Img2mesh <br>
-🕒 Advanced prompting <br>
-✔ Interrogation <br>
-✔ Segmentation <br>
-🕒 Additional schedulers <br>
-🕒 Animation <br>
+✔ Diffusers pipeline  <br>
+🕒 Multiple samplers <br>
+✔ Image browser (extension) <br>
+✔ Fine-tuning (extension) <br>
+✔ Style library (extension) <br>
+✔ Low-VRAM options <br>
+✔ Img2mesh (extension) <br>
+🕒 Dynamic prompts <br>
+🕒 Prompt weighting <br>
+✔ Interrogation (extension) <br>
+✔ Segmentation (extension) <br>
+🕒 Checkpoint conversion <br>
+🕒 Animation (extension) <br>
 🕒 LoRA <br>
-🕒 ControlNet  <br>
+🕒 ControlNet (extension) <br>
+🕒 Easy-to-use installer  <br>
 🕒 Documentation <br>
 
 ## Screenshots (outdated)
