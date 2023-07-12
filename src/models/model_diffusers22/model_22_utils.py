@@ -37,13 +37,10 @@ def prepare_weights_for_task(model, task):
                 cache_dir=cache_dir,
             )
 
-            if task == "text2img" or task == "mix":
-                current_unet = model.t2i_pipe
-            else:
-                model.i2i_pipe = KandinskyV22Img2ImgPipeline(
-                    **model.t2i_pipe.components
-                )
-                current_unet = model.i2i_pipe
+        current_unet = model.t2i_pipe
+        if task == "img2img":
+            model.i2i_pipe = KandinskyV22Img2ImgPipeline(**model.t2i_pipe.components)
+            current_unet = model.i2i_pipe
 
     if task == "text2img_cnet" or task == "img2img_cnet":
         if model.cnet_t2i_pipe is None:
@@ -55,17 +52,16 @@ def prepare_weights_for_task(model, task):
                 cache_dir=cache_dir,
             )
 
-            if task == "text2img_cnet":
-                current_unet = model.cnet_t2i_pipe
-            else:
-                model.pipe_prior_e2e = KandinskyV22PriorEmb2EmbPipeline(
-                    **model.pipe_prior.components
-                )
-                current_prior = model.pipe_prior_e2e
-                model.cnet_i2i_pipe = KandinskyV22ControlnetImg2ImgPipeline(
-                    **model.cnet_t2i_pipe.components
-                )
-                current_unet = model.cnet_i2i_pipe
+        current_unet = model.cnet_t2i_pipe
+        if task == "img2img_cnet":
+            model.pipe_prior_e2e = KandinskyV22PriorEmb2EmbPipeline(
+                **model.pipe_prior.components
+            )
+            current_prior = model.pipe_prior_e2e
+            model.cnet_i2i_pipe = KandinskyV22ControlnetImg2ImgPipeline(
+                **model.cnet_t2i_pipe.components
+            )
+            current_unet = model.cnet_i2i_pipe
 
     elif task == "inpainting" or task == "outpainting":
         if model.inpaint_pipe is None:
@@ -77,7 +73,7 @@ def prepare_weights_for_task(model, task):
                 cache_dir=cache_dir,
             )
 
-            current_unet = model.inpaint_pipe
+        current_unet = model.inpaint_pipe
 
     to_device(model.params, current_prior, current_unet)
     return current_prior, current_unet
