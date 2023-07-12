@@ -10,8 +10,8 @@ def options_tab_general(kubin: Kubin):
     ) as general_options:
         model_name = gr.Radio(
             value=kubin.params("general", "model_name"),
-            choices=["kd20", "kd21"],
-            info="kd20: Kandinsky 2.0, kd21: Kandinsky 2.1",
+            choices=["kd20", "kd21", "kd22"],
+            info="kd20: Kandinsky 2.0, kd21: Kandinsky 2.1, kd22: Kandinsky 2.2",
             label="Base model",
         )
         pipeline = gr.Radio(

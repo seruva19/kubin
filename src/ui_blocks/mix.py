@@ -39,9 +39,7 @@ def mix_ui(generate_fn, shared: SharedUI, tabs):
                     )
                     weight_2 = gr.Slider(0, 1, 0.5, step=0.05, label="Weight")
 
-            negative_decoder_prompt = gr.TextArea(
-                "", label="Negative decoder prompt", lines=2
-            )
+            negative_prompt = gr.TextArea("", label="Negative prompt", lines=2)
             with gr.Accordion(
                 "Advanced params", open=not shared.ui_params("collapse_advanced_params")
             ) as mix_advanced_params:
@@ -93,13 +91,15 @@ def mix_ui(generate_fn, shared: SharedUI, tabs):
                     prior_steps = gr.Slider(
                         1,
                         100,
-                        5,
+                        25,
                         step=1,
                         label="Prior steps",
                         elem_classes=["inline-flex"],
                     )
-                    negative_prior_prompt = gr.Textbox(
-                        "", label="Negative prior prompt"
+                    negative_prior_prompt = gr.TextArea(
+                        "",
+                        label="Negative prior prompt",
+                        lines=2,
                     )
 
             augmentations["ui"]()
@@ -126,7 +126,7 @@ def mix_ui(generate_fn, shared: SharedUI, tabs):
                 text_2,
                 weight_1,
                 weight_2,
-                negative_decoder_prompt,
+                negative_prompt,
                 steps,
                 batch_count,
                 batch_size,
@@ -147,7 +147,7 @@ def mix_ui(generate_fn, shared: SharedUI, tabs):
                     "text_2": text_2,
                     "weight_1": weight_1,
                     "weight_2": weight_2,
-                    "negative_decoder_prompt": negative_decoder_prompt,
+                    "negative_prompt": negative_prompt,
                     "num_steps": steps,
                     "batch_count": batch_count,
                     "batch_size": batch_size,
@@ -173,7 +173,7 @@ def mix_ui(generate_fn, shared: SharedUI, tabs):
                 text_2,
                 weight_1,
                 weight_2,
-                negative_decoder_prompt,
+                negative_prompt,
                 steps,
                 batch_count,
                 batch_size,

@@ -24,17 +24,21 @@ class Model_Mock:
 
     def t2i(self, params):
         print("mock t2i executed")
+        print(params)
         return self.dummyImages()
 
     def i2i(self, params):
         print("mock i2i executed")
+        print(params)
         return self.dummyImages()
 
     def mix(self, params):
         print("mock mix executed")
+        print(params)
         return self.dummyImages()
 
     def inpaint(self, params):
+        print(params)
         print("mock inpaint executed")
 
         output_size = (params["w"], params["h"])
@@ -52,6 +56,8 @@ class Model_Mock:
 
     def outpaint(self, params):
         print("mock outpaint executed")
+        print(params)
+
         image = params["image"]
         image_w, image_h = image.size
 

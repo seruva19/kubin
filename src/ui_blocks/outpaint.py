@@ -67,7 +67,7 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs):
             with gr.Column():
                 prompt = gr.TextArea("", placeholder="", label="Prompt", lines=2)
                 negative_prompt = gr.TextArea(
-                    "", placeholder="", label="Negative decoder prompt", lines=2
+                    "", placeholder="", label="Negative prompt", lines=2
                 )
 
             with gr.Accordion(
@@ -135,8 +135,8 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs):
                         label="Prior steps",
                         elem_classes=["inline-flex"],
                     )
-                    negative_prior_prompt = gr.Textbox(
-                        "", label="Negative prior prompt"
+                    negative_prior_prompt = gr.TextArea(
+                        "", label="Negative prior prompt", lines=2
                     )
 
             infer_size.change(
@@ -195,7 +195,7 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs):
                 params = {
                     "image": image,
                     "prompt": prompt,
-                    "negative_decoder_prompt": negative_prompt,
+                    "negative_prompt": negative_prompt,
                     "num_steps": steps,
                     "batch_count": batch_count,
                     "batch_size": batch_size,

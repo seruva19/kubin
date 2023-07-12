@@ -1,5 +1,6 @@
 import os
 from extension.ext_registry import ExtensionRegistry
+from models.model_diffusers22.model_22 import Model_Diffusers22
 from params import KubinParams
 from models.model_mock import Model_Mock
 from models.model_kd20 import Model_KD20
@@ -39,6 +40,8 @@ class Kubin:
         self.model = (
             Model_Mock(self.params)
             if use_mock
+            else Model_Diffusers22(self.params)
+            if pipeline == "diffusers" and model_name == "kd22"
             else Model_Diffusers(self.params)
             if pipeline == "diffusers" and model_name == "kd21"
             else Model_KD21(self.params)

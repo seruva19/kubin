@@ -119,7 +119,7 @@ class Model_KD21:
                 prior_cf_scale=params["prior_cf_scale"],  # type: ignore
                 prior_steps=str(params["prior_steps"]),  # type: ignore
                 negative_prior_prompt=params["negative_prior_prompt"],  # type: ignore
-                negative_decoder_prompt=params["negative_decoder_prompt"],  # type: ignore
+                negative_prompt=params["negative_prompt"],  # type: ignore
             )
             output_dir = params.get(
                 ".output_dir",
@@ -188,7 +188,7 @@ class Model_KD21:
                 prior_cf_scale=params["prior_cf_scale"],
                 prior_steps=str(params["prior_steps"]),
                 negative_prior_prompt=params["negative_prior_prompt"],
-                negative_decoder_prompt=params["negative_decoder_prompt"],
+                negative_prompt=params["negative_prompt"],
             )
             output_dir = params.get(
                 ".output_dir", os.path.join(self.params("general", "output_dir"), "mix")
@@ -232,7 +232,7 @@ class Model_KD21:
                 prior_cf_scale=params["prior_cf_scale"],  # type: ignore
                 prior_steps=str(params["prior_steps"]),  # type: ignore
                 negative_prior_prompt=params["negative_prior_prompt"],  # type: ignore
-                negative_decoder_prompt=params["negative_decoder_prompt"],  # type: ignore
+                negative_prompt=params["negative_prompt"],  # type: ignore
             )
 
             output_dir = params.get(
@@ -272,7 +272,7 @@ class Model_KD21:
                 prior_cf_scale=params["prior_cf_scale"],  # type: ignore
                 prior_steps=str(params["prior_steps"]),  # type: ignore
                 negative_prior_prompt=params["negative_prior_prompt"],  # type: ignore
-                negative_decoder_prompt=params["negative_decoder_prompt"],  # type: ignore
+                negative_prompt=params["negative_prompt"],  # type: ignore
             )
 
             output_dir = params.get(

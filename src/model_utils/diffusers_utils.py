@@ -24,19 +24,17 @@ from params import KubinParams
 import torch
 
 
-def use_scheduler(pipeline: KandinskyPipeline, sampler="ddim_sampler"):
-    scheduler = None
-
+def use_scheduler(pipeline: KandinskyPipeline, sampler):
     if sampler == "ddim_inverse_sampler":
-        scheduler = DDIMInverseScheduler.from_config(pipeline.scheduler.config)
-    elif scheduler == "ddpms_sampler":
-        scheduler = DDPMScheduler.from_config(pipeline.scheduler.config)
-    elif scheduler == "dpms_m_sampler":
-        scheduler = DPMSolverMultistepScheduler.from_config(pipeline.scheduler.config)
-    else:
-        scheduler = DDIMScheduler.from_config(pipeline.scheduler.config)
-
-    pipeline.scheduler = scheduler
+        pipeline.scheduler = DDIMInverseScheduler.from_config(pipeline.scheduler.config)
+    elif sampler == "ddpm_sampler":
+        pipeline.scheduler = DDPMScheduler.from_config(pipeline.scheduler.config)
+    elif pipeline.scheduler == "dpms_m_sampler":
+        pipeline.scheduler = DPMSolverMultistepScheduler.from_config(
+            pipeline.scheduler.config
+        )
+    elif sampler == "ddim_sampler":
+        pipeline.scheduler = DDIMScheduler.from_config(pipeline.scheduler.config)
 
 
 def _encode_and_concat(

@@ -81,6 +81,7 @@
     customEventListeners.init()
 
     kubin.notify.success('UI successfully loaded')
+    kubin.UI.reveal()
   })
 
   const customEventListeners = {
@@ -175,16 +176,24 @@
         kubin.UI.fullScreenUI(fullScreenPanel)
       }
 
-      const pipeline = params['general.pipeline']
-      pipeline == 'native' && (document.body.classList.add('pipeline-native'), document.body.classList.remove('pipeline-diffusers'))
-      pipeline == 'diffusers' && (document.body.classList.add('pipeline-diffusers'), document.body.classList.remove('pipeline-native'))
+      const pipeline = window._kubinParams['general.pipeline']
+      const model_name = window._kubinParams['general.model_name']
 
-      const model_name = params['general.model_name']
-      model_name == 'kd20' && document.body.classList.add('pipeline-native2_0')
-      model_name != 'kd20' && document.body.classList.remove('pipeline-native2_0')
+      document.querySelectorAll('body[class*="pipeline-"]').forEach(b => {
+        for (let i = b.classList.length - 1; i >= 0; i--) {
+          const className = b.classList[i]
+          if (className.startsWith('pipeline-')) {
+            b.classList.remove(className)
+          }
+        }
+      })
 
-      if (window._kubinParams['general.model_name'] == 'kd20' && window._kubinParams['general.pipeline'] == 'diffusers') {
-        kubin.notify.error('You cannot use a 2.0 model with the diffusers pipeline! Native 2.0 pipeline will be used')
+      document.body.classList.add(`pipeline-${pipeline}-${model_name}`)
+
+      if (model_name == 'kd20' && pipeline == 'diffusers') {
+        kubin.notify.error('You cannot use a 2.0 model with the diffusers pipeline! Native pipeline will be used')
+      } else if (model_name == 'kd22' && pipeline == 'native') {
+        kubin.notify.error('You cannot use a 2.2 model with the native pipeline! Diffusers pipeline will be used')
       }
     },
 
@@ -241,6 +250,10 @@
     fullScreenUI: fullScreenUI => {
       fullScreenUI && document.body.classList.add('gradio-full')
       !fullScreenUI && document.body.classList.remove('gradio-full')
+    },
+
+    reveal: () => {
+      document.body.classList.add('is-ready')
     }
   }
 

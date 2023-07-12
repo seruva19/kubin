@@ -7,6 +7,7 @@
 
 ## Roadmap
 
+✔ Supports versions 2.0, 2.1, 2.2 <br>
 ✔ Txt2img <br>
 ✔ Img2img <br>
 ✔ Mixing <br>
@@ -15,21 +16,21 @@
 ✔ Outpainting <br>
 ✔ Support for extensions <br>
 ✔ Diffusers pipeline  <br>
-🕒 Multiple samplers <br>
-✔ Image browser (extension) <br>
-✔ Fine-tuning (extension) <br>
-✔ Style library (extension) <br>
+✔ Image browser <br>
+✔ Fine-tuning <br>
+✔ Style library <br>
 ✔ Low-VRAM options <br>
-✔ Img2mesh (extension) <br>
+✔ Img2mesh <br>
+✔ Interrogation <br>
+✔ Segmentation <br>
+✔ ControlNet <br>
+🕒 Multiple samplers <br>
 🕒 Dynamic prompts <br>
 🕒 Prompt weighting <br>
-✔ Interrogation (extension) <br>
-✔ Segmentation (extension) <br>
 🕒 Checkpoint conversion <br>
-🕒 Animation (extension) <br>
+🕒 Animation <br>
 🕒 LoRA <br>
-🕒 ControlNet (extension) <br>
-🕒 Easy-to-use installer  <br>
+🕒 Easy-to-use installer <br>
 🕒 Documentation <br>
 
 ## Screenshots (outdated)

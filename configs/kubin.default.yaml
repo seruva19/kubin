@@ -1,9 +1,9 @@
 general:
   device: cuda
   cache_dir: models
-  model_name: kd21
+  model_name: kd22
   output_dir: output
-  pipeline: native
+  pipeline: diffusers
   mock: false
   extensions_path: extensions
   enabled_extensions: null
@@ -12,6 +12,7 @@ general:
   skip_install: false
   safe_mode: false
   share: none
+  never_unload_models: null
 
 gradio:
   server_name: 127.0.0.1
@@ -33,7 +34,7 @@ ui:
   enable_vertical_alignment: false
   collapse_advanced_params: false
   full_screen_panel: false
-  side_tabs: false
+  side_tabs: true
 
 native:
   flash_attention: false
