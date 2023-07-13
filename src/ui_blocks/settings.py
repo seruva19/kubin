@@ -74,11 +74,11 @@ def settings_ui(kubin: Kubin):
     model_config = flatten_yaml(CONFIG_2_1)
 
     with gr.Column() as settings_block:
-        with gr.TabItem("Checkpoints"):
-            ckpt_selector(kubin)
-
         with gr.TabItem("Options"):
             options_ui(kubin)
+
+        with gr.TabItem("Checkpoints"):
+            ckpt_selector(kubin)
 
         with gr.TabItem("Extensions"):
             extensions_ui(kubin)

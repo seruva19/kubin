@@ -71,7 +71,7 @@ class SharedUI:
             outputs=[self.input_i2i_image],
         )
 
-        with gr.Row():
+        with gr.Row() as mix_buttons:
             send_mix_1_btn = gr.Button("Send to Mix (1)", variant="secondary").style(
                 size="sm"
             )
@@ -86,9 +86,10 @@ class SharedUI:
                 outputs=[self.input_mix_image_1],
             )
 
-            send_mix_2_btn = gr.Button("Send to Mix (2)", variant="secondary").style(
-                size="sm"
-            )
+            send_mix_2_btn = gr.Button(
+                "Send to Mix (2)",
+                variant="secondary",
+            ).style(size="sm")
             send_mix_2_btn.click(
                 fn=self.open_another_tab,
                 inputs=[gr.State(2)],
@@ -99,7 +100,7 @@ class SharedUI:
                 inputs=[output, selected_image_index],
                 outputs=[self.input_mix_image_2],
             )
-
+        mix_buttons.elem_classes = ["unsupported2_0"]
         send_inpaint_btn = gr.Button("Send to Inpaint", variant="secondary").style(
             size="sm"
         )
@@ -114,9 +115,9 @@ class SharedUI:
             outputs=[self.input_inpaint_image],
         )
 
-        send_outpaint_btn = gr.Button("Send to Outpaint", variant="secondary").style(
-            size="sm"
-        )
+        send_outpaint_btn = gr.Button(
+            "Send to Outpaint", variant="secondary", elem_classes=["unsupported2_0"]
+        ).style(size="sm")
         send_outpaint_btn.click(
             fn=self.open_another_tab,
             inputs=[gr.State(4)],
@@ -129,7 +130,9 @@ class SharedUI:
         )
 
         send_cnet_t2i_btn = gr.Button(
-            "Send to T2I ControlNet", variant="secondary"
+            "Send to T2I ControlNet",
+            variant="secondary",
+            elem_classes=["diffusers-kd22-control"],
         ).style(size="sm")
         send_cnet_t2i_btn.click(
             fn=self.open_another_tab,

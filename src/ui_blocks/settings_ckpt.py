@@ -23,94 +23,105 @@ def ckpt_selector(kubin: Kubin):
         kubin.params("general", "cache_dir")
     )
 
-    with gr.Row() as selector:
-        with gr.Column():
-            current_checkpoints = gr.HTML(
-                show_current_checkpoints(kubin), elem_classes=["block-info"]
-            )
+    with gr.TabItem("2.1") as selector_kd21:
+        selector_kd21.elem_classes = ["ckpt-selector-kd21"]
 
-            prior_select = gr.Dropdown(
-                choices=scan_checkpoints(
-                    scanned_directories,
-                    prior_filename_pattern,
-                    default_prior_path,
-                    prior_base_path_placeholder,
-                ),
-                value=prior_base_path_placeholder,
-                label="Select prior checkpoint",
-                interactive=True,
-            )
-            prior_select.select(
-                lambda path, kubin=kubin: select_prior_checkpoint(path, kubin),
-                inputs=[prior_select],
-                outputs=[current_checkpoints],
-                show_progress=False,
-            )
-            decoder_select = gr.Dropdown(
-                choices=scan_checkpoints(
-                    scanned_directories,
-                    decoder_filename_pattern,
-                    default_decoder_path,
-                    decoder_base_path_placeholder,
-                ),
-                value=decoder_base_path_placeholder,
-                label="Select decoder checkpoint",
-                interactive=True,
-            )
-            decoder_select.select(
-                lambda path, kubin=kubin: select_decoder_checkpoint(path, kubin),
-                inputs=[decoder_select],
-                outputs=[current_checkpoints],
-                show_progress=False,
-            )
-            inpaint_select = gr.Dropdown(
-                choices=scan_checkpoints(
-                    scanned_directories,
-                    inpaint_filename_pattern,
-                    default_inpaint_decoder_path,
-                    inpaint_decoder_base_path_placeholder,
-                ),
-                value=inpaint_decoder_base_path_placeholder,
-                label="Select inpaint decoder checkpoint",
-                interactive=True,
-            )
-            inpaint_select.select(
-                lambda path, kubin=kubin: select_inpaint_checkpoint(path, kubin),
-                inputs=[inpaint_select],
-                outputs=[current_checkpoints],
-                show_progress=False,
-            )
+        with gr.Row() as selector:
+            with gr.Column():
+                current_checkpoints = gr.HTML(
+                    show_current_checkpoints(kubin), elem_classes=["block-info"]
+                )
 
-        with gr.Accordion("Checkpoint location settings", open=True):
-            rescan_btn = gr.Button(value="🔄 Rescan checkpoints").style(full_width=False)
+                prior_select = gr.Dropdown(
+                    choices=scan_checkpoints(
+                        scanned_directories,
+                        prior_filename_pattern,
+                        default_prior_path,
+                        prior_base_path_placeholder,
+                    ),
+                    value=prior_base_path_placeholder,
+                    label="Select prior checkpoint",
+                    interactive=True,
+                )
+                prior_select.select(
+                    lambda path, kubin=kubin: select_prior_checkpoint(path, kubin),
+                    inputs=[prior_select],
+                    outputs=[current_checkpoints],
+                    show_progress=False,
+                )
+                decoder_select = gr.Dropdown(
+                    choices=scan_checkpoints(
+                        scanned_directories,
+                        decoder_filename_pattern,
+                        default_decoder_path,
+                        decoder_base_path_placeholder,
+                    ),
+                    value=decoder_base_path_placeholder,
+                    label="Select decoder checkpoint",
+                    interactive=True,
+                )
+                decoder_select.select(
+                    lambda path, kubin=kubin: select_decoder_checkpoint(path, kubin),
+                    inputs=[decoder_select],
+                    outputs=[current_checkpoints],
+                    show_progress=False,
+                )
+                inpaint_select = gr.Dropdown(
+                    choices=scan_checkpoints(
+                        scanned_directories,
+                        inpaint_filename_pattern,
+                        default_inpaint_decoder_path,
+                        inpaint_decoder_base_path_placeholder,
+                    ),
+                    value=inpaint_decoder_base_path_placeholder,
+                    label="Select inpaint decoder checkpoint",
+                    interactive=True,
+                )
+                inpaint_select.select(
+                    lambda path, kubin=kubin: select_inpaint_checkpoint(path, kubin),
+                    inputs=[inpaint_select],
+                    outputs=[current_checkpoints],
+                    show_progress=False,
+                )
 
-            directories = gr.Textbox(
-                value=scanned_directories, label="Directories to scan"
-            )
-            prior_pattern = gr.Textbox(
-                value=prior_filename_pattern, label="Prior filename pattern"
-            )
-            decoder_pattern = gr.Textbox(
-                value=decoder_filename_pattern, label="Decoder filename pattern"
-            )
-            inpaint_pattern = gr.Textbox(
-                value=inpaint_filename_pattern, label="Inpaint decoder filename pattern"
-            )
+            with gr.Accordion("Checkpoint location settings", open=True):
+                rescan_btn = gr.Button(value="🔄 Rescan checkpoints").style(
+                    full_width=False
+                )
 
-            rescan_btn.click(
-                lambda directories, prior_pattern, decoder_pattern, inpaint_pattern, kubin=kubin: rescan_checkpoints(
-                    kubin,
-                    directories,
-                    prior_pattern,
-                    decoder_pattern,
-                    inpaint_pattern,
-                    default_prior_path,
-                    default_decoder_path,
-                    default_inpaint_decoder_path,
-                ),
-                inputs=[directories, prior_pattern, decoder_pattern, inpaint_pattern],
-                outputs=[prior_select, decoder_select, inpaint_select],
-            )
+                directories = gr.Textbox(
+                    value=scanned_directories, label="Directories to scan"
+                )
+                prior_pattern = gr.Textbox(
+                    value=prior_filename_pattern, label="Prior filename pattern"
+                )
+                decoder_pattern = gr.Textbox(
+                    value=decoder_filename_pattern, label="Decoder filename pattern"
+                )
+                inpaint_pattern = gr.Textbox(
+                    value=inpaint_filename_pattern,
+                    label="Inpaint decoder filename pattern",
+                )
+
+                rescan_btn.click(
+                    lambda directories, prior_pattern, decoder_pattern, inpaint_pattern, kubin=kubin: rescan_checkpoints(
+                        kubin,
+                        directories,
+                        prior_pattern,
+                        decoder_pattern,
+                        inpaint_pattern,
+                        default_prior_path,
+                        default_decoder_path,
+                        default_inpaint_decoder_path,
+                    ),
+                    inputs=[
+                        directories,
+                        prior_pattern,
+                        decoder_pattern,
+                        inpaint_pattern,
+                    ],
+                    outputs=[prior_select, decoder_select, inpaint_select],
+                )
 
     return selector
 

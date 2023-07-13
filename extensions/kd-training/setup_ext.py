@@ -9,11 +9,14 @@ def setup(kubin):
     def training_ui(ui_shared, ui_tabs):
         with gr.Column() as training_block:
             with gr.Tabs() as training_tabs:
-                with gr.TabItem("Prior", id="training-prior"):
-                    prior_ui = train_prior_ui(kubin, training_tabs)
+                with gr.TabItem("2.1") as training_selector_kd21:
+                    training_selector_kd21.elem_classes = ["training-selector-kd21"]
 
-                with gr.TabItem("UnCLIP", id="training-unclip"):
-                    unclip_ui = train_unclip_ui(kubin, training_tabs)
+                    with gr.TabItem("Prior", id="training-prior"):
+                        prior_ui = train_prior_ui(kubin, training_tabs)
+
+                    with gr.TabItem("UnCLIP", id="training-unclip"):
+                        unclip_ui = train_unclip_ui(kubin, training_tabs)
 
                 with gr.TabItem("Dataset", id="training-tools"):
                     utils_ui = train_tools_ui(kubin)
