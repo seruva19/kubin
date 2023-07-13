@@ -3,10 +3,10 @@ import torch
 import torch
 import torch.backends
 
-from model_utils.diffusers_utils import use_scheduler
 from utils.image import create_inpaint_targets, create_outpaint_targets
 
 try:
+    from model_utils.diffusers_utils import use_scheduler
     from diffusers import (
         KandinskyPipeline,
         KandinskyImg2ImgPipeline,
