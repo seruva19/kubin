@@ -6,11 +6,15 @@
   font-family: var(--font);
 }
 
-body[class*="pipeline-native"] .diffusers-sampler {
+body[class*="pipeline-native"] .diffusers-control {
   display: none;
 }
 
-body[class*="pipeline-diffusers"] .native-sampler {
+body[class*="pipeline-diffusers"] .native-control {
+  display: none;
+}
+
+body:not([class*="pipeline-diffusers-kd22"]) .diffusers-kd22-control {
   display: none;
 }
 

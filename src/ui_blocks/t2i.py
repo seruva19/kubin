@@ -111,7 +111,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                         value="p_sampler",
                         label="Sampler",
                     )
-                    sampler.elem_classes = ["t2i_sampler", "native-sampler"]
+                    sampler.elem_classes = ["t2i_sampler", "native-control"]
 
                     sampler_diffusers = gr.Radio(
                         ["ddim_sampler", "ddpm_sampler"],
@@ -120,7 +120,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                     )
                     sampler_diffusers.elem_classes = [
                         "t2i_sampler",
-                        "diffusers-sampler",
+                        "diffusers-control",
                     ]
                     seed = gr.Number(-1, label="Seed", precision=0)
                 with gr.Row() as prior_block:
