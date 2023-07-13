@@ -1,7 +1,7 @@
 import gradio as gr
 import fnmatch
 import os
-from engine.kandinsky import KandinskyCheckpoint
+from model_utils.kandinsky_utils import KandinskyCheckpoint
 from env import Kubin
 
 prior_base_path_placeholder = "🏠 base prior checkpoint"

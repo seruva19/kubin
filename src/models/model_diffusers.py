@@ -3,6 +3,9 @@ import torch
 import torch
 import torch.backends
 
+from model_utils.diffusers_utils import apply_prompt_encoder, use_scheduler
+from utils.image import create_inpaint_targets, create_outpaint_targets
+
 try:
     from diffusers import (
         KandinskyPipeline,
@@ -20,8 +23,6 @@ except:
 import itertools
 import os
 import secrets
-from PIL import Image, ImageOps
-import numpy as np
 from params import KubinParams
 from utils.file_system import save_output
 
@@ -36,6 +37,7 @@ class Model_Diffusers:
         self.i2i_pipe: KandinskyImg2ImgPipeline | None = None
         self.inpaint_pipe: KandinskyInpaintPipeline | None = None
 
+        self.current_pipe = None
         self.cublas_config = os.environ.get("CUBLAS_WORKSPACE_CONFIG", None)
 
     def prepareModel(self, task):
@@ -68,6 +70,7 @@ class Model_Diffusers:
                 cache_dir=cache_dir,
             )
 
+            self.pipe_prior.safety_checker = None
             self.pipe_prior.to(device)
 
             if self.params("diffusers", "sequential_cpu_offload"):
@@ -85,35 +88,7 @@ class Model_Diffusers:
                     else "auto",
                     cache_dir=cache_dir,
                 )
-
-                if self.params("diffusers", "enable_xformers"):
-                    self.t2i_pipe.enable_xformers_memory_efficient_attention()
-                else:
-                    self.t2i_pipe.disable_xformers_memory_efficient_attention()
-
-                if self.params("diffusers", "enable_sdpa_attention"):
-                    self.t2i_pipe.unet.set_attn_processor(AttnAddedKVProcessor2_0())
-
-                if self.params("diffusers", "enable_sliced_attention"):
-                    self.t2i_pipe.enable_attention_slicing()
-                else:
-                    self.t2i_pipe.disable_attention_slicing()
-
-                if self.params("diffusers", "channels_last_memory"):
-                    self.t2i_pipe.unet.to(memory_format=torch.channels_last)
-
-                if self.params("diffusers", "torch_code_compilation"):
-                    self.t2i_pipe.unet = torch.compile(
-                        self.t2i_pipe.unet, mode="reduce-overhead", fullgraph=True
-                    )
-
-                self.t2i_pipe.to(device)
-
-                if self.params("diffusers", "sequential_cpu_offload"):
-                    self.t2i_pipe.enable_sequential_cpu_offload()
-
-                if self.params("diffusers", "full_model_offload"):
-                    self.t2i_pipe.enable_model_cpu_offload()
+                self.current_pipe = self.t2i_pipe
 
         elif task == "img2img":
             if self.i2i_pipe is None:
@@ -127,35 +102,7 @@ class Model_Diffusers:
                     else "auto",
                     cache_dir=cache_dir,
                 )
-
-                if self.params("diffusers", "enable_xformers"):
-                    self.i2i_pipe.enable_xformers_memory_efficient_attention()
-                else:
-                    self.i2i_pipe.disable_xformers_memory_efficient_attention()
-
-                if self.params("diffusers", "enable_sdpa_attention"):
-                    self.i2i_pipe.unet.set_attn_processor(AttnAddedKVProcessor2_0())
-
-                if self.params("diffusers", "enable_sliced_attention"):
-                    self.i2i_pipe.enable_attention_slicing()
-                else:
-                    self.i2i_pipe.disable_attention_slicing()
-
-                if self.params("diffusers", "channels_last_memory"):
-                    self.i2i_pipe.unet.to(memory_format=torch.channels_last)
-
-                if self.params("diffusers", "torch_code_compilation"):
-                    self.i2i_pipe.unet = torch.compile(
-                        self.i2i_pipe.unet, mode="reduce-overhead", fullgraph=True
-                    )
-
-                self.i2i_pipe.to(device)
-
-                if self.params("diffusers", "sequential_cpu_offload"):
-                    self.i2i_pipe.enable_sequential_cpu_offload()
-
-                if self.params("diffusers", "full_model_offload"):
-                    self.i2i_pipe.enable_model_cpu_offload()
+                self.current_pipe = self.i2i_pipe
 
         elif task == "inpainting" or task == "outpainting":
             if self.inpaint_pipe is None:
@@ -170,36 +117,39 @@ class Model_Diffusers:
                     cache_dir=cache_dir,
                 )
 
-                if self.params("diffusers", "enable_xformers"):
-                    self.inpaint_pipe.enable_xformers_memory_efficient_attention()
-                else:
-                    self.inpaint_pipe.disable_xformers_memory_efficient_attention()
+                self.current_pipe = self.inpaint_pipe
 
-                if self.params("diffusers", "enable_sdpa_attention"):
-                    self.inpaint_pipe.unet.set_attn_processor(AttnAddedKVProcessor2_0())
+        if self.params("diffusers", "enable_xformers"):
+            self.current_pipe.enable_xformers_memory_efficient_attention()
+        else:
+            self.current_pipe.disable_xformers_memory_efficient_attention()
 
-                if self.params("diffusers", "enable_sliced_attention"):
-                    self.inpaint_pipe.enable_attention_slicing()
-                else:
-                    self.inpaint_pipe.disable_attention_slicing()
+        if self.params("diffusers", "enable_sdpa_attention"):
+            self.current_pipe.unet.set_attn_processor(AttnAddedKVProcessor2_0())
 
-                if self.params("diffusers", "channels_last_memory"):
-                    self.inpaint_pipe.unet.to(memory_format=torch.channels_last)
+        if self.params("diffusers", "channels_last_memory"):
+            self.current_pipe.unet.to(memory_format=torch.channels_last)
 
-                if self.params("diffusers", "torch_code_compilation"):
-                    self.inpaint_pipe.unet = torch.compile(
-                        self.inpaint_pipe.unet, mode="reduce-overhead", fullgraph=True
-                    )
+        if self.params("diffusers", "torch_code_compilation"):
+            self.current_pipe.unet = torch.compile(
+                self.current_pipe.unet, mode="reduce-overhead", fullgraph=True
+            )
 
-                self.inpaint_pipe.to(device)
+        self.current_pipe.to(device)
 
-                if self.params("diffusers", "sequential_cpu_offload"):
-                    self.inpaint_pipe.enable_sequential_cpu_offload()
+        if self.params("diffusers", "sequential_cpu_offload"):
+            self.current_pipe.enable_sequential_cpu_offload()
 
-                if self.params("diffusers", "full_model_offload"):
-                    self.inpaint_pipe.enable_model_cpu_offload()
+        if self.params("diffusers", "full_model_offload"):
+            self.current_pipe.enable_model_cpu_offload()
 
-        return self
+        if self.params("diffusers", "enable_sliced_attention"):
+            self.current_pipe.enable_attention_slicing()
+        else:
+            self.current_pipe.disable_attention_slicing()
+
+        self.current_pipe.safety_checker = None
+        return self.current_pipe
 
     def flush(self, target=None):
         print(f"clearing memory")
@@ -243,10 +193,13 @@ class Model_Diffusers:
         print(f"seed generated: {seed}")
         params["input_seed"] = seed
         params["model_name"] = "diffusers2.1"
+
         return params
 
     def t2i(self, params):
-        params = self.prepareModel("text2img").prepareParams(params)
+        unet_pipe = self.prepareModel("text2img")
+        params = self.prepareParams(params)
+
         generator = torch.Generator(
             device=self.params("general", "device")
         ).manual_seed(params["input_seed"])
@@ -263,13 +216,24 @@ class Model_Diffusers:
             return_dict=True,
         ).to_tuple()
 
+        promp_encoder = apply_prompt_encoder(self.params, self.pipe_prior)
+        image_embeds, negative_image_embeds = promp_encoder(
+            image_embeds,
+            negative_image_embeds,
+            params["prompt"],
+            params["negative_prior_prompt"],
+        )
+
+        use_scheduler(unet_pipe, params["sampler"])
+
         images = []
         for _ in itertools.repeat(None, params["batch_count"]):
             current_batch = self.t2i_pipe(
+                # progress_bar=params["_progress_bar"],
                 prompt=params["prompt"],
                 image_embeds=image_embeds,
+                negative_prompt=params["negative_prompt"],
                 negative_image_embeds=negative_image_embeds,
-                negative_prompt=params["negative_decoder_prompt"],
                 width=params["w"],
                 height=params["h"],
                 num_inference_steps=params["num_steps"],
@@ -290,7 +254,9 @@ class Model_Diffusers:
         return images
 
     def i2i(self, params):
-        params = self.prepareModel("img2img").prepareParams(params)
+        unet_pipe = self.prepareModel("img2img")
+        params = self.prepareParams(params)
+
         generator = torch.Generator(
             device=self.params("general", "device")
         ).manual_seed(params["input_seed"])
@@ -308,6 +274,8 @@ class Model_Diffusers:
             return_dict=True,
         ).to_tuple()
 
+        use_scheduler(unet_pipe, params["sampler"])
+
         images = []
         for _ in itertools.repeat(None, params["batch_count"]):
             current_batch = self.i2i_pipe(
@@ -317,9 +285,9 @@ class Model_Diffusers:
                 negative_image_embeds=negative_image_embeds,
                 width=params["w"],
                 height=params["h"],
-                strength=1 - params["strength"],
+                strength=params["strength"],
                 # TODO add negative prompt to UI
-                # negative_prompt=params["negative_decoder_prompt"],
+                # negative_prompt=params["negative_prompt"],
                 num_inference_steps=params["num_steps"],
                 guidance_scale=params["guidance_scale"],
                 num_images_per_prompt=params["batch_size"],
@@ -337,7 +305,9 @@ class Model_Diffusers:
         return images
 
     def mix(self, params):
-        params = self.prepareModel("mix").prepareParams(params)
+        unet_pipe = self.prepareModel("mix")
+        params = self.prepareParams(params)
+
         generator = torch.Generator(
             device=self.params("general", "device")
         ).manual_seed(params["input_seed"])
@@ -355,6 +325,8 @@ class Model_Diffusers:
         )
         weights = [params["weight_1"], params["weight_2"]]
 
+        use_scheduler(unet_pipe, params["sampler"])
+
         prompt = ""
         interpolation_params = self.pipe_prior.interpolate(
             images_and_prompts=images_texts,
@@ -364,7 +336,7 @@ class Model_Diffusers:
             generator=generator,
             latents=None,
             negative_prior_prompt=params["negative_prior_prompt"],
-            negative_prompt=params["negative_decoder_prompt"],
+            negative_prompt=params["negative_prompt"],
             guidance_scale=params["prior_cf_scale"],
         )
 
@@ -393,7 +365,9 @@ class Model_Diffusers:
         return images
 
     def inpaint(self, params):
-        params = self.prepareModel("inpainting").prepareParams(params)
+        unet_pipe = self.prepareModel("inpainting")
+        params = self.prepareParams(params)
+
         generator = torch.Generator(
             device=self.params("general", "device")
         ).manual_seed(params["input_seed"])
@@ -402,7 +376,7 @@ class Model_Diffusers:
             prompt=params["prompt"],
             negative_prompt=params["negative_prior_prompt"],
             num_images_per_prompt=1,
-            num_inference_steps=25,
+            num_inference_steps=params["prior_steps"],
             latents=None,
             guidance_scale=params["prior_cf_scale"],
             output_type="pt",
@@ -410,22 +384,30 @@ class Model_Diffusers:
             return_dict=True,
         )
 
-        output_size = (params["w"], params["h"])
         image_mask = params["image_mask"]
-        pil_img = image_mask["image"].resize(output_size, resample=Image.LANCZOS)
 
-        mask_img = image_mask["mask"].resize(output_size)
-        mask_arr = np.array(mask_img.convert("L")).astype(np.float32) / 255.0
+        pil_img = image_mask["image"]
+        width, height = (
+            pil_img.width if params["infer_size"] else params["w"],
+            pil_img.height if params["infer_size"] else params["h"],
+        )
+        output_size = (width, height)
+        mask = image_mask["mask"]
+        inpaint_region = params["region"]
+        inpaint_target = params["target"]
 
-        if params["target"] == "only mask":
-            mask_arr = 1.0 - mask_arr
+        image, mask = create_inpaint_targets(
+            pil_img, mask, output_size, inpaint_region, inpaint_target
+        )
+
+        use_scheduler(unet_pipe, params["sampler"])
 
         images = []
         for _ in itertools.repeat(None, params["batch_count"]):
             current_batch = self.inpaint_pipe(
                 prompt=params["prompt"],
-                image=pil_img,
-                mask_image=mask_arr,
+                image=image,
+                mask_image=mask,
                 **prior_output,
                 width=params["w"],
                 height=params["h"],
@@ -447,7 +429,9 @@ class Model_Diffusers:
         return images
 
     def outpaint(self, params):
-        params = self.prepareModel("outpainting").prepareParams(params)
+        unet_pipe = self.prepareModel("outpainting")
+        params = self.prepareParams(params)
+
         generator = torch.Generator(
             device=self.params("general", "device")
         ).manual_seed(params["input_seed"])
@@ -456,7 +440,7 @@ class Model_Diffusers:
             prompt=params["prompt"],
             negative_prompt=params["negative_prior_prompt"],
             num_images_per_prompt=1,
-            num_inference_steps=25,
+            num_inference_steps=params["prior_steps"],
             latents=None,
             guidance_scale=params["prior_cf_scale"],
             output_type="pt",
@@ -465,33 +449,16 @@ class Model_Diffusers:
         ).to_tuple()
 
         image = params["image"]
-        image_w, image_h = image.size
-
         offset = params["offset"]
-
-        if offset is not None:
-            top, right, bottom, left = offset
-            inferred_mask_size = tuple(
-                a + b for a, b in zip(image.size, (left + right, top + bottom))  # type: ignore
-            )[::-1]
-            mask = np.zeros(inferred_mask_size, dtype=np.float32)  # type: ignore
-            mask[top : image_h + top, left : image_w + left] = 1
-            image = ImageOps.expand(image, border=(left, top, right, bottom), fill=0)
-
-        else:
-            x1, y1, x2, y2 = image.getbbox()
-            mask = np.ones((image_h, image_w), dtype=np.float32)
-            mask[0:y1, :] = 0
-            mask[:, 0:x1] = 0
-            mask[y2:image_h, :] = 0
-            mask[:, x2:image_w] = 0
-
         infer_size = params["infer_size"]
-        if infer_size:
-            height, width = mask.shape[:2]
-        else:
-            width = params["w"]
-            height = params["h"]
+        width = params["w"]
+        height = params["h"]
+
+        image, mask, width, height = create_outpaint_targets(
+            image, offset, infer_size, width, height
+        )
+
+        use_scheduler(unet_pipe, params["sampler"])
 
         images = []
         for _ in itertools.repeat(None, params["batch_count"]):

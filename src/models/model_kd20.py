@@ -8,7 +8,6 @@ import torch
 import torch.backends
 
 from params import KubinParams
-from engine.kandinsky import get_checkpoint
 from kandinsky2 import Kandinsky2, get_kandinsky2_0
 from utils.file_system import save_output
 
@@ -90,6 +89,7 @@ class Model_KD20:
         print(f"seed generated: {seed}")
         params["input_seed"] = seed
         params["model_name"] = "kd2.0"
+
         return params
 
     def t2i(self, params):

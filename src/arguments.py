@@ -27,6 +27,7 @@ def parse_arguments():
     parser.add_argument("--pipeline", type=str, default=None)
     parser.add_argument("--mock", type=str, default=None)
     parser.add_argument("--theme", type=str, default=None)
+    parser.add_argument("--side-tabs", type=str, default=None)
     parser.add_argument("--optimize", type=str, default=None)
 
     args = parser.parse_args()

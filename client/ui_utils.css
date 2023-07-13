@@ -6,18 +6,22 @@
   font-family: var(--font);
 }
 
-body.pipeline-native .diffusers-sampler {
+body[class^="pipeline-native"] .diffusers-sampler {
   display: none;
 }
 
-body.pipeline-diffusers .native-sampler {
+body[class^="pipeline-diffusers"] .native-sampler {
   display: none;
 }
 
-body.pipeline-native2_0 .unsupported2_0,
-body.pipeline-native2_0 .ui-tabs>.tab-nav>button:nth-child(3),
-body.pipeline-native2_0 .ui-tabs>.tab-nav>button:nth-child(5) {
+body.pipeline-native-kd20 .unsupported2_0,
+body.pipeline-native-kd20 .ui-tabs>.tab-nav>button:nth-child(3),
+body.pipeline-native-kd20 .ui-tabs>.tab-nav>button:nth-child(5) {
   display: none;
+}
+
+body:not(.pipeline-diffusers-kd22) .control-net {
+  /* display: none; */
 }
 
 body.unselectable * {
@@ -68,6 +72,25 @@ html.has-lightbox body {
 
 .options-block {
   display: none !important;
+
+}
+
+.options-block .form {
+  line-height: 50px;
+  border-radius: 5px !important;
+}
+
+.options-block .form,
+.options-block .form fieldset {
+  border: none;
+  display: initial;
+  box-shadow: none;
+}
+
+.options-block .padded {
+  padding: 5px;
+  border-color: transparent;
+  box-shadow: none;
 }
 
 .options-block.active {
@@ -108,4 +131,23 @@ html.has-lightbox body {
 
 .block-params-vertical-alignment .block-resizable-anchor {
   display: none;
+}
+
+.block.inline-flex {
+  display: inline-flex;
+}
+
+.thumbnail-item {
+  aspect-ratio: initial !important;
+}
+
+.ui-tabs.left>.tab-nav button.selected {
+  margin-left: 15px;
+}
+
+.ui-tabs.left>.tab-nav button.selected::before {
+  content: "👉";
+  position: absolute;
+  margin-left: -24px;
+  margin-top: -1px;
 }
