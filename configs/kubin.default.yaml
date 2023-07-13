@@ -1,5 +1,5 @@
 general:
-  device: cuda:0
+  device: cuda
   cache_dir: models
   model_name: kd22
   output_dir: output
