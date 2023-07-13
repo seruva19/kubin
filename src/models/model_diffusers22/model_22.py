@@ -14,6 +14,8 @@ from params import KubinParams
 from utils.file_system import save_output
 
 try:
+    from transformers import CLIPVisionModelWithProjection
+    from diffusers.models import UNet2DConditionModel
     from diffusers import (
         KandinskyV22PriorPipeline,
         KandinskyV22PriorEmb2EmbPipeline,
@@ -35,6 +37,9 @@ class Model_Diffusers22:
     def __init__(self, params: KubinParams):
         print("activating pipeline: diffusers (2.2)")
         self.params = params
+
+        self.image_encoder: CLIPVisionModelWithProjection | None = None
+        self.unet_2d: UNet2DConditionModel | None = None
 
         self.pipe_prior: KandinskyV22PriorPipeline | None = None
         self.pipe_prior_e2e: KandinskyV22PriorEmb2EmbPipeline | None = None
@@ -109,7 +114,6 @@ class Model_Diffusers22:
         assert isinstance(unet, KandinskyV22Pipeline)
         params, generator = self.prepareParams(params)
 
-        print("generating prior embeddings")
         image_embeds, zero_embeds = prior(
             prompt=params["prompt"],
             negative_prompt=params["negative_prior_prompt"]
@@ -123,8 +127,8 @@ class Model_Diffusers22:
             generator=generator,
             return_dict=False,
         )
+        print("prior embeddings: done")
 
-        print("generating negative prior embeddings")
         negative_image_embeds = (
             prior(
                 prompt=params["negative_prompt"],
@@ -140,12 +144,12 @@ class Model_Diffusers22:
             if params["negative_prompt"] != ""
             else zero_embeds
         )
+        print("negative prior embeddings: done")
 
         use_scheduler(unet, params["sampler"])
 
         images = []
         for _ in itertools.repeat(None, params["batch_count"]):
-            print("generating unet images")
             current_batch = unet(
                 image_embeds=image_embeds,
                 negative_image_embeds=negative_image_embeds,
@@ -163,6 +167,7 @@ class Model_Diffusers22:
             images = images + self.create_batch_images(
                 params, "text2img", current_batch
             )
+        print("unet images: done")
         return images
 
     def i2i(self, params):
@@ -184,6 +189,7 @@ class Model_Diffusers22:
             generator=generator,
             return_dict=False,
         )
+        print("prior embeddings: done")
 
         use_scheduler(unet, params["sampler"])
 
@@ -205,6 +211,7 @@ class Model_Diffusers22:
             ).images
 
             images = images + self.create_batch_images(params, "img2img", current_batch)
+        print("unet images: done")
         return images
 
     def mix(self, params):
@@ -237,6 +244,7 @@ class Model_Diffusers22:
             negative_prior_prompt=params["negative_prior_prompt"],
             guidance_scale=params["prior_cf_scale"],
         )
+        print("prior embeddings: done")
 
         use_scheduler(unet, params["sampler"])
 
@@ -257,6 +265,7 @@ class Model_Diffusers22:
             ).images
 
             images = images + self.create_batch_images(params, "mix", current_batch)
+        print("unet images: done")
         return images
 
     def inpaint(self, params):
@@ -278,6 +287,7 @@ class Model_Diffusers22:
             generator=generator,
             return_dict=False,
         )
+        print("prior embeddings: done")
 
         negative_image_embeds = (
             prior(
@@ -294,6 +304,7 @@ class Model_Diffusers22:
             if params["negative_prompt"] != ""
             else zero_embeds
         )
+        print("negative prior embeddings: done")
 
         image_mask = params["image_mask"]
 
@@ -334,6 +345,7 @@ class Model_Diffusers22:
             images = images + self.create_batch_images(
                 params, "inpainting", current_batch
             )
+        print("unet images: done")
         return images
 
     def outpaint(self, params):
@@ -355,6 +367,7 @@ class Model_Diffusers22:
             generator=generator,
             return_dict=False,
         )
+        print("prior embeddings: done")
 
         negative_image_embeds = (
             prior(
@@ -371,6 +384,7 @@ class Model_Diffusers22:
             if params["negative_prompt"] != ""
             else zero_embeds
         )
+        print("negative prior embeddings: done")
 
         image = params["image"]
         offset = params["offset"]
@@ -405,6 +419,7 @@ class Model_Diffusers22:
             images = images + self.create_batch_images(
                 params, "outpainting", current_batch
             )
+        print("unet images: done")
         return images
 
     def t2i_cnet(self, params):
@@ -429,6 +444,7 @@ class Model_Diffusers22:
             generator=generator,
             return_dict=False,
         )
+        print("prior embeddings: done")
 
         negative_image_embeds = (
             prior(
@@ -445,11 +461,12 @@ class Model_Diffusers22:
             if params["negative_prompt"] != ""
             else zero_embeds
         )
+        print("negative prior embeddings: done")
 
         use_scheduler(unet, params["sampler"])
 
         cnet_image = cnet_image.resize((params["w"], params["h"]))
-        hint = generate_hint(cnet_image, cnet_condition)
+        hint = generate_hint(cnet_image, cnet_condition, self.params)
 
         images = []
         for _ in itertools.repeat(None, params["batch_count"]):
@@ -471,6 +488,7 @@ class Model_Diffusers22:
             images = images + self.create_batch_images(
                 params, "text2img_cnet", current_batch
             )
+        print("unet images: done")
         return images
 
     def i2i_cnet(self, params):
@@ -500,6 +518,7 @@ class Model_Diffusers22:
             generator=generator,
             return_dict=False,
         )
+        print("prior embeddings: done")
 
         negative_image_embeds = (
             prior(
@@ -518,11 +537,12 @@ class Model_Diffusers22:
             if params["negative_prompt"] != ""
             else zero_embeds
         )
+        print("negative prior embeddings: done")
 
         use_scheduler(unet, params["sampler"])
 
         i2i_cnet_image = i2i_cnet_image.resize((params["w"], params["h"]))
-        hint = generate_hint(i2i_cnet_image, i2i_cnet_condition)
+        hint = generate_hint(i2i_cnet_image, i2i_cnet_condition, self.params)
 
         images = []
         for _ in itertools.repeat(None, params["batch_count"]):
@@ -545,4 +565,5 @@ class Model_Diffusers22:
             images = images + self.create_batch_images(
                 params, "img2img_cnet", current_batch
             )
+        print("unet images: done")
         return images

@@ -2,6 +2,8 @@ import gc
 import torch
 
 try:
+    from transformers import CLIPVisionModelWithProjection
+    from diffusers.models import UNet2DConditionModel
     from diffusers import (
         KandinskyV22PriorPipeline,
         KandinskyV22PriorEmb2EmbPipeline,
@@ -18,10 +20,22 @@ except:
 
 def prepare_weights_for_task(model, task):
     cache_dir = model.params("general", "cache_dir")
+    device = model.params("general", "device")
 
     if model.pipe_prior is None:
+        model.image_encoder = (
+            CLIPVisionModelWithProjection.from_pretrained(
+                "kandinsky-community/kandinsky-2-2-prior",
+                subfolder="image_encoder",
+                cache_dir=cache_dir,
+            )
+            .half()
+            .to(device)
+        )
+
         model.pipe_prior = KandinskyV22PriorPipeline.from_pretrained(
             "kandinsky-community/kandinsky-2-2-prior",
+            image_encoder=model.image_encoder,
             torch_dtype=type_of_weights(model.params),
             cache_dir=cache_dir,
         )
@@ -31,8 +45,19 @@ def prepare_weights_for_task(model, task):
         if model.t2i_pipe is None:
             flush_if_required(model, task)
 
+            model.unet_2d = (
+                UNet2DConditionModel.from_pretrained(
+                    "kandinsky-community/kandinsky-2-2-decoder",
+                    subfolder="unet",
+                    cache_dir=cache_dir,
+                )
+                .half()
+                .to(device)
+            )
+
             model.t2i_pipe = KandinskyV22Pipeline.from_pretrained(
                 "kandinsky-community/kandinsky-2-2-decoder",
+                unet=model.unet_2d,
                 torch_dtype=type_of_weights(model.params),
                 cache_dir=cache_dir,
             )
@@ -46,8 +71,19 @@ def prepare_weights_for_task(model, task):
         if model.cnet_t2i_pipe is None:
             flush_if_required(model, task)
 
+            model.unet_2d = (
+                UNet2DConditionModel.from_pretrained(
+                    "kandinsky-community/kandinsky-2-2-controlnet-depth",
+                    subfolder="unet",
+                    cache_dir=cache_dir,
+                )
+                .half()
+                .to(device)
+            )
+
             model.cnet_t2i_pipe = KandinskyV22ControlnetPipeline.from_pretrained(
                 "kandinsky-community/kandinsky-2-2-controlnet-depth",
+                unet=model.unet_2d,
                 torch_dtype=type_of_weights(model.params),
                 cache_dir=cache_dir,
             )
@@ -67,9 +103,20 @@ def prepare_weights_for_task(model, task):
         if model.inpaint_pipe is None:
             flush_if_required(model, task)
 
+            model.unet_2d = (
+                UNet2DConditionModel.from_pretrained(
+                    "kandinsky-community/kandinsky-2-2-decoder-inpaint",
+                    subfolder="unet",
+                    cache_dir=cache_dir,
+                )
+                .half()
+                .to(device)
+            )
+
             model.inpaint_pipe = KandinskyV22InpaintPipeline.from_pretrained(
                 "kandinsky-community/kandinsky-2-2-decoder-inpaint",
                 torch_dtype=type_of_weights(model.params),
+                unet=model.unet_2d,
                 cache_dir=cache_dir,
             )
 
@@ -202,7 +249,8 @@ def to_device(k_params, prior, unet):
         unet.enable_model_cpu_offload()
 
     if k_params("diffusers", "enable_sliced_attention"):
-        unet.enable_attention_slicing()
+        slice_size = k_params("diffusers", "attention_slice_size")
+        unet.enable_attention_slicing(slice_size)
     else:
         unet.disable_attention_slicing()
 
