@@ -4,6 +4,7 @@ from transformers import pipeline
 
 
 def generate_depth_map(image, k_params):
+    # TODO reuse pipeline
     depth_estimator = pipeline("depth-estimation")
     image = depth_estimator(image)["depth"]
     image = np.array(image)

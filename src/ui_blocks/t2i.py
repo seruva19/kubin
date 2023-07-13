@@ -39,12 +39,6 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                             label="Condition",
                         )
 
-                        cnet_info = gr.HTML(
-                            "<span style='font-size: 12px; color: red;'>Warning: ControlNet is not enabled</span>",
-                            visible=True,
-                            elem_classes=["block-info"],
-                        )
-
                 with gr.Column(visible=False) as cnet_i2i_params:
                     with gr.Row():
                         cnet_emb_transform_strength = gr.Slider(
@@ -73,17 +67,6 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                             label="Image strength",
                             # info="Strength of reference image",
                         )
-
-            def cnet_enabled(enabled):
-                return gr.update(visible=not enabled)
-
-            cnet_enable.change(
-                cnet_enabled,
-                inputs=cnet_enable,
-                outputs=cnet_info,
-                show_progress=False,
-                queue=False,
-            )
 
             def pipeline_changed(pipeline):
                 return gr.update(
