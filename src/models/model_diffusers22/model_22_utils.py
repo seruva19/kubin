@@ -88,6 +88,16 @@ def flush_if_required(model, target):
         clear_memory_targets = ["text2img_cnet", "inpainting"]
     elif target in ["inpainting", "outpainting"]:
         clear_memory_targets = ["text2img", "text2img_cnet"]
+    elif target is None:
+        clear_memory_targets = [
+            "text2img",
+            "img2img",
+            "mix",
+            "inpainting",
+            "outpainting",
+            "text2img_cnet",
+            "img2img_cnet",
+        ]
 
     if clear_memory_targets is not None:
         print(
@@ -95,7 +105,7 @@ def flush_if_required(model, target):
         )
         offload_enabled = model.params("diffusers", "sequential_cpu_offload")
 
-        if ["prior"] in clear_memory_targets:
+        if "prior" in clear_memory_targets:
             if model.pipe_prior is not None:
                 print("releasing prior pipeline")
                 if not offload_enabled:
@@ -108,7 +118,9 @@ def flush_if_required(model, target):
                     model.pipe_prior_e2e.to("cpu")
                 model.pipe_prior_e2e = None
 
-        if ["text2img", "img2img", "mix"] in clear_memory_targets:
+        if any(
+            value in clear_memory_targets for value in ["text2img", "img2img", "mix"]
+        ):
             if model.t2i_pipe is not None:
                 print("releasing t2i pipeline")
                 if not offload_enabled:
@@ -121,14 +133,18 @@ def flush_if_required(model, target):
                     model.i2i_pipe.to("cpu")
                 model.i2i_pipe = None
 
-        if ["inpainting", "outpainting"] in clear_memory_targets:
+        if any(
+            value in clear_memory_targets for value in ["inpainting", "outpainting"]
+        ):
             if model.inpaint_pipe is not None:
                 print("releasing inpaint pipeline")
                 if not offload_enabled:
                     model.inpaint_pipe.to("cpu")
                 model.inpaint_pipe = None
 
-        if ["text2img_cnet", "img2img_cnet"] in clear_memory_targets:
+        if any(
+            value in clear_memory_targets for value in ["text2img_cnet", "img2img_cnet"]
+        ):
             if model.cnet_t2i_pipe is not None:
                 print("releasing t2i_cnet pipeline")
                 if not offload_enabled:
