@@ -157,3 +157,6 @@ class KubinParams:
                     self.conf["diffusers"]["sequential_cpu_offload"] = True
                 if optimize_param == "channels_last":
                     self.conf["diffusers"]["channels_last_memory"] = True
+
+        if self.args.side_tabs is not None:
+            self.conf["ui"]["side_tabs"] = self.args.side_tabs == "use"
