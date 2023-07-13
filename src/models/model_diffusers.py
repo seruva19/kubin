@@ -3,7 +3,7 @@ import torch
 import torch
 import torch.backends
 
-from model_utils.diffusers_utils import apply_prompt_encoder, use_scheduler
+from model_utils.diffusers_utils import use_scheduler
 from utils.image import create_inpaint_targets, create_outpaint_targets
 
 try:
