@@ -49,11 +49,7 @@ def options_tab_diffusers(kubin: Kubin):
             value=kubin.params("diffusers", "use_tf32_mode"),
             label="Enable TensorFloat32 mode",
         )
-        use_compel_encoder = gr.Checkbox(
-            value=kubin.params("diffusers", "use_compel_encoder"),
-            label="Use Compel for prompt encoding",
-            visible=False,
-        )
+
         half_precision_weights.change(
             fn=None,
             _js=on_change,
@@ -154,14 +150,5 @@ def options_tab_diffusers(kubin: Kubin):
             ],
             show_progress=False,
         )
-        use_compel_encoder.change(
-            fn=None,
-            _js=on_change,
-            inputs=[
-                gr.Text("diffusers.use_compel_encoder", visible=False),
-                use_compel_encoder,
-                gr.Checkbox(False, visible=False),
-            ],
-            show_progress=False,
-        )
+
     return diffusers_options

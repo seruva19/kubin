@@ -216,14 +216,6 @@ class Model_Diffusers:
             return_dict=True,
         ).to_tuple()
 
-        promp_encoder = apply_prompt_encoder(self.params, self.pipe_prior)
-        image_embeds, negative_image_embeds = promp_encoder(
-            image_embeds,
-            negative_image_embeds,
-            params["prompt"],
-            params["negative_prior_prompt"],
-        )
-
         use_scheduler(unet_pipe, params["sampler"])
 
         images = []
