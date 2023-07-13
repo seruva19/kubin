@@ -3,7 +3,7 @@ import torch
 from transformers import pipeline
 
 
-def generate_depth_map(image):
+def generate_depth_map(image, k_params):
     depth_estimator = pipeline("depth-estimation")
     image = depth_estimator(image)["depth"]
     image = np.array(image)
@@ -14,8 +14,10 @@ def generate_depth_map(image):
     return depth_map
 
 
-def generate_hint(image, cnet_condition):
+def generate_hint(image, cnet_condition, k_params):
+    device = k_params("general", "device")
+
     if cnet_condition == "depth-map":
-        return generate_depth_map(image).unsqueeze(0).half().to("cuda")
+        return generate_depth_map(image, k_params).unsqueeze(0).half().to(device)
 
     return None

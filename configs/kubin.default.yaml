@@ -1,5 +1,5 @@
 general:
-  device: cuda
+  device: cuda:0
   cache_dir: models
   model_name: kd22
   output_dir: output
@@ -51,3 +51,4 @@ diffusers:
   use_deterministic_algorithms: false 
   use_tf32_mode: false 
   use_compel_encoder: false 
+  attention_slice_size: max
