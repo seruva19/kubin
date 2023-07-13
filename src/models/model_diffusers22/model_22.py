@@ -1,11 +1,5 @@
 import torch
 import torch.backends
-from model_utils.diffusers_utils import use_scheduler
-from models.model_diffusers22.model_22_cnet import generate_hint
-from models.model_diffusers22.model_22_utils import (
-    flush_if_required,
-    prepare_weights_for_task,
-)
 from utils.image import create_inpaint_targets, create_outpaint_targets
 import itertools
 import os
@@ -14,6 +8,12 @@ from params import KubinParams
 from utils.file_system import save_output
 
 try:
+    from model_utils.diffusers_utils import use_scheduler
+    from models.model_diffusers22.model_22_cnet import generate_hint
+    from models.model_diffusers22.model_22_utils import (
+        flush_if_required,
+        prepare_weights_for_task,
+    )
     from transformers import CLIPVisionModelWithProjection
     from diffusers.models import UNet2DConditionModel
     from diffusers import (

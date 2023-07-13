@@ -3,10 +3,10 @@ import torch
 import torch
 import torch.backends
 
-from model_utils.diffusers_utils import apply_prompt_encoder, use_scheduler
 from utils.image import create_inpaint_targets, create_outpaint_targets
 
 try:
+    from model_utils.diffusers_utils import use_scheduler
     from diffusers import (
         KandinskyPipeline,
         KandinskyImg2ImgPipeline,
@@ -215,14 +215,6 @@ class Model_Diffusers:
             generator=generator,
             return_dict=True,
         ).to_tuple()
-
-        promp_encoder = apply_prompt_encoder(self.params, self.pipe_prior)
-        image_embeds, negative_image_embeds = promp_encoder(
-            image_embeds,
-            negative_image_embeds,
-            params["prompt"],
-            params["negative_prior_prompt"],
-        )
 
         use_scheduler(unet_pipe, params["sampler"])
 
