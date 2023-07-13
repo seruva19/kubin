@@ -26,7 +26,7 @@ def start(kubin, ui: gr.Blocks):
         concurrency_count=kubin.params("gradio", "concurrency_count"), api_open=False
     ).launch(
         prevent_thread_lock=True,
-        show_api=False,
+        show_api=True,
         debug=kubin.params("gradio", "debug"),
         show_error=True,
         share=kubin.params("general", "share") == "gradio",

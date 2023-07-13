@@ -27,6 +27,11 @@ def options_tab_ui(kubin: Kubin):
             label="Allow UI stretch to the screen edges",
         )
 
+        side_tabs = gr.Checkbox(
+            value=kubin.params("ui", "side_tabs"),
+            label="Put tabs to left side of the screen",
+        )
+
     allow_params_panel_resize.change(
         fn=None,
         _js=on_change,
@@ -67,6 +72,17 @@ def options_tab_ui(kubin: Kubin):
             gr.Text("ui.full_screen_panel", visible=False),
             full_screen_panel,
             gr.Checkbox(False, visible=False),
+        ],
+        show_progress=False,
+    )
+
+    side_tabs.change(
+        fn=None,
+        _js=on_change,
+        inputs=[
+            gr.Text("ui.side_tabs", visible=False),
+            side_tabs,
+            gr.Checkbox(True, visible=False),
         ],
         show_progress=False,
     )

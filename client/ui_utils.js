@@ -81,6 +81,7 @@
     customEventListeners.init()
 
     kubin.notify.success('UI successfully loaded')
+    kubin.UI.reveal()
   })
 
   const customEventListeners = {
@@ -105,11 +106,15 @@
           targetGallery.classList.add('gallery-active')
 
           let position = 0
-          Array.from(e.target.nextElementSibling.querySelectorAll(thumbnailsSelector)).forEach((image, index, images) => {
+          const allImages = Array.from(e.target.nextElementSibling.querySelectorAll(thumbnailsSelector))
+          allImages.forEach((image, index) => {
             if (image.src === e.target.src) {
-              position = index == 0 ? images.length - 1 : index - 1
+              position = index - 1 == -1 ? allImages.length - 1 : index - 1
             }
           })
+
+          window._kubinGalleryThumbnails = allImages
+          window._kubinThumbnailIndex = position
 
           const gallery = window._kubinGallery = new SimpleLightbox(thumbnailsSelector, {
             sourceAttr: 'src',
@@ -118,15 +123,37 @@
             swipeTolerance: Number.MAX_VALUE
           })
 
-          gallery.on('closed.simplelightbox', function () {
+          gallery.on('closed.simplelightbox', () => {
             targetGallery.classList.remove('gallery-active')
             window._kubinGallery = undefined
             gallery.destroy()
           })
 
           gallery.openPosition(position)
+          window._kubinGalleryThumbnails[position].click()
         } else if (e.target.parentNode?.classList.contains('sl-image')) {
           window._kubinGallery?.next()
+
+          window._kubinThumbnailIndex++
+          if (window._kubinThumbnailIndex == window.window._kubinGalleryThumbnails.length) {
+            window._kubinThumbnailIndex = 0
+          }
+
+          window._kubinGalleryThumbnails[window._kubinThumbnailIndex]?.click()
+        } else if (e.target.classList.contains('sl-prev')) {
+          window._kubinThumbnailIndex--
+          if (window._kubinThumbnailIndex == -1) {
+            window._kubinThumbnailIndex = window.window._kubinGalleryThumbnails.length - 1
+          }
+
+          window._kubinGalleryThumbnails[window._kubinThumbnailIndex].click()
+        } else if (e.target.classList.contains('sl-next')) {
+          window._kubinThumbnailIndex++
+          if (window._kubinThumbnailIndex == window.window._kubinGalleryThumbnails.length) {
+            window._kubinThumbnailIndex = 0
+          }
+
+          window._kubinGalleryThumbnails[window._kubinThumbnailIndex].click()
         }
       })
     }
@@ -149,16 +176,24 @@
         kubin.UI.fullScreenUI(fullScreenPanel)
       }
 
-      const pipeline = params['general.pipeline']
-      pipeline == 'native' && (document.body.classList.add('pipeline-native'), document.body.classList.remove('pipeline-diffusers'))
-      pipeline == 'diffusers' && (document.body.classList.add('pipeline-diffusers'), document.body.classList.remove('pipeline-native'))
+      const pipeline = window._kubinParams['general.pipeline']
+      const model_name = window._kubinParams['general.model_name']
 
-      const model_name = params['general.model_name']
-      model_name == 'kd20' && document.body.classList.add('pipeline-native2_0')
-      model_name != 'kd20' && document.body.classList.remove('pipeline-native2_0')
+      document.querySelectorAll('body[class*="pipeline-"]').forEach(b => {
+        for (let i = b.classList.length - 1; i >= 0; i--) {
+          const className = b.classList[i]
+          if (className.startsWith('pipeline-')) {
+            b.classList.remove(className)
+          }
+        }
+      })
 
-      if (window._kubinParams['general.model_name'] == 'kd20' && window._kubinParams['general.pipeline'] == 'diffusers') {
-        kubin.notify.error('You cannot use a 2.0 model with the diffusers pipeline! Native 2.0 pipeline will be used')
+      document.body.classList.add(`pipeline-${pipeline}-${model_name}`)
+
+      if (model_name == 'kd20' && pipeline == 'diffusers') {
+        kubin.notify.error('You cannot use a 2.0 model with the diffusers pipeline! Native pipeline will be used')
+      } else if (model_name == 'kd22' && pipeline == 'native') {
+        kubin.notify.error('You cannot use a 2.2 model with the native pipeline! Diffusers pipeline will be used')
       }
     },
 
@@ -215,6 +250,10 @@
     fullScreenUI: fullScreenUI => {
       fullScreenUI && document.body.classList.add('gradio-full')
       !fullScreenUI && document.body.classList.remove('gradio-full')
+    },
+
+    reveal: () => {
+      document.body.classList.add('is-ready')
     }
   }
 

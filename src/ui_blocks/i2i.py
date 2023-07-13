@@ -24,7 +24,6 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                             prompt = gr.TextArea(
                                 "", placeholder="", label="Prompt", lines=2
                             )
-
                 with gr.TabItem("Batch"):
                     with gr.Row():
                         input_folder = gr.Textbox(
@@ -54,15 +53,29 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                 "Advanced params", open=not shared.ui_params("collapse_advanced_params")
             ) as i2i_advanced_params:
                 with gr.Row():
-                    steps = gr.Slider(1, 200, 100, step=1, label="Steps")
-                    guidance_scale = gr.Slider(1, 30, 7, step=1, label="Guidance scale")
+                    steps = gr.Slider(
+                        1,
+                        200,
+                        100,
+                        step=1,
+                        label="Steps",
+                        elem_classes=["inline-flex"],
+                    )
+                    guidance_scale = gr.Slider(
+                        1,
+                        30,
+                        7,
+                        step=1,
+                        label="Guidance scale",
+                        elem_classes=["inline-flex"],
+                    )
                     strength = gr.Slider(
                         0,
                         1,
-                        0.7,
+                        0.3,
                         step=0.05,
                         label="Strength",
-                        info="Input image strength",
+                        # info="Transformation strength",
                     )
                 with gr.Row():
                     batch_count = gr.Slider(1, 16, 4, step=1, label="Batch count")
@@ -98,8 +111,28 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                     ]
                     seed = gr.Number(-1, label="Seed", precision=0)
                 with gr.Row() as prior_block:
-                    prior_scale = gr.Slider(1, 100, 4, step=1, label="Prior scale")
-                    prior_steps = gr.Slider(1, 100, 5, step=1, label="Prior steps")
+                    prior_scale = gr.Slider(
+                        1,
+                        30,
+                        4,
+                        step=1,
+                        label="Prior scale",
+                        elem_classes=["inline-flex"],
+                    )
+                    prior_steps = gr.Slider(
+                        1,
+                        100,
+                        25,
+                        step=1,
+                        label="Prior steps",
+                        elem_classes=["inline-flex"],
+                    )
+                    negative_prior_prompt = gr.TextArea(
+                        "",
+                        label="Negative prior prompt",
+                        elem_classes=["inline-flex"],
+                        lines=2,
+                    )
 
             augmentations["ui"]()
 
@@ -121,6 +154,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
             def generate(
                 image,
                 prompt,
+                negative_prior_prompt,
                 strength,
                 steps,
                 batch_count,
@@ -137,6 +171,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                 params = {
                     "init_image": image,
                     "prompt": prompt,
+                    "negative_prior_prompt": negative_prior_prompt,
                     "strength": strength,
                     "num_steps": steps,
                     "batch_count": batch_count,
@@ -158,6 +193,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                 inputs=[
                     shared.input_i2i_image,
                     prompt,
+                    negative_prior_prompt,
                     strength,
                     steps,
                     batch_count,

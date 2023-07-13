@@ -241,8 +241,8 @@ def append_style(target, params, current_style, default_style):
             "" if style_not_chosen or style_prompt is None else f", {style_prompt}"
         )
 
-    if "negative_decoder_prompt" in params:
-        params["negative_decoder_prompt"] += (
+    if "negative_prompt" in params:
+        params["negative_prompt"] += (
             ""
             if style_not_chosen or style_negative_prompt is None
             else f", {style_negative_prompt}"

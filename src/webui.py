@@ -67,7 +67,10 @@ def gradio_ui(kubin: Kubin, start_fn):
 
             with gr.TabItem("Settings", id=next_id + 2) as settings_tabitem:
                 settings_ui(kubin)
-        ui_tabs.elem_classes = ["ui-tabs"]
+        ui_tabs.elem_classes = [
+            "ui-tabs",
+            "left" if kubin.params("ui", "side_tabs") else "",
+        ]
     return ui, ext_client_folders
 
 
