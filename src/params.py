@@ -66,6 +66,8 @@ class KubinParams:
             != self._updated["diffusers"]["half_precision_weights"]
             or self.conf["general"]["model_name"]
             != self._updated["general"]["model_name"]
+            or self.conf["diffusers"]["run_prior_on_cpu"]
+            != self._updated["diffusers"]["run_prior_on_cpu"]
         ):
             print("model will be reloaded")
             reload_model = True

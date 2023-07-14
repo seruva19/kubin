@@ -49,6 +49,10 @@ def options_tab_diffusers(kubin: Kubin):
             value=kubin.params("diffusers", "use_tf32_mode"),
             label="Enable TensorFloat32 mode",
         )
+        run_prior_on_cpu = gr.Checkbox(
+            value=kubin.params("diffusers", "run_prior_on_cpu"),
+            label="Enable prior generation on CPU",
+        )
 
         half_precision_weights.change(
             fn=None,
@@ -150,5 +154,14 @@ def options_tab_diffusers(kubin: Kubin):
             ],
             show_progress=False,
         )
-
+        run_prior_on_cpu.change(
+            fn=None,
+            _js=on_change,
+            inputs=[
+                gr.Text("diffusers.run_prior_on_cpu", visible=False),
+                run_prior_on_cpu,
+                gr.Checkbox(False, visible=False),
+            ],
+            show_progress=False,
+        )
     return diffusers_options

@@ -89,10 +89,18 @@ class Model_Diffusers22:
         params["input_seed"] = seed
         params["model_name"] = "diffusers2.2"
 
-        generator = torch.Generator(
+        prior_on_cpu = self.params("diffusers", "run_prior_on_cpu")
+        decoder_generator = torch.Generator(
             device=self.params("general", "device")
         ).manual_seed(params["input_seed"])
-        return params, generator
+
+        prior_generator = (
+            torch.Generator(device="cpu").manual_seed(params["input_seed"])
+            if prior_on_cpu
+            else decoder_generator
+        )
+
+        return params, prior_generator, decoder_generator
 
     def create_batch_images(self, params, mode, batch):
         output_dir = params.get(
@@ -112,7 +120,7 @@ class Model_Diffusers22:
         prior, unet = self.prepareModel("text2img")
         assert isinstance(prior, KandinskyV22PriorPipeline)
         assert isinstance(unet, KandinskyV22Pipeline)
-        params, generator = self.prepareParams(params)
+        params, prior_generator, decoder_generator = self.prepareParams(params)
 
         image_embeds, zero_embeds = prior(
             prompt=params["prompt"],
@@ -124,7 +132,7 @@ class Model_Diffusers22:
             latents=None,
             guidance_scale=params["prior_cf_scale"],
             output_type="pt",
-            generator=generator,
+            generator=prior_generator,
             return_dict=False,
         )
         print("prior embeddings: done")
@@ -138,7 +146,7 @@ class Model_Diffusers22:
                 latents=None,
                 guidance_scale=params["prior_cf_scale"],
                 output_type="pt",
-                generator=generator,
+                generator=prior_generator,
                 return_dict=True,
             ).image_embeds
             if params["negative_prompt"] != ""
@@ -149,32 +157,33 @@ class Model_Diffusers22:
         use_scheduler(unet, params["sampler"])
 
         images = []
+        prior_on_cpu = self.params("diffusers", "run_prior_on_cpu")
         for _ in itertools.repeat(None, params["batch_count"]):
             current_batch = unet(
-                image_embeds=image_embeds,
-                negative_image_embeds=negative_image_embeds,
+                image_embeds=image_embeds.half() if prior_on_cpu else image_embeds,
+                negative_image_embeds=negative_image_embeds.half()
+                if prior_on_cpu
+                else negative_image_embeds,
                 width=params["w"],
                 height=params["h"],
                 num_inference_steps=params["num_steps"],
                 guidance_scale=params["guidance_scale"],
                 num_images_per_prompt=params["batch_size"],
-                generator=generator,
+                generator=decoder_generator,
                 latents=None,
                 output_type="pil",
                 return_dict=True,
             ).images
 
-            images = images + self.create_batch_images(
-                params, "text2img", current_batch
-            )
-        print("unet images: done")
+            images += self.create_batch_images(params, "text2img", current_batch)
+        print("decoder images: done")
         return images
 
     def i2i(self, params):
         prior, unet = self.prepareModel("img2img")
         assert isinstance(prior, KandinskyV22PriorPipeline)
         assert isinstance(unet, KandinskyV22Img2ImgPipeline)
-        params, generator = self.prepareParams(params)
+        params, prior_generator, decoder_generator = self.prepareParams(params)
 
         image_embeds, negative_embeds = prior(
             prompt=params["prompt"],
@@ -186,7 +195,7 @@ class Model_Diffusers22:
             latents=None,
             guidance_scale=params["prior_cf_scale"],
             output_type="pt",
-            generator=generator,
+            generator=prior_generator,
             return_dict=False,
         )
         print("prior embeddings: done")
@@ -205,20 +214,20 @@ class Model_Diffusers22:
                 num_inference_steps=params["num_steps"],
                 guidance_scale=params["guidance_scale"],
                 num_images_per_prompt=params["batch_size"],
-                generator=generator,
+                generator=decoder_generator,
                 output_type="pil",
                 return_dict=True,
             ).images
 
-            images = images + self.create_batch_images(params, "img2img", current_batch)
-        print("unet images: done")
+            images += self.create_batch_images(params, "img2img", current_batch)
+        print("decoder images: done")
         return images
 
     def mix(self, params):
         prior, unet = self.prepareModel("mix")
         assert isinstance(prior, KandinskyV22PriorPipeline)
         assert isinstance(unet, KandinskyV22Pipeline)
-        params, generator = self.prepareParams(params)
+        params, prior_generator, decoder_generator = self.prepareParams(params)
 
         def images_or_texts(images, texts):
             images_texts = []
@@ -238,7 +247,7 @@ class Model_Diffusers22:
             weights=weights,
             num_images_per_prompt=params["batch_size"],
             num_inference_steps=params["prior_steps"],
-            generator=generator,
+            generator=prior_generator,
             latents=None,
             negative_prompt=params["negative_prompt"],
             negative_prior_prompt=params["negative_prior_prompt"],
@@ -258,21 +267,21 @@ class Model_Diffusers22:
                 num_inference_steps=params["num_steps"],
                 guidance_scale=params["guidance_scale"],
                 num_images_per_prompt=params["batch_size"],
-                generator=generator,
+                generator=decoder_generator,
                 latents=None,
                 output_type="pil",
                 return_dict=True,
             ).images
 
-            images = images + self.create_batch_images(params, "mix", current_batch)
-        print("unet images: done")
+            images += self.create_batch_images(params, "mix", current_batch)
+        print("decoder images: done")
         return images
 
     def inpaint(self, params):
         prior, unet = self.prepareModel("inpainting")
         assert isinstance(prior, KandinskyV22PriorPipeline)
         assert isinstance(unet, KandinskyV22InpaintPipeline)
-        params, generator = self.prepareParams(params)
+        params, prior_generator, decoder_generator = self.prepareParams(params)
 
         image_embeds, zero_embeds = prior(
             prompt=params["prompt"],
@@ -284,7 +293,7 @@ class Model_Diffusers22:
             latents=None,
             guidance_scale=params["prior_cf_scale"],
             output_type="pt",
-            generator=generator,
+            generator=prior_generator,
             return_dict=False,
         )
         print("prior embeddings: done")
@@ -298,7 +307,7 @@ class Model_Diffusers22:
                 latents=None,
                 guidance_scale=params["prior_cf_scale"],
                 output_type="pt",
-                generator=generator,
+                generator=prior_generator,
                 return_dict=True,
             ).image_embeds
             if params["negative_prompt"] != ""
@@ -336,23 +345,21 @@ class Model_Diffusers22:
                 num_inference_steps=params["num_steps"],
                 guidance_scale=params["guidance_scale"],
                 num_images_per_prompt=params["batch_size"],
-                generator=generator,
+                generator=decoder_generator,
                 latents=None,
                 output_type="pil",
                 return_dict=True,
             ).images
 
-            images = images + self.create_batch_images(
-                params, "inpainting", current_batch
-            )
-        print("unet images: done")
+            images += self.create_batch_images(params, "inpainting", current_batch)
+        print("decoder images: done")
         return images
 
     def outpaint(self, params):
         prior, unet = self.prepareModel("outpainting")
         assert isinstance(prior, KandinskyV22PriorPipeline)
         assert isinstance(unet, KandinskyV22InpaintPipeline)
-        params, generator = self.prepareParams(params)
+        params, prior_generator, decoder_generator = self.prepareParams(params)
 
         image_embeds, zero_embeds = prior(
             prompt=params["prompt"],
@@ -364,7 +371,7 @@ class Model_Diffusers22:
             latents=None,
             guidance_scale=params["prior_cf_scale"],
             output_type="pt",
-            generator=generator,
+            generator=prior_generator,
             return_dict=False,
         )
         print("prior embeddings: done")
@@ -378,7 +385,7 @@ class Model_Diffusers22:
                 latents=None,
                 guidance_scale=params["prior_cf_scale"],
                 output_type="pt",
-                generator=generator,
+                generator=prior_generator,
                 return_dict=True,
             ).image_embeds
             if params["negative_prompt"] != ""
@@ -410,23 +417,21 @@ class Model_Diffusers22:
                 num_inference_steps=params["num_steps"],
                 guidance_scale=params["guidance_scale"],
                 num_images_per_prompt=params["batch_size"],
-                generator=generator,
+                generator=decoder_generator,
                 latents=None,
                 output_type="pil",
                 return_dict=True,
             ).images
 
-            images = images + self.create_batch_images(
-                params, "outpainting", current_batch
-            )
-        print("unet images: done")
+            images += self.create_batch_images(params, "outpainting", current_batch)
+        print("decoder images: done")
         return images
 
     def t2i_cnet(self, params):
         prior, unet = self.prepareModel("text2img_cnet")
         assert isinstance(prior, KandinskyV22PriorPipeline)
         assert isinstance(unet, KandinskyV22ControlnetPipeline)
-        params, generator = self.prepareParams(params)
+        params, prior_generator, decoder_generator = self.prepareParams(params)
 
         cnet_image = params["cnet_image"]
         cnet_condition = params["cnet_condition"]
@@ -441,7 +446,7 @@ class Model_Diffusers22:
             latents=None,
             guidance_scale=params["prior_cf_scale"],
             output_type="pt",
-            generator=generator,
+            generator=prior_generator,
             return_dict=False,
         )
         print("prior embeddings: done")
@@ -455,7 +460,7 @@ class Model_Diffusers22:
                 latents=None,
                 guidance_scale=params["prior_cf_scale"],
                 output_type="pt",
-                generator=generator,
+                generator=prior_generator,
                 return_dict=True,
             ).image_embeds
             if params["negative_prompt"] != ""
@@ -479,23 +484,21 @@ class Model_Diffusers22:
                 num_inference_steps=params["num_steps"],
                 guidance_scale=params["guidance_scale"],
                 num_images_per_prompt=params["batch_size"],
-                generator=generator,
+                generator=decoder_generator,
                 latents=None,
                 output_type="pil",
                 return_dict=True,
             ).images
 
-            images = images + self.create_batch_images(
-                params, "text2img_cnet", current_batch
-            )
-        print("unet images: done")
+            images += self.create_batch_images(params, "text2img_cnet", current_batch)
+        print("decoder images: done")
         return images
 
     def i2i_cnet(self, params):
         prior, unet = self.prepareModel("img2img_cnet")
         assert isinstance(prior, KandinskyV22PriorEmb2EmbPipeline)
         assert isinstance(unet, KandinskyV22ControlnetImg2ImgPipeline)
-        params, generator = self.prepareParams(params)
+        params, prior_generator, decoder_generator = self.prepareParams(params)
 
         i2i_cnet_image = params["cnet_image"]
         i2i_cnet_condition = params["cnet_condition"]
@@ -515,7 +518,7 @@ class Model_Diffusers22:
             latents=None,
             guidance_scale=params["prior_cf_scale"],
             output_type="pt",
-            generator=generator,
+            generator=prior_generator,
             return_dict=False,
         )
         print("prior embeddings: done")
@@ -531,7 +534,7 @@ class Model_Diffusers22:
                 latents=None,
                 guidance_scale=params["prior_cf_scale"],
                 output_type="pt",
-                generator=generator,
+                generator=prior_generator,
                 return_dict=True,
             ).image_embeds
             if params["negative_prompt"] != ""
@@ -557,13 +560,11 @@ class Model_Diffusers22:
                 num_inference_steps=params["num_steps"],
                 guidance_scale=params["guidance_scale"],
                 num_images_per_prompt=params["batch_size"],
-                generator=generator,
+                generator=decoder_generator,
                 output_type="pil",
                 return_dict=True,
             ).images
 
-            images = images + self.create_batch_images(
-                params, "img2img_cnet", current_batch
-            )
-        print("unet images: done")
+            images += self.create_batch_images(params, "img2img_cnet", current_batch)
+        print("decoder images: done")
         return images

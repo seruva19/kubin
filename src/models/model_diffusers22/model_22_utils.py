@@ -21,22 +21,28 @@ except:
 def prepare_weights_for_task(model, task):
     cache_dir = model.params("general", "cache_dir")
     device = model.params("general", "device")
+    half_weights = model.params("diffusers", "half_precision_weights")
+    run_prior_on_cpu = model.params("diffusers", "run_prior_on_cpu")
 
     if model.pipe_prior is None:
-        model.image_encoder = (
-            CLIPVisionModelWithProjection.from_pretrained(
-                "kandinsky-community/kandinsky-2-2-prior",
-                subfolder="image_encoder",
-                cache_dir=cache_dir,
-            )
-            .half()
-            .to(device)
+        model.image_encoder = CLIPVisionModelWithProjection.from_pretrained(
+            "kandinsky-community/kandinsky-2-2-prior",
+            subfolder="image_encoder",
+            cache_dir=cache_dir,
         )
+
+        if not run_prior_on_cpu and half_weights:
+            model.image_encoder = model.image_encoder.half()
+
+        encoder_device = "cpu" if run_prior_on_cpu else device
+        model.image_encoder.to(encoder_device)
 
         model.pipe_prior = KandinskyV22PriorPipeline.from_pretrained(
             "kandinsky-community/kandinsky-2-2-prior",
             image_encoder=model.image_encoder,
-            torch_dtype=type_of_weights(model.params),
+            torch_dtype=torch.float32
+            if run_prior_on_cpu
+            else type_of_weights(model.params),
             cache_dir=cache_dir,
         )
     current_prior = model.pipe_prior
@@ -205,10 +211,10 @@ def flush_if_required(model, target):
                 model.cnet_i2i_pipe = None
 
         gc.collect()
-
-        if model.params("general", "device") == "cuda":
+        device = model.params("general", "device")
+        if device.startswith("cuda"):
             if torch.cuda.is_available():
-                with torch.cuda.device("cuda"):
+                with torch.cuda.device(device):
                     torch.cuda.empty_cache()
                     torch.cuda.ipc_collect()
 
@@ -219,9 +225,10 @@ def type_of_weights(k_params):
 
 def to_device(k_params, prior, unet):
     device = k_params("general", "device")
+    prior_device = "cpu" if k_params("diffusers", "run_prior_on_cpu") else device
 
     prior.safety_checker = None
-    prior.to(device)
+    prior.to(prior_device)
 
     if k_params("diffusers", "sequential_cpu_offload"):
         prior.enable_sequential_cpu_offload()

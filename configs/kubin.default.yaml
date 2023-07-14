@@ -50,5 +50,6 @@ diffusers:
   torch_code_compilation: false
   use_deterministic_algorithms: false 
   use_tf32_mode: false 
-  run_prior_on_cpu: false 
   attention_slice_size: max
+  run_prior_on_cpu: false 
+  
