@@ -124,7 +124,7 @@ class Model_Diffusers:
         else:
             self.current_pipe.disable_xformers_memory_efficient_attention()
 
-        if self.params("diffusers", "enable_sdpa_attention"):
+        if self.params("diffusers", "enable_sdp_attention"):
             self.current_pipe.unet.set_attn_processor(AttnAddedKVProcessor2_0())
 
         if self.params("diffusers", "channels_last_memory"):

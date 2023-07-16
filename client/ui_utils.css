@@ -19,6 +19,9 @@ body:not([class*="pipeline-diffusers-kd22"]) .diffusers-kd22-control {
 }
 
 body.pipeline-native-kd20 .unsupported2_0,
+body.pipeline-native-kd21 .unsupported2_1,
+body.pipeline-diffusers-kd21 .unsupported2_1d,
+body.pipeline-diffusers-kd22 .unsupported2_2d,
 body.pipeline-native-kd20 .ui-tabs>.tab-nav>button:nth-child(3),
 body.pipeline-native-kd20 .ui-tabs>.tab-nav>button:nth-child(5) {
   display: none;
@@ -26,6 +29,11 @@ body.pipeline-native-kd20 .ui-tabs>.tab-nav>button:nth-child(5) {
 
 body:not(.pipeline-diffusers-kd22) .control-net {
   display: none;
+}
+
+.control-net>div:nth-child(3)>div>div.form {
+  box-shadow: none;
+  border: none;
 }
 
 body.unselectable * {

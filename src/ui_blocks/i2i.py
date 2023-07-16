@@ -24,6 +24,39 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                             prompt = gr.TextArea(
                                 "", placeholder="", label="Prompt", lines=2
                             )
+                    with gr.Accordion("ControlNet", open=False) as i2i_cnet:
+                        cnet_enable = gr.Checkbox(False, label="Enable")
+
+                        with gr.Row():
+                            with gr.Column():
+                                cnet_condition = gr.Radio(
+                                    choices=["depth-map"],
+                                    value="depth-map",
+                                    label="Condition",
+                                )
+
+                            with gr.Column():
+                                cnet_emb_transform_strength = gr.Slider(
+                                    0, 1, 0.85, step=0.05, label="Embedding strength"
+                                )
+
+                                cnet_neg_emb_transform_strength = gr.Slider(
+                                    0,
+                                    1,
+                                    1,
+                                    step=0.05,
+                                    label="Negative prior embedding strength",
+                                )
+
+                                cnet_img_strength = gr.Slider(
+                                    0,
+                                    1,
+                                    0.5,
+                                    step=0.05,
+                                    label="Image strength",
+                                )
+                    i2i_cnet.elem_classes = ["control-net"]
+
                 with gr.TabItem("Batch"):
                     with gr.Row():
                         input_folder = gr.Textbox(
@@ -56,7 +89,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                     steps = gr.Slider(
                         1,
                         200,
-                        100,
+                        shared.ui_params("decoder_steps_default"),
                         step=1,
                         label="Steps",
                         elem_classes=["inline-flex"],
@@ -166,6 +199,11 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                 prior_scale,
                 prior_steps,
                 seed,
+                cnet_enable,
+                cnet_condition,
+                cnet_emb_transform_strength,
+                cnet_neg_emb_transform_strength,
+                cnet_img_strength,
                 *injections,
             ):
                 params = {
@@ -183,6 +221,13 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                     "prior_cf_scale": prior_scale,
                     "prior_steps": prior_steps,
                     "input_seed": seed,
+                    "cnet_enable": cnet_enable,
+                    "cnet_image": image,
+                    "cnet_condition": cnet_condition,
+                    "cnet_emb_transform_strength": cnet_emb_transform_strength,
+                    "cnet_neg_emb_transform_strength": cnet_neg_emb_transform_strength,
+                    "cnet_img_strength": cnet_img_strength,
+                    "negative_prompt": "",
                 }
 
                 params = augmentations["exec"](params, injections)
@@ -205,6 +250,11 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                     prior_scale,
                     prior_steps,
                     seed,
+                    cnet_enable,
+                    cnet_condition,
+                    cnet_emb_transform_strength,
+                    cnet_neg_emb_transform_strength,
+                    cnet_img_strength,
                 ]
                 + augmentations["injections"],
                 outputs=i2i_output,

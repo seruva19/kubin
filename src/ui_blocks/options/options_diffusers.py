@@ -41,9 +41,9 @@ def options_tab_diffusers(kubin: Kubin):
             value=kubin.params("diffusers", "use_deterministic_algorithms"),
             label="Enable torch deterministic algorithms",
         )
-        enable_sdpa_attention = gr.Checkbox(
-            value=kubin.params("diffusers", "enable_sdpa_attention"),
-            label="Enable forced SDPA attention",
+        enable_sdp_attention = gr.Checkbox(
+            value=kubin.params("diffusers", "enable_sdp_attention"),
+            label="Enable forced SDP attention",
         )
         use_tf32_mode = gr.Checkbox(
             value=kubin.params("diffusers", "use_tf32_mode"),
@@ -74,12 +74,12 @@ def options_tab_diffusers(kubin: Kubin):
             ],
             show_progress=False,
         )
-        enable_sdpa_attention.change(
+        enable_sdp_attention.change(
             fn=None,
             _js=on_change,
             inputs=[
-                gr.Text("diffusers.enable_sdpa_attention", visible=False),
-                enable_sdpa_attention,
+                gr.Text("diffusers.enable_sdp_attention", visible=False),
+                enable_sdp_attention,
                 gr.Checkbox(True, visible=False),
             ],
             show_progress=False,

@@ -69,7 +69,7 @@ class KubinParams:
             or self.conf["diffusers"]["run_prior_on_cpu"]
             != self._updated["diffusers"]["run_prior_on_cpu"]
         ):
-            print("model will be reloaded")
+            print("model will be reloaded because of config changes")
             reload_model = True
 
         self.conf = self._updated.copy()

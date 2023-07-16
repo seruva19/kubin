@@ -74,7 +74,13 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs):
                 "Advanced params", open=not shared.ui_params("collapse_advanced_params")
             ) as outpaint_advanced_params:
                 with gr.Row():
-                    steps = gr.Slider(1, 200, 100, step=1, label="Steps")
+                    steps = gr.Slider(
+                        1,
+                        200,
+                        shared.ui_params("decoder_steps_default"),
+                        step=1,
+                        label="Steps",
+                    )
                     guidance_scale = gr.Slider(
                         1, 30, 10, step=1, label="Guidance scale"
                     )

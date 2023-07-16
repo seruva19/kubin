@@ -1,6 +1,8 @@
 import gc
 import torch
 
+from utils.logging import k_log
+
 try:
     from transformers import CLIPVisionModelWithProjection
     from diffusers.models import UNet2DConditionModel
@@ -68,10 +70,10 @@ def prepare_weights_for_task(model, task):
                 cache_dir=cache_dir,
             )
 
-        current_unet = model.t2i_pipe
+        current_decoder = model.t2i_pipe
         if task == "img2img":
             model.i2i_pipe = KandinskyV22Img2ImgPipeline(**model.t2i_pipe.components)
-            current_unet = model.i2i_pipe
+            current_decoder = model.i2i_pipe
 
     if task == "text2img_cnet" or task == "img2img_cnet":
         if model.cnet_t2i_pipe is None:
@@ -94,7 +96,7 @@ def prepare_weights_for_task(model, task):
                 cache_dir=cache_dir,
             )
 
-        current_unet = model.cnet_t2i_pipe
+        current_decoder = model.cnet_t2i_pipe
         if task == "img2img_cnet":
             model.pipe_prior_e2e = KandinskyV22PriorEmb2EmbPipeline(
                 **model.pipe_prior.components
@@ -103,7 +105,7 @@ def prepare_weights_for_task(model, task):
             model.cnet_i2i_pipe = KandinskyV22ControlnetImg2ImgPipeline(
                 **model.cnet_t2i_pipe.components
             )
-            current_unet = model.cnet_i2i_pipe
+            current_decoder = model.cnet_i2i_pipe
 
     elif task == "inpainting" or task == "outpainting":
         if model.inpaint_pipe is None:
@@ -126,10 +128,10 @@ def prepare_weights_for_task(model, task):
                 cache_dir=cache_dir,
             )
 
-        current_unet = model.inpaint_pipe
+        current_decoder = model.inpaint_pipe
 
-    to_device(model.params, current_prior, current_unet)
-    return current_prior, current_unet
+    to_device(model.params, current_prior, current_decoder)
+    return current_prior, current_decoder
 
 
 def flush_if_required(model, target):
@@ -223,42 +225,96 @@ def type_of_weights(k_params):
     return torch.float16 if k_params("diffusers", "half_precision_weights") else "auto"
 
 
-def to_device(k_params, prior, unet):
+def to_device(k_params, prior, decoder):
+    applied_optimizations = []
+    xformers_available = False
+    try:
+        import xformers
+
+        xformers_available = True
+    except:
+        None
+
     device = k_params("general", "device")
-    prior_device = "cpu" if k_params("diffusers", "run_prior_on_cpu") else device
+    prior_device = device
+
+    run_prior_on_cpu = k_params("diffusers", "run_prior_on_cpu")
+    if run_prior_on_cpu:
+        prior_device = "cpu"
+        applied_optimizations.append("prior on CPU")
 
     prior.safety_checker = None
     prior.to(prior_device)
 
+    if k_params("diffusers", "enable_xformers"):
+        if xformers_available:
+            if prior_device != "cpu":
+                from xformers.ops import MemoryEfficientAttentionFlashAttentionOp
+
+                prior.enable_xformers_memory_efficient_attention(
+                    attention_op=MemoryEfficientAttentionFlashAttentionOp
+                )
+                applied_optimizations.append("xformers for prior")
+        else:
+            k_log("xformers use for prior requested, but no xformers installed")
+    else:
+        prior.disable_xformers_memory_efficient_attention()
+
     if k_params("diffusers", "sequential_cpu_offload"):
         prior.enable_sequential_cpu_offload()
+        applied_optimizations.append("sequential CPU offloading for prior")
 
-    if k_params("diffusers", "enable_xformers"):
-        unet.enable_xformers_memory_efficient_attention()
+    if k_params("diffusers", "enable_sdp_attention"):
+        decoder.unet.set_attn_processor(AttnAddedKVProcessor2_0())
+        applied_optimizations.append("forced sdp attention for decoder unet")
     else:
-        unet.disable_xformers_memory_efficient_attention()
-
-    if k_params("diffusers", "enable_sdpa_attention"):
-        unet.unet.set_attn_processor(AttnAddedKVProcessor2_0())
+        decoder.unet.set_default_attn_processor()
 
     if k_params("diffusers", "channels_last_memory"):
-        unet.unet.to(memory_format=torch.channels_last)
+        decoder.unet.to(memory_format=torch.channels_last)
+        applied_optimizations.append("channels last memory for decoder unet")
+    else:
+        decoder.unet.to(memory_format=torch.contiguous_format)
 
     if k_params("diffusers", "torch_code_compilation"):
-        unet.unet = torch.compile(unet.unet, mode="reduce-overhead", fullgraph=True)
+        decoder.unet = torch.compile(
+            decoder.unet, mode="reduce-overhead", fullgraph=True
+        )
+        applied_optimizations.append("torch compile for decoder unet")
 
-    unet.to(device)
+    decoder.to(device)
+
+    if k_params("diffusers", "enable_xformers"):
+        if xformers_available:
+            from xformers.ops import MemoryEfficientAttentionFlashAttentionOp
+
+            decoder.enable_xformers_memory_efficient_attention(
+                attention_op=MemoryEfficientAttentionFlashAttentionOp
+            )
+            applied_optimizations.append("xformers for decoder")
+        else:
+            k_log("xformers use for decoder requested, but no xformers installed")
+    else:
+        decoder.disable_xformers_memory_efficient_attention()
 
     if k_params("diffusers", "sequential_cpu_offload"):
-        unet.enable_sequential_cpu_offload()
+        decoder.enable_sequential_cpu_offload()
+        applied_optimizations.append("sequential CPU offloading for decoder")
 
     if k_params("diffusers", "full_model_offload"):
-        unet.enable_model_cpu_offload()
+        decoder.enable_model_cpu_offload()
+        applied_optimizations.append("full model offloading for decoder")
 
     if k_params("diffusers", "enable_sliced_attention"):
         slice_size = k_params("diffusers", "attention_slice_size")
-        unet.enable_attention_slicing(slice_size)
+        decoder.enable_attention_slicing(slice_size)
+        applied_optimizations.append(
+            "attention slicing for decoder: slice_size={slice_size}"
+        )
     else:
-        unet.disable_attention_slicing()
+        decoder.disable_attention_slicing()
 
-    unet.safety_checker = None
+    k_log(
+        f"optimizations: {'none' if len(applied_optimizations) == 0 else ';'.join(applied_optimizations)}"
+    )
+    decoder.safety_checker = None
