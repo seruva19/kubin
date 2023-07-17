@@ -1,9 +1,5 @@
-.notyf__wrapper {
-  padding: 10px;
-}
-
-.notyf__message {
-  font-family: var(--font);
+html.has-lightbox {
+  overflow-x: hidden;
 }
 
 body[class*="pipeline-native"] .diffusers-control {
@@ -44,8 +40,12 @@ body.gradio-full .gradio-container {
   max-width: 100% !important;
 }
 
-html.has-lightbox {
-  overflow-x: hidden;
+.notyf__wrapper {
+  padding: 10px;
+}
+
+.notyf__message {
+  font-family: var(--font);
 }
 
 html.has-lightbox body {

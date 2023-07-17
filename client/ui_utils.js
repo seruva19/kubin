@@ -80,7 +80,7 @@
     kubin.UI.loadParams(window._kubinParams)
     customEventListeners.init()
 
-    kubin.notify.success('UI successfully loaded')
+    console.log('UI successfully loaded')
     kubin.UI.reveal()
   })
 
@@ -253,7 +253,7 @@
     },
 
     reveal: () => {
-      document.body.classList.add('is-ready')
+      document.getElementsByTagName('html')[0].classList.add('is-ready')
     }
   }
 
