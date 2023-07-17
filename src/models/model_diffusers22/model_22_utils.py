@@ -309,7 +309,7 @@ def to_device(k_params, prior, decoder):
         slice_size = k_params("diffusers", "attention_slice_size")
         decoder.enable_attention_slicing(slice_size)
         applied_optimizations.append(
-            "attention slicing for decoder: slice_size={slice_size}"
+            f"attention slicing for decoder: slice_size={slice_size}"
         )
     else:
         decoder.disable_attention_slicing()
