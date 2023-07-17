@@ -26,7 +26,9 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                                 "", placeholder="", label="Prompt", lines=2
                             )
                     with gr.Accordion("ControlNet", open=False) as i2i_cnet:
-                        cnet_enable = gr.Checkbox(False, label="Enable")
+                        cnet_enable = gr.Checkbox(
+                            False, label="Enable", elem_classes=["cnet-enable"]
+                        )
 
                         with gr.Row():
                             with gr.Column():

@@ -75,7 +75,7 @@ def prepare_weights_for_task(model, task):
             model.i2i_pipe = KandinskyV22Img2ImgPipeline(**model.t2i_pipe.components)
             current_decoder = model.i2i_pipe
 
-    if task == "text2img_cnet" or task == "img2img_cnet":
+    if task == "text2img_cnet" or task == "img2img_cnet" or task == "mix_cnet":
         if model.cnet_t2i_pipe is None:
             flush_if_required(model, task)
 
@@ -97,11 +97,19 @@ def prepare_weights_for_task(model, task):
             )
 
         current_decoder = model.cnet_t2i_pipe
+
         if task == "img2img_cnet":
             model.pipe_prior_e2e = KandinskyV22PriorEmb2EmbPipeline(
                 **model.pipe_prior.components
             )
             current_prior = model.pipe_prior_e2e
+
+            model.cnet_i2i_pipe = KandinskyV22ControlnetImg2ImgPipeline(
+                **model.cnet_t2i_pipe.components
+            )
+            current_decoder = model.cnet_i2i_pipe
+
+        if task == "mix_cnet":
             model.cnet_i2i_pipe = KandinskyV22ControlnetImg2ImgPipeline(
                 **model.cnet_t2i_pipe.components
             )
@@ -137,7 +145,7 @@ def prepare_weights_for_task(model, task):
 def flush_if_required(model, target):
     clear_memory_targets = None
 
-    if target in ["text2img_cnet", "img2img_cnet"]:
+    if target in ["text2img_cnet", "img2img_cnet", "mix_cnet"]:
         clear_memory_targets = ["text2img", "inpainting"]
     elif target in ["text2img", "img2img", "mix"]:
         clear_memory_targets = ["text2img_cnet", "inpainting"]
@@ -152,11 +160,12 @@ def flush_if_required(model, target):
             "outpainting",
             "text2img_cnet",
             "img2img_cnet",
+            "mix_cnet",
         ]
 
     if clear_memory_targets is not None:
         print(
-            f"following pipelines, if active, will be released for {target if target is not None else 'another model'}: {clear_memory_targets}"
+            f"following pipelines, if active, will be released for {target + ' task' if target is not None else 'another model'}: {clear_memory_targets}"
         )
         offload_enabled = model.params("diffusers", "sequential_cpu_offload")
 
@@ -288,14 +297,14 @@ def to_device(k_params, prior, decoder):
         if xformers_available:
             from xformers.ops import MemoryEfficientAttentionFlashAttentionOp
 
-            decoder.enable_xformers_memory_efficient_attention(
+            decoder.unet.enable_xformers_memory_efficient_attention(
                 attention_op=MemoryEfficientAttentionFlashAttentionOp
             )
             applied_optimizations.append("xformers for decoder")
         else:
             k_log("xformers use for decoder requested, but no xformers installed")
     else:
-        decoder.disable_xformers_memory_efficient_attention()
+        decoder.unet.disable_xformers_memory_efficient_attention()
 
     if k_params("diffusers", "sequential_cpu_offload"):
         decoder.enable_sequential_cpu_offload()
@@ -318,3 +327,15 @@ def to_device(k_params, prior, decoder):
         f"optimizations: {'none' if len(applied_optimizations) == 0 else ';'.join(applied_optimizations)}"
     )
     decoder.safety_checker = None
+
+
+def finalize(model):
+    None
+
+
+def images_or_texts(images, texts):
+    images_texts = []
+    for i in range(len(images)):
+        images_texts.append(texts[i] if images[i] is None else images[i])
+
+    return images_texts

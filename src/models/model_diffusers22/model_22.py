@@ -14,6 +14,8 @@ try:
     from models.model_diffusers22.model_22_utils import (
         flush_if_required,
         prepare_weights_for_task,
+        images_or_texts,
+        finalize,
     )
     from transformers import CLIPVisionModelWithProjection
     from diffusers.models import UNet2DConditionModel
@@ -60,6 +62,7 @@ class Model_Diffusers22:
             "img2img",
             "img2img_cnet",
             "mix",
+            "mix_cnet",
             "inpainting",
             "outpainting",
         ]
@@ -178,6 +181,7 @@ class Model_Diffusers22:
 
             images += self.create_batch_images(params, "text2img", current_batch)
         k_log("decoder images: done")
+        finalize(self)
         return images
 
     def i2i(self, params):
@@ -228,20 +232,17 @@ class Model_Diffusers22:
 
             images += self.create_batch_images(params, "img2img", current_batch)
         k_log("decoder images: done")
+        finalize(self)
         return images
 
     def mix(self, params):
+        if params["cnet_enable"]:
+            return self.mix_cnet(params)
+
         prior, decoder = self.prepareModel("mix")
         assert isinstance(prior, KandinskyV22PriorPipeline)
         assert isinstance(decoder, KandinskyV22Pipeline)
         params, prior_generator, decoder_generator = self.prepareParams(params)
-
-        def images_or_texts(images, texts):
-            images_texts = []
-            for i in range(len(images)):
-                images_texts.append(texts[i] if images[i] is None else images[i])
-
-            return images_texts
 
         images_texts = images_or_texts(
             [params["image_1"], params["image_2"]],
@@ -260,7 +261,7 @@ class Model_Diffusers22:
             negative_prior_prompt=params["negative_prior_prompt"],
             guidance_scale=params["prior_cf_scale"],
         )
-        k_log("prior embeddings: done")
+        k_log("interpolation prior embeddings: done")
 
         use_scheduler(decoder, params["sampler"])
 
@@ -287,6 +288,7 @@ class Model_Diffusers22:
 
             images += self.create_batch_images(params, "mix", current_batch)
         k_log("decoder images: done")
+        finalize(self)
         return images
 
     def inpaint(self, params):
@@ -368,6 +370,7 @@ class Model_Diffusers22:
 
             images += self.create_batch_images(params, "inpainting", current_batch)
         k_log("decoder images: done")
+        finalize(self)
         return images
 
     def outpaint(self, params):
@@ -443,6 +446,7 @@ class Model_Diffusers22:
 
             images += self.create_batch_images(params, "outpainting", current_batch)
         k_log("decoder images: done")
+        finalize(self)
         return images
 
     def t2i_cnet(self, params):
@@ -513,6 +517,7 @@ class Model_Diffusers22:
 
             images += self.create_batch_images(params, "text2img_cnet", current_batch)
         k_log("decoder images: done")
+        finalize(self)
         return images
 
     def i2i_cnet(self, params):
@@ -592,4 +597,65 @@ class Model_Diffusers22:
 
             images += self.create_batch_images(params, "img2img_cnet", current_batch)
         k_log("decoder images: done")
+        finalize(self)
+        return images
+
+    def mix_cnet(self, params):
+        prior, decoder = self.prepareModel("mix_cnet")
+        assert isinstance(prior, KandinskyV22PriorPipeline)
+        assert isinstance(decoder, KandinskyV22ControlnetImg2ImgPipeline)
+        params, prior_generator, decoder_generator = self.prepareParams(params)
+
+        mix_cnet_image = params["cnet_image"]
+        mix_cnet_condition = params["cnet_condition"]
+        mix_cnet_img_strength = params["cnet_img_strength"]
+
+        images_texts = images_or_texts(
+            [params["image_1"], params["image_2"]],
+            [params["text_1"], params["text_2"]],
+        )
+        weights = [params["weight_1"], params["weight_2"]]
+
+        embeds = prior.interpolate(
+            images_and_prompts=images_texts,
+            weights=weights,
+            num_images_per_prompt=params["batch_size"],
+            num_inference_steps=params["prior_steps"],
+            generator=prior_generator,
+            latents=None,
+            negative_prompt=params["negative_prompt"],
+            negative_prior_prompt=params["negative_prior_prompt"],
+            guidance_scale=params["prior_cf_scale"],
+        )
+        k_log("interpolation prior embeddings: done")
+
+        use_scheduler(decoder, params["sampler"])
+
+        mix_cnet_image = mix_cnet_image.resize((params["w"], params["h"]))
+        hint = generate_hint(mix_cnet_image, mix_cnet_condition, self.params)
+
+        images = []
+        prior_on_cpu = self.params("diffusers", "run_prior_on_cpu")
+        for _ in itertools.repeat(None, params["batch_count"]):
+            current_batch = decoder(
+                image=mix_cnet_image,
+                image_embeds=embeds.image_embeds.half()
+                if prior_on_cpu
+                else embeds.image_embeds,
+                negative_image_embeds=embeds.negative_image_embeds.half(),
+                strength=mix_cnet_img_strength,
+                hint=hint,
+                width=params["w"],
+                height=params["h"],
+                num_inference_steps=params["num_steps"],
+                guidance_scale=params["guidance_scale"],
+                num_images_per_prompt=params["batch_size"],
+                generator=decoder_generator,
+                output_type="pil",
+                return_dict=True,
+            ).images
+
+            images += self.create_batch_images(params, "mix_cnet", current_batch)
+        k_log("decoder images: done")
+        finalize(self)
         return images

@@ -30,6 +30,11 @@ class SharedUI:
         self.input_mix_image_2 = gr.Image(
             type="pil", elem_classes=["mix_2_image", "full-height"]
         )
+        self.input_cnet_mix_image = gr.Image(
+            type="pil",
+            elem_classes=["input_cnet_mix_image", "full-height"],
+            label="Reference image",
+        )
         self.input_inpaint_image = gr.ImageMask(
             type="pil", elem_classes=["inpaint_image"]
         )
@@ -135,6 +140,8 @@ class SharedUI:
             outputs=[self.input_outpaint_image],
         )
 
+        gr.HTML()
+
         send_cnet_t2i_btn = gr.Button(
             "Send to T2I ControlNet",
             variant="secondary",
@@ -165,6 +172,22 @@ class SharedUI:
             self.send_gallery_image_to_another_tab,
             inputs=[output, selected_image_index],
             outputs=[self.input_cnet_i2i_image],
+        )
+
+        send_cnet_mix_btn = gr.Button(
+            "Send to Mix ControlNet",
+            variant="secondary",
+            elem_classes=["diffusers-kd22-control"],
+        ).style(size="sm")
+        send_cnet_mix_btn.click(
+            fn=self.open_another_tab,
+            inputs=[gr.State(2)],
+            outputs=tabs,
+            queue=False,
+        ).then(
+            self.send_gallery_image_to_another_tab,
+            inputs=[output, selected_image_index],
+            outputs=[self.input_cnet_mix_image],
         )
 
         gr.HTML()
