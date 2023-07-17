@@ -30,6 +30,7 @@ ui:
   image_height_max: 2048
   image_height_step: 64
   image_height_default: 768
+  decoder_steps_default: 50
   allow_params_panel_resize: true
   enable_vertical_alignment: false
   collapse_advanced_params: false
@@ -42,7 +43,7 @@ native:
 diffusers:
   half_precision_weights: true
   enable_xformers: false
-  enable_sdpa_attention: false
+  enable_sdp_attention: false
   enable_sliced_attention: false
   channels_last_memory: false
   sequential_cpu_offload: false
@@ -50,5 +51,6 @@ diffusers:
   torch_code_compilation: false
   use_deterministic_algorithms: false 
   use_tf32_mode: false 
-  run_prior_on_cpu: false 
   attention_slice_size: max
+  run_prior_on_cpu: false 
+  

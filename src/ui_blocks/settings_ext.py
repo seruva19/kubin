@@ -93,6 +93,12 @@ def extensions_ui(kubin: Kubin):
             label="Force reinstall",
             interactive=True,
         )
-        clear_ext_install_all_btn.click(lambda: kubin.ext_registry.force_reinstall())
+        clear_ext_install_all_btn.click(
+            lambda: kubin.ext_registry.force_reinstall(),
+            queue=False,
+        ).then(
+            fn=None,
+            _js=f'_ => kubin.notify.success("All extensions will be reinstalled on next launch")',
+        )
 
     return extensions_block

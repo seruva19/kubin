@@ -44,7 +44,13 @@ def mix_ui(generate_fn, shared: SharedUI, tabs):
                 "Advanced params", open=not shared.ui_params("collapse_advanced_params")
             ) as mix_advanced_params:
                 with gr.Row():
-                    steps = gr.Slider(1, 200, 100, step=1, label="Steps")
+                    steps = gr.Slider(
+                        1,
+                        200,
+                        shared.ui_params("decoder_steps_default"),
+                        step=1,
+                        label="Steps",
+                    )
                     guidance_scale = gr.Slider(1, 30, 4, step=1, label="Guidance scale")
                 with gr.Row():
                     batch_count = gr.Slider(1, 16, 4, step=1, label="Batch count")

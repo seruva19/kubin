@@ -1,4 +1,6 @@
 import os
+
+import torch
 from extension.ext_registry import ExtensionRegistry
 from models.model_diffusers22.model_22 import Model_Diffusers22
 from params import KubinParams
@@ -6,6 +8,7 @@ from models.model_mock import Model_Mock
 from models.model_kd20 import Model_KD20
 from models.model_kd21 import Model_KD21
 from models.model_diffusers import Model_Diffusers
+from utils.logging import k_log
 
 
 class Kubin:
@@ -48,6 +51,11 @@ class Kubin:
             if pipeline == "native" and model_name == "kd21"
             else Model_KD20(self.params)
         )
+
+        if not torch.cuda.is_available():
+            k_log(
+                "torch not compiled with CUDA enabled, ignore this message if it is intentional; otherwise, use 'install-torch' script to fix this"
+            )
 
     def with_utils(self):
         import utils.file_system as fs_utils
