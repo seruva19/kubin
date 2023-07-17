@@ -1,6 +1,7 @@
 import gradio as gr
 from ui_blocks.shared.ui_shared import SharedUI
 from utils.gradio_ui import click_and_disable
+from utils.logging import k_log
 import os
 from PIL import Image
 
@@ -29,11 +30,20 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
 
                         with gr.Row():
                             with gr.Column():
+                                cnet_img_reuse = gr.Checkbox(
+                                    True, label="Reuse input image for ControlNet"
+                                )
+                                shared.input_cnet_i2i_image.render()
                                 cnet_condition = gr.Radio(
                                     choices=["depth-map"],
                                     value="depth-map",
                                     label="Condition",
                                 )
+                            cnet_img_reuse.change(
+                                lambda x: gr.update(visible=not x),
+                                inputs=[cnet_img_reuse],
+                                outputs=[shared.input_cnet_i2i_image],
+                            )
 
                             with gr.Column():
                                 cnet_emb_transform_strength = gr.Slider(
@@ -200,12 +210,23 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                 prior_steps,
                 seed,
                 cnet_enable,
+                cnet_img_reuse,
+                cnet_image,
                 cnet_condition,
                 cnet_emb_transform_strength,
                 cnet_neg_emb_transform_strength,
                 cnet_img_strength,
                 *injections,
             ):
+                cnet_target_image = image
+                if cnet_enable:
+                    if not cnet_img_reuse and cnet_image is None:
+                        k_log(
+                            "No image selected for ControlNet input, using original image instead"
+                        )
+                    elif not cnet_img_reuse:
+                        cnet_target_image = cnet_image
+
                 params = {
                     "init_image": image,
                     "prompt": prompt,
@@ -222,7 +243,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                     "prior_steps": prior_steps,
                     "input_seed": seed,
                     "cnet_enable": cnet_enable,
-                    "cnet_image": image,
+                    "cnet_image": cnet_target_image,
                     "cnet_condition": cnet_condition,
                     "cnet_emb_transform_strength": cnet_emb_transform_strength,
                     "cnet_neg_emb_transform_strength": cnet_neg_emb_transform_strength,
@@ -251,6 +272,8 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                     prior_steps,
                     seed,
                     cnet_enable,
+                    cnet_img_reuse,
+                    shared.input_cnet_i2i_image,
                     cnet_condition,
                     cnet_emb_transform_strength,
                     cnet_neg_emb_transform_strength,

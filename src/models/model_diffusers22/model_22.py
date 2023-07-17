@@ -189,7 +189,7 @@ class Model_Diffusers22:
         assert isinstance(decoder, KandinskyV22Img2ImgPipeline)
         params, prior_generator, decoder_generator = self.prepareParams(params)
 
-        image_embeds, negative_embeds = prior(
+        image_embeds, negative_image_embeds = prior(
             prompt=params["prompt"],
             negative_prompt=params["negative_prior_prompt"]
             if params["negative_prior_prompt"] != ""
@@ -207,11 +207,14 @@ class Model_Diffusers22:
         use_scheduler(decoder, params["sampler"])
 
         images = []
+        prior_on_cpu = self.params("diffusers", "run_prior_on_cpu")
         for _ in itertools.repeat(None, params["batch_count"]):
             current_batch = decoder(
                 image=params["init_image"],
-                image_embeds=image_embeds,
-                negative_image_embeds=negative_embeds,
+                image_embeds=image_embeds.half() if prior_on_cpu else image_embeds,
+                negative_image_embeds=negative_image_embeds.half()
+                if prior_on_cpu
+                else negative_image_embeds,
                 width=params["w"],
                 height=params["h"],
                 strength=params["strength"],
@@ -262,10 +265,15 @@ class Model_Diffusers22:
         use_scheduler(decoder, params["sampler"])
 
         images = []
+        prior_on_cpu = self.params("diffusers", "run_prior_on_cpu")
         for _ in itertools.repeat(None, params["batch_count"]):
             current_batch = decoder(
-                image_embeds=embeds.image_embeds,
-                negative_image_embeds=embeds.negative_image_embeds,
+                image_embeds=embeds.image_embeds.half()
+                if prior_on_cpu
+                else embeds.image_embeds,
+                negative_image_embeds=embeds.negative_image_embeds.half()
+                if prior_on_cpu
+                else embeds.negative_image_embeds,
                 width=params["w"],
                 height=params["h"],
                 num_inference_steps=params["num_steps"],
@@ -338,12 +346,15 @@ class Model_Diffusers22:
         use_scheduler(decoder, params["sampler"])
 
         images = []
+        prior_on_cpu = self.params("diffusers", "run_prior_on_cpu")
         for _ in itertools.repeat(None, params["batch_count"]):
             current_batch = decoder(
                 image=image,
                 mask_image=mask,
-                image_embeds=image_embeds,
-                negative_image_embeds=negative_image_embeds,
+                image_embeds=image_embeds.half() if prior_on_cpu else image_embeds,
+                negative_image_embeds=negative_image_embeds.half()
+                if prior_on_cpu
+                else negative_image_embeds,
                 width=params["w"],
                 height=params["h"],
                 num_inference_steps=params["num_steps"],
@@ -410,12 +421,15 @@ class Model_Diffusers22:
         use_scheduler(decoder, params["sampler"])
 
         images = []
+        prior_on_cpu = self.params("diffusers", "run_prior_on_cpu")
         for _ in itertools.repeat(None, params["batch_count"]):
             current_batch = decoder(
                 image=image,
                 mask_image=mask,
-                image_embeds=image_embeds,
-                negative_image_embeds=negative_image_embeds,
+                image_embeds=image_embeds.half() if prior_on_cpu else image_embeds,
+                negative_image_embeds=negative_image_embeds.half()
+                if prior_on_cpu
+                else negative_image_embeds,
                 width=params["w"],
                 height=params["h"],
                 num_inference_steps=params["num_steps"],
@@ -478,10 +492,13 @@ class Model_Diffusers22:
         hint = generate_hint(cnet_image, cnet_condition, self.params)
 
         images = []
+        prior_on_cpu = self.params("diffusers", "run_prior_on_cpu")
         for _ in itertools.repeat(None, params["batch_count"]):
             current_batch = decoder(
-                image_embeds=image_embeds,
-                negative_image_embeds=negative_image_embeds,
+                image_embeds=image_embeds.half() if prior_on_cpu else image_embeds,
+                negative_image_embeds=negative_image_embeds.half()
+                if prior_on_cpu
+                else negative_image_embeds,
                 hint=hint,
                 width=params["w"],
                 height=params["h"],
@@ -504,6 +521,7 @@ class Model_Diffusers22:
         assert isinstance(decoder, KandinskyV22ControlnetImg2ImgPipeline)
         params, prior_generator, decoder_generator = self.prepareParams(params)
 
+        init_image = params["init_image"]
         i2i_cnet_image = params["cnet_image"]
         i2i_cnet_condition = params["cnet_condition"]
         i2i_cnet_emb_transform_strength = params["cnet_emb_transform_strength"]
@@ -515,7 +533,7 @@ class Model_Diffusers22:
             negative_prompt=params["negative_prior_prompt"]
             if params["negative_prior_prompt"] != ""
             else None,
-            image=i2i_cnet_image,
+            image=init_image if init_image is not None else i2i_cnet_image,
             strength=i2i_cnet_emb_transform_strength,
             num_images_per_prompt=params["batch_size"],
             num_inference_steps=params["prior_steps"],
@@ -531,7 +549,7 @@ class Model_Diffusers22:
             prior(
                 prompt=params["negative_prompt"],
                 negative_prompt=None,
-                image=i2i_cnet_image,
+                image=init_image if init_image is not None else i2i_cnet_image,
                 strength=i2i_cnet_neg_emb_transform_strength,
                 num_images_per_prompt=params["batch_size"],
                 num_inference_steps=params["prior_steps"],
@@ -552,11 +570,14 @@ class Model_Diffusers22:
         hint = generate_hint(i2i_cnet_image, i2i_cnet_condition, self.params)
 
         images = []
+        prior_on_cpu = self.params("diffusers", "run_prior_on_cpu")
         for _ in itertools.repeat(None, params["batch_count"]):
             current_batch = decoder(
                 image=i2i_cnet_image,
-                image_embeds=image_embeds,
-                negative_image_embeds=negative_image_embeds,
+                image_embeds=image_embeds.half() if prior_on_cpu else image_embeds,
+                negative_image_embeds=negative_image_embeds.half()
+                if prior_on_cpu
+                else negative_image_embeds,
                 strength=i2i_cnet_img_strength,
                 hint=hint,
                 width=params["w"],
