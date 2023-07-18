@@ -68,7 +68,7 @@ def setup(kubin):
             ci = Interrogator(
                 Config(
                     clip_model_name=clip_model,
-                    blip_model_type=blip_type,
+                    caption_model_name=blip_type,
                     clip_model_path=cache_path,
                     cache_path=cache_path,
                     download_cache=True,
@@ -178,7 +178,9 @@ def setup(kubin):
                     )
                 with gr.Row():
                     blip_model_type = gr.Radio(
-                        ["base", "large"], value="large", label="BLIP model type"
+                        ["blip-base", "blip-large", "git-large-coco"],
+                        value="blip-large",
+                        label="Caption model name",
                     )
                 with gr.Row():
                     chunk_size = gr.Slider(
