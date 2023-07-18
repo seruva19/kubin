@@ -32,6 +32,11 @@ def options_tab_ui(kubin: Kubin):
             label="Put tabs to left side of the screen",
         )
 
+        show_help_text = gr.Checkbox(
+            value=kubin.params("ui", "show_help_text"),
+            label="Show help text if present",
+        )
+
     allow_params_panel_resize.change(
         fn=None,
         _js=on_change,
@@ -82,6 +87,17 @@ def options_tab_ui(kubin: Kubin):
         inputs=[
             gr.Text("ui.side_tabs", visible=False),
             side_tabs,
+            gr.Checkbox(True, visible=False),
+        ],
+        show_progress=False,
+    )
+
+    show_help_text.change(
+        fn=None,
+        _js=on_change,
+        inputs=[
+            gr.Text("ui.show_help_text", visible=False),
+            show_help_text,
             gr.Checkbox(True, visible=False),
         ],
         show_progress=False,

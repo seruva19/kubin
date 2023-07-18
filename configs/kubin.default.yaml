@@ -36,6 +36,7 @@ ui:
   collapse_advanced_params: false
   full_screen_panel: false
   side_tabs: true
+  show_help_text: false
 
 native:
   flash_attention: false

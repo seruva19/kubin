@@ -15,3 +15,7 @@ def click_and_disable(element, fn, inputs=None, outputs=None):
             outputs=element,
         )
     )
+
+
+def info_message(ui_params, tooltip):
+    return tooltip if ui_params("show_help_text") else None

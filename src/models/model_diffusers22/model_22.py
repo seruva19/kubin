@@ -31,9 +31,11 @@ try:
     from diffusers.models.attention_processor import AttnAddedKVProcessor2_0
 except:
     k_log(
-        "warning: seems like diffusers are not installed, run 'pip install -r diffusers/requirements.txt' to install"
+        "warning (2.2): seems like diffusers are not installed, run 'pip install -r diffusers/requirements.txt' to install"
     )
-    k_log("warning: if you are not going to use diffusers, just ignore this message")
+    k_log(
+        "warning (2.2): if you are not going to use diffusers, just ignore this message"
+    )
 
 
 class Model_Diffusers22:
