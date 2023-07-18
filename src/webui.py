@@ -5,6 +5,7 @@ from ui_blocks.inpaint import inpaint_ui
 from ui_blocks.mix import mix_ui
 from ui_blocks.outpaint import outpaint_ui
 from ui_blocks.settings import settings_ui
+from ui_blocks.extensions import extensions_ui
 from ui_blocks.shared.ui_shared import SharedUI
 from ui_blocks.t2i import t2i_ui
 from ui_blocks.shared.client import css_styles, js_loader
@@ -65,8 +66,12 @@ def gradio_ui(kubin: Kubin, start_fn):
             create_ext_tabs(ext_standalone, ext_start_tab_index, ui_shared, ui_tabs)
             next_id = len(ext_standalone) + ext_start_tab_index
 
-            with gr.TabItem("Settings", id=next_id + 2) as settings_tabitem:
+            with gr.TabItem("Extensions", id=next_id + 2) as extensions_tabitem:
+                extensions_ui(kubin)
+
+            with gr.TabItem("Settings", id=next_id + 3) as settings_tabitem:
                 settings_ui(kubin)
+
         ui_tabs.elem_classes = [
             "ui-tabs",
             "left" if kubin.params("ui", "side_tabs") else "",
