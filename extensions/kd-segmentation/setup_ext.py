@@ -16,31 +16,31 @@ def setup(kubin):
         selected_mask_index = gr.State(None)  # type: ignore
 
         with gr.Row() as segment_block:
-            with gr.Column(scale=1):
-                with gr.Row():
-                    source_image.render()
+            with gr.Column(scale=1) as segment_params_block:
+                with gr.Column():
+                    with gr.Row():
+                        source_image.render()
+
+                    with gr.Row():
+                        model_type = gr.Radio(
+                            choices=[
+                                "vit_h/sam_vit_h_4b8939",
+                                "vit_l/sam_vit_l_0b3195",
+                                "vit_b/sam_vit_b_01ec64.pth",
+                            ],
+                            value="vit_h/sam_vit_h_4b8939",
+                            label="Model type",
+                        )
+
+                    with gr.Row():
+                        mode = gr.Radio(
+                            choices=["Extract all"], value="Extract all", label="Mode"
+                        )
+                        prompt = gr.Textbox(
+                            "", label="Prompt", placeholder="", visible=False
+                        )
 
             with gr.Column(scale=1):
-                with gr.Row():
-                    model_type = gr.Radio(
-                        choices=[
-                            "vit_h/sam_vit_h_4b8939",
-                            "vit_l/sam_vit_l_0b3195",
-                            "vit_b/sam_vit_b_01ec64.pth",
-                        ],
-                        value="vit_h/sam_vit_h_4b8939",
-                        label="Model type",
-                    )
-
-                with gr.Row():
-                    mode = gr.Radio(
-                        choices=["Extract all"], value="Extract all", label="Mode"
-                    )
-                    prompt = gr.Textbox(
-                        "", label="Prompt", placeholder="", visible=False
-                    )
-
-            with gr.Column(scale=2):
                 segment_btn = gr.Button("Segment image", variant="primary")
                 segment_output = gr.Gallery(label="Segmented Masks").style(
                     preview=True, grid=4
@@ -68,6 +68,7 @@ def setup(kubin):
                 ],
                 outputs=segment_output,
             )
+            segment_params_block.elem_classes = ["block-params"]
 
         return segment_block
 

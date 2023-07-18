@@ -24,10 +24,10 @@ def setup(kubin):
     )
 
     def model_3d_ui(ui_shared, ui_tabs):
-        selected_model_index = gr.State(None)  # type: ignore
+        selected_model_index = gr.State(None)
 
         with gr.Row() as model_3d_block:
-            with gr.Column(scale=1):
+            with gr.Column(scale=1) as model_3d_params_block:
                 with gr.Row():
                     source_image.render()
 
@@ -43,11 +43,12 @@ def setup(kubin):
                 fn=lambda *p: create_model(kubin, *p),
                 inputs=[
                     source_image,
-                    gr.State(kubin.params("general", "output_dir")),  # type: ignore
-                    gr.State(kubin.params("general", "device")),  # type: ignore
+                    gr.State(kubin.params("general", "output_dir")),
+                    gr.State(kubin.params("general", "device")),
                 ],
                 outputs=model_output,
             )
+            model_3d_params_block.elem_classes = ["block-params"]
 
         return model_3d_block
 

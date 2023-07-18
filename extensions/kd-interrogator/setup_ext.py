@@ -163,7 +163,7 @@ def setup(kubin):
 
     def interrogator_ui(ui_shared, ui_tabs):
         with gr.Row() as interrogator_block:
-            with gr.Column(scale=1):
+            with gr.Column(scale=1) as interrogator_params_block:
                 with gr.Row():
                     clip_model = gr.Dropdown(
                         choices=["ViT-L-14/openai", "ViT-H-14/laion2b_s32b_b79k"],
@@ -273,6 +273,8 @@ def setup(kubin):
                             ],
                             outputs=[progress],
                         )
+
+            interrogator_params_block.elem_classes = ["block-params"]
         return interrogator_block
 
     return {
