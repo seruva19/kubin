@@ -1,0 +1,26 @@
+html.has-lightbox {
+  overflow-x: hidden;
+}
+
+.notyf__wrapper {
+  padding: 10px;
+}
+
+.notyf__message {
+  font-family: var(--font);
+}
+
+html.has-lightbox body {
+  height: 0;
+  overflow: hidden;
+}
+
+.sl-overlay {
+  background: black !important;
+}
+
+.sl-wrapper * {
+  font-family: var(--font) !important;
+  color: white !important;
+  text-decoration: none !important;
+}

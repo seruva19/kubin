@@ -1,6 +1,6 @@
 import gradio as gr
 from ui_blocks.shared.ui_shared import SharedUI
-from utils.gradio_ui import click_and_disable
+from utils.gradio_ui import click_and_disable, info_message
 from utils.logging import k_log
 import os
 from PIL import Image
@@ -26,7 +26,9 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                                 "", placeholder="", label="Prompt", lines=2
                             )
                     with gr.Accordion("ControlNet", open=False) as i2i_cnet:
-                        cnet_enable = gr.Checkbox(False, label="Enable")
+                        cnet_enable = gr.Checkbox(
+                            False, label="Enable", elem_classes=["cnet-enable"]
+                        )
 
                         with gr.Row():
                             with gr.Column():
@@ -65,6 +67,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                                     step=0.05,
                                     label="Image strength",
                                 )
+
                     i2i_cnet.elem_classes = ["control-net"]
 
                 with gr.TabItem("Batch"):
@@ -112,14 +115,18 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                         label="Guidance scale",
                         elem_classes=["inline-flex"],
                     )
+
                     strength = gr.Slider(
                         0,
                         1,
                         0.3,
                         step=0.05,
                         label="Strength",
-                        # info="Transformation strength",
+                        info=info_message(
+                            shared.ui_params, "Reference image transformation strength"
+                        ),
                     )
+
                 with gr.Row():
                     batch_count = gr.Slider(1, 16, 4, step=1, label="Batch count")
                     batch_size = gr.Slider(1, 16, 1, step=1, label="Batch size")

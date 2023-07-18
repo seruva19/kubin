@@ -1,0 +1,57 @@
+body[class*="pipeline-native"] .diffusers-control {
+  display: none;
+}
+
+body[class*="pipeline-diffusers"] .native-control {
+  display: none;
+}
+
+body:not([class*="pipeline-diffusers-kd22"]) .diffusers-kd22-control {
+  display: none;
+}
+
+body.pipeline-native-kd20 .unsupported2_0,
+body.pipeline-native-kd21 .unsupported2_1,
+body.pipeline-diffusers-kd21 .unsupported2_1d,
+body.pipeline-diffusers-kd22 .unsupported2_2d,
+body.pipeline-native-kd20 .ui-tabs>.tab-nav>button:nth-child(3),
+body.pipeline-native-kd20 .ui-tabs>.tab-nav>button:nth-child(5) {
+  display: none;
+}
+
+body:not(.pipeline-diffusers-kd22) .control-net {
+  display: none;
+}
+
+.control-net>div:nth-child(3)>div>div.form {
+  box-shadow: none;
+  border: none;
+}
+
+body.gradio-full .gradio-container {
+  max-width: 100% !important;
+}
+
+.block.inline-flex {
+  display: inline-flex;
+}
+
+.thumbnail-item {
+  aspect-ratio: initial !important;
+}
+
+.ui-tabs.left>.tab-nav button.selected {
+  margin-left: 15px;
+}
+
+.ui-tabs.left>.tab-nav button.selected::before {
+  content: "👉";
+  position: absolute;
+  margin-left: -24px;
+  margin-top: -1px;
+}
+
+.block.training-misc-params {
+  position: absolute;
+  bottom: 0;
+}

@@ -16,9 +16,11 @@ try:
     from diffusers.models.attention_processor import AttnAddedKVProcessor2_0
 except:
     print(
-        "warning: seems like diffusers are not installed, run 'pip install -r diffusers/requirements.txt' to install"
+        "warning (2.1): seems like diffusers are not installed, run 'pip install -r diffusers/requirements.txt' to install"
     )
-    print("warning: if you are not going to use diffusers, just ignore this message")
+    print(
+        "warning (2.1): if you are not going to use diffusers, just ignore this message"
+    )
 
 import itertools
 import os

@@ -40,6 +40,27 @@ def mix_ui(generate_fn, shared: SharedUI, tabs):
                     weight_2 = gr.Slider(0, 1, 0.5, step=0.05, label="Weight")
 
             negative_prompt = gr.TextArea("", label="Negative prompt", lines=2)
+
+            with gr.Accordion("ControlNet", open=False) as mix_cnet:
+                cnet_enable = gr.Checkbox(
+                    False, label="Enable", elem_classes=["cnet-enable"]
+                )
+
+                with gr.Row():
+                    shared.input_cnet_mix_image.render()
+                    with gr.Column():
+                        cnet_condition = gr.Radio(
+                            choices=["depth-map"],
+                            value="depth-map",
+                            label="Condition",
+                        )
+
+                        cnet_img_strength = gr.Slider(
+                            0, 1, 1, step=0.05, label="Image strength"
+                        )
+
+            mix_cnet.elem_classes = ["control-net"]
+
             with gr.Accordion(
                 "Advanced params", open=not shared.ui_params("collapse_advanced_params")
             ) as mix_advanced_params:
@@ -144,6 +165,10 @@ def mix_ui(generate_fn, shared: SharedUI, tabs):
                 prior_steps,
                 negative_prior_prompt,
                 input_seed,
+                cnet_enable,
+                cnet_image,
+                cnet_condition,
+                cnet_img_strength,
                 *injections,
             ):
                 params = {
@@ -165,6 +190,10 @@ def mix_ui(generate_fn, shared: SharedUI, tabs):
                     "prior_steps": prior_steps,
                     "negative_prior_prompt": negative_prior_prompt,
                     "input_seed": input_seed,
+                    "cnet_enable": cnet_enable,
+                    "cnet_image": cnet_image,
+                    "cnet_condition": cnet_condition,
+                    "cnet_img_strength": cnet_img_strength,
                 }
 
                 params = augmentations["exec"](params, injections)
@@ -191,6 +220,10 @@ def mix_ui(generate_fn, shared: SharedUI, tabs):
                 prior_steps,
                 negative_prior_prompt,
                 seed,
+                cnet_enable,
+                shared.input_cnet_mix_image,
+                cnet_condition,
+                cnet_img_strength,
             ]
             + augmentations["injections"],
             outputs=mix_output,

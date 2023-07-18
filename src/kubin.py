@@ -1,7 +1,7 @@
 from arguments import parse_arguments
 from env import Kubin
+from utils.platform import is_windows
 from webui import gradio_ui
-import gradio as gr
 from pathlib import Path
 
 kubin = Kubin()
@@ -15,15 +15,35 @@ def init_kubin(kubin: Kubin):
     kubin.with_extensions()
 
 
-def start(kubin, ui: gr.Blocks):
-    if ui is not None:
+def reload_app(ui):
+    from subprocess import Popen
+
+    Popen(
+        ["start.bat"]
+        if is_windows()
+        else [
+            "/bin/bash",
+            "-c",
+            f"chmod u+x '{Path(__file__).parent.parent.absolute()}/start.sh' && ./start.sh",
+        ]
+    )
+
+    try:
         ui.close()
+        raise SystemExit
+    finally:
+        None
+
+
+def start(kubin, ui):
+    if ui is not None:
+        reload_app(ui)
 
     init_kubin(kubin)
     ui, resources = gradio_ui(kubin, start)
 
-    ui.queue(
-        concurrency_count=kubin.params("gradio", "concurrency_count"), api_open=False
+    app, local, shared = ui.queue(
+        concurrency_count=kubin.params("gradio", "concurrency_count"), api_open=True
     ).launch(
         prevent_thread_lock=True,
         show_api=True,

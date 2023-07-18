@@ -1,0 +1,84 @@
+body.unselectable * {
+  user-select: none;
+}
+
+.options-left {
+  max-width: 150px;
+  min-width: 0 !important;
+}
+
+.options-select {
+  font-size: large !important;
+  padding: 0 5px 0 5px;
+  cursor: pointer;
+  height: 50px;
+  line-height: 50px !important;
+  border-radius: var(--block-radius);
+  text-align: center;
+}
+
+.options-select.selected {
+  background: var(--button-secondary-background-fill);
+}
+
+.options-block {
+  display: none !important;
+}
+
+.options-block .form {
+  line-height: 50px;
+  border-radius: 5px !important;
+}
+
+.options-block .form,
+.options-block .form fieldset {
+  border: none;
+  display: initial;
+  box-shadow: none;
+}
+
+.options-block .padded {
+  padding: 5px;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.options-block.active {
+  display: block !important;
+}
+
+.options-info {
+  margin: 10px 0;
+  height: 30px;
+  display: block;
+}
+
+.block-resizable-anchor {
+  max-width: 6px;
+  margin-left: -11px;
+  height: 100%;
+  background: radial-gradient(lightgray, transparent);
+  opacity: 0;
+}
+
+.block-resizable-anchor:hover {
+  opacity: 1;
+  transition: all 1s;
+}
+
+.block-resizable-anchor.activated {
+  background: radial-gradient(#2a73fb, transparent);
+  opacity: 1;
+}
+
+.block-params-vertical-alignment {
+  display: initial !important;
+}
+
+.block-params-vertical-alignment .block-params {
+  margin-bottom: 20px;
+}
+
+.block-params-vertical-alignment .block-resizable-anchor {
+  display: none;
+}

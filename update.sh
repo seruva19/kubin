@@ -1,3 +1,5 @@
+#!/bin/bash
+
 git pull
 git checkout .
 source venv/bin/activate

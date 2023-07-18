@@ -13,7 +13,7 @@ def setup(kubin):
 
     def upscaler_ui(ui_shared, ui_tabs):
         with gr.Row() as upscaler_block:
-            with gr.Column(scale=1):
+            with gr.Column(scale=1) as upscaler_params_block:
                 with gr.Row():
                     source_image.render()
 
@@ -55,6 +55,7 @@ def setup(kubin):
                 outputs=upscale_output,
             )
 
+            upscaler_params_block.elem_classes = ["block-params"]
         return upscaler_block
 
     return {

@@ -8,7 +8,10 @@ from env import Kubin
 from utils.yaml import flatten_yaml
 from .settings_options import options_ui
 from .settings_ckpt import ckpt_selector
-from .settings_ext import extensions_ui
+
+
+def in_mb(bytes: float):
+    return round(bytes / (1024**2))
 
 
 def update_info():
@@ -49,10 +52,10 @@ def update_info():
     ram_total = vmem.total
     ram_available = vmem.available
 
-    torch_total_mb = round(torch_total / (1024 * 1024))
-    torch_free_mb = round(torch_free / (1024 * 1024))
-    ram_total_mb = round(ram_total / (1024 * 1024))
-    ram_available_mb = round(ram_available / (1024 * 1024))
+    torch_total_mb = in_mb(torch_total)
+    torch_free_mb = in_mb(torch_free)
+    ram_total_mb = in_mb(ram_total)
+    ram_available_mb = in_mb(ram_available)
 
     return (
         f"python: {sys.version}\n"
@@ -70,26 +73,24 @@ def update_info():
     )
 
 
-def settings_ui(kubin: Kubin):
+def settings_ui(kubin: Kubin, start_fn, ui):
     model_config = flatten_yaml(CONFIG_2_1)
 
     with gr.Column() as settings_block:
         with gr.TabItem("Options"):
-            options_ui(kubin)
+            options_ui(kubin, start_fn, ui)
 
         with gr.TabItem("Checkpoints"):
             ckpt_selector(kubin)
-
-        with gr.TabItem("Extensions"):
-            extensions_ui(kubin)
 
         with gr.TabItem("System"):
             with gr.Row():
                 system_info = gr.TextArea(
                     update_info, lines=10, label="System info", interactive=False
                 ).style(show_copy_button=True)
+
                 textbox_log = gr.TextArea(
-                    label="System  log", lines=10, interactive=False
+                    label="System log", lines=10, interactive=False
                 ).style(show_copy_button=True)
 
             with gr.Row():

@@ -11,7 +11,7 @@ from ui_blocks.options.options_gradio import options_tab_gradio
 from ui_blocks.options.options_ui import options_tab_ui
 
 
-def options_ui(kubin: Kubin):
+def options_ui(kubin: Kubin, start_fn, ui):
     with gr.Row() as options_block:
         with gr.Column(scale=1, elem_classes="options-left"):
             with gr.Box():
@@ -54,6 +54,7 @@ def options_ui(kubin: Kubin):
         )
 
         reset_changes = gr.Button(value="⏮️ Reset to default", label="Reset to default")
+        restart_app = gr.Button(value="♻️ Restart app", label="Restart app")
 
     with gr.Row():
         options_info = gr.HTML("", elem_id="options-info", elem_classes=["block-info"])
@@ -106,7 +107,14 @@ def options_ui(kubin: Kubin):
         fn=lambda: kubin.params.reset_config(), queue=False, show_progress=False
     ).then(
         fn=None,
-        _js='(e) => kubin.notify.success("Restored default config. Restart the app for changes to take effect")',
+        _js='() => kubin.notify.success("Restored default config. Restart the app for changes to take effect")',
+    )
+
+    restart_app.click(
+        fn=lambda: start_fn(kubin, ui),
+        queue=False,
+        show_progress=False,
+        _js="() => kubin.utils.reloadUI()",
     )
 
     return options_block

@@ -66,7 +66,7 @@ def setup(kubin):
         selected_folder_contents_index = gr.State(None)  # type: ignore
 
         with gr.Row() as image_browser_block:
-            with gr.Column(scale=2):
+            with gr.Column(scale=3) as folder_block:
                 no_folders_message = gr.HTML(
                     "No image folders found", visible=len(folders) == 0
                 )
@@ -89,7 +89,7 @@ def setup(kubin):
                 refresh_btn = gr.Button("Refresh", variant="secondary")
                 metadata_info = gr.HTML()
 
-            with gr.Column(scale=5):
+            with gr.Column(scale=4):
                 folder_contents = gr.Gallery(label="Images in folder").style(
                     preview=False, grid=5
                 )
@@ -133,6 +133,7 @@ def setup(kubin):
                     outputs=[folder_contents, metadata_info],
                 )
 
+        folder_block.elem_classes = ["block-params"]
         return image_browser_block
 
     return {
