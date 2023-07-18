@@ -1,10 +1,7 @@
-import os
-import subprocess
 from arguments import parse_arguments
 from env import Kubin
 from utils.platform import is_windows
 from webui import gradio_ui
-import gradio as gr
 from pathlib import Path
 
 kubin = Kubin()
@@ -21,7 +18,13 @@ def init_kubin(kubin: Kubin):
 def reload_app(ui):
     from subprocess import Popen
 
-    Popen(["start.bat" if is_windows() else "chmod u+x start.sh && ./start.sh"])
+    Popen(
+        [
+            "start.bat"
+            if is_windows()
+            else f"chmod u+x '{Path(__file__).parent.parent.absolute()}/start.sh' && ./start.sh"
+        ]
+    )
     try:
         ui.close()
         raise SystemExit
@@ -29,7 +32,7 @@ def reload_app(ui):
         None
 
 
-def start(kubin, ui: gr.Blocks):
+def start(kubin, ui):
     if ui is not None:
         reload_app(ui)
 
