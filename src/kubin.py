@@ -19,12 +19,15 @@ def reload_app(ui):
     from subprocess import Popen
 
     Popen(
-        [
-            "start.bat"
-            if is_windows()
-            else f"chmod u+x '{Path(__file__).parent.parent.absolute()}/start.sh' && ./start.sh"
+        ["start.bat"]
+        if is_windows()
+        else [
+            "/bin/bash",
+            "-c",
+            f"chmod u+x '{Path(__file__).parent.parent.absolute()}/start.sh' && ./start.sh",
         ]
     )
+
     try:
         ui.close()
         raise SystemExit
