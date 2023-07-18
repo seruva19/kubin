@@ -305,7 +305,7 @@
   }
 
   kubin.utils.reloadUI = () => {
-    kubin.notify.success("App was restarted, wait for page to reload")
+    kubin.notify.success("App restart initiated, wait for page to reload")
 
     const url = window.location.origin
     const interval = 5
@@ -313,17 +313,9 @@
     const checkWithInterval = (url, interval) => {
       const check = () => {
         fetch(url).then(response => {
-          if (response.ok) {
-            console.log('availanle!')
-            window.location.reload()
-          } else {
-            console.log('not eady yet!')
-            setTimeout(check, interval * 1000)
-          }
-        }).catch(error => {
-          console.log('some error!')
-          setTimeout(check, interval * 1000)
-        })
+          response.ok && window.location.reload()
+          !response.ok && setTimeout(check, interval * 1000)
+        }).catch(_ => setTimeout(check, interval * 1000))
       }
 
       setTimeout(check, interval * 1000)
