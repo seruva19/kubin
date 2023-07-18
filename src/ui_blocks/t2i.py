@@ -217,6 +217,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                     "cnet_emb_transform_strength": cnet_emb_transform_strength,
                     "cnet_neg_emb_transform_strength": cnet_neg_emb_transform_strength,
                     "cnet_img_strength": cnet_img_strength,
+                    "init_image": None,
                 }
 
                 params = augmentations["exec"](params, injections)
