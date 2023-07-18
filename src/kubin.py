@@ -21,7 +21,7 @@ def init_kubin(kubin: Kubin):
 def reload_app(ui):
     from subprocess import Popen
 
-    Popen(["start.bat" if is_windows() else "./start.sh"])
+    Popen(["start.bat" if is_windows() else "chmod u+x start.sh && ./start.sh"])
     try:
         ui.close()
         raise SystemExit
