@@ -56,7 +56,7 @@ def mix_ui(generate_fn, shared: SharedUI, tabs):
                         )
 
                         cnet_img_strength = gr.Slider(
-                            0, 1, 0.5, step=0.05, label="Image strength"
+                            0, 1, 1, step=0.05, label="Image strength"
                         )
 
             mix_cnet.elem_classes = ["control-net"]
