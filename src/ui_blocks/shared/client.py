@@ -31,7 +31,7 @@ def js_loader(resources, params):
       window._kubinSessionId = '{session_id}'
 
       const script = document.createElement('script')
-      script.src = '/file=client/ui_utils.js?{session_id}'
+      script.src = '/file=client/dist/bundle.js?{session_id}'
       script.async = false
 
       const head = document.getElementsByTagName("head")[0]
