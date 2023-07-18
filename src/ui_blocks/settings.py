@@ -11,7 +11,7 @@ from .settings_ckpt import ckpt_selector
 
 
 def in_mb(bytes: float):
-    return round(bytes / (1024 ^ 2))
+    return round(bytes / (1024**2))
 
 
 def update_info():
