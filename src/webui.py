@@ -70,7 +70,7 @@ def gradio_ui(kubin: Kubin, start_fn):
                 extensions_ui(kubin)
 
             with gr.TabItem("Settings", id=next_id + 3) as settings_tabitem:
-                settings_ui(kubin)
+                settings_ui(kubin, start_fn, ui)
 
         ui_tabs.elem_classes = [
             "ui-tabs",
