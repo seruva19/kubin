@@ -1,23 +1,19 @@
 import gc
 import torch
-
 from utils.logging import k_log
 
-try:
-    from transformers import CLIPVisionModelWithProjection
-    from diffusers.models import UNet2DConditionModel
-    from diffusers import (
-        KandinskyV22PriorPipeline,
-        KandinskyV22PriorEmb2EmbPipeline,
-        KandinskyV22Pipeline,
-        KandinskyV22Img2ImgPipeline,
-        KandinskyV22InpaintPipeline,
-        KandinskyV22ControlnetPipeline,
-        KandinskyV22ControlnetImg2ImgPipeline,
-    )
-    from diffusers.models.attention_processor import AttnAddedKVProcessor2_0
-except:
-    None
+from transformers import CLIPVisionModelWithProjection
+from diffusers.models import UNet2DConditionModel
+from diffusers import (
+    KandinskyV22PriorPipeline,
+    KandinskyV22PriorEmb2EmbPipeline,
+    KandinskyV22Pipeline,
+    KandinskyV22Img2ImgPipeline,
+    KandinskyV22InpaintPipeline,
+    KandinskyV22ControlnetPipeline,
+    KandinskyV22ControlnetImg2ImgPipeline,
+)
+from diffusers.models.attention_processor import AttnAddedKVProcessor2_0
 
 
 def prepare_weights_for_task(model, task):

@@ -1,0 +1,9 @@
+.kd-image-browser .preview {
+    flex-direction: row-reverse;
+}
+
+.kd-image-browser .thumbnails.scroll-hide {
+    display: inline-block;
+    height: 100%;
+    position: relative;
+}

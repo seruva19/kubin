@@ -77,7 +77,9 @@ def extensions_ui(kubin: Kubin):
                         clear_ext_install_btn = gr.Button(
                             value="🔧 Force reinstall",
                             interactive=True,
-                        ).style(size="sm", full_width=False)
+                            size="sm",
+                            scale=0,
+                        )
                         clear_ext_install_btn.click(
                             lambda name=extension_info.name: kubin.ext_registry.force_reinstall(
                                 name

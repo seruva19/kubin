@@ -84,7 +84,7 @@ def create_ext_targets(exts, ext_start_tab_index):
     for tab_index, ext in enumerate(exts):
         target = ext.get("send_target", None)
         if target is not None:
-            ext_targets.append((ext["title"], target, ext_start_tab_index + tab_index))
+            ext_targets.append((ext, target, ext_start_tab_index + tab_index))
 
     return ext_targets
 

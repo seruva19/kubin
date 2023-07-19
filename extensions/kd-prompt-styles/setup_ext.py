@@ -110,12 +110,12 @@ def setup(kubin):
         )
 
     def style_select_ui(target):
-        target = gr.State(value=target)  # type: ignore
+        target = gr.State(value=target)
 
         initial_styles = get_styles()
-        available_styles = gr.State(value=initial_styles)  # type: ignore
-        default_style = gr.State(value=initial_styles[0], _source="kd-prompt-styles")  # type: ignore
-        current_style = gr.State(value=initial_styles[0])  # type: ignore
+        available_styles = gr.State(value=initial_styles)
+        default_style = gr.State(value=initial_styles[0])
+        current_style = gr.State(value=initial_styles[0])
 
         with gr.Column() as style_selector_block:
             style_variant = gr.Dropdown(
@@ -180,7 +180,7 @@ def setup(kubin):
             add_style_btn.click(
                 fn=add_style,
                 inputs=[gr.State(None)],
-                outputs=[  # type: ignore
+                outputs=[
                     edit_prompt_elements,
                     style_name,
                     style_prompt,
@@ -192,7 +192,7 @@ def setup(kubin):
             edit_style_btn.click(
                 fn=add_style,
                 inputs=[current_style],
-                outputs=[  # type: ignore
+                outputs=[
                     edit_prompt_elements,
                     style_name,
                     style_prompt,
@@ -204,19 +204,19 @@ def setup(kubin):
             save_style_btn.click(
                 fn=save_style,
                 inputs=[style_name, style_prompt, style_negative_prompt],
-                outputs=[style_edit_elements, edit_prompt_elements],  # type: ignore
+                outputs=[style_edit_elements, edit_prompt_elements],
             )
 
             cancel_style_btn.click(
                 fn=lambda: [gr.update(visible=True), gr.update(visible=False)],
                 inputs=[],
-                outputs=[style_edit_elements, edit_prompt_elements],  # type: ignore
+                outputs=[style_edit_elements, edit_prompt_elements],
             )
 
             remove_style_btn.click(
                 fn=remove_style,
                 inputs=[style_name],
-                outputs=[style_edit_elements, edit_prompt_elements],  # type: ignore
+                outputs=[style_edit_elements, edit_prompt_elements],
             )
 
         return style_selector_block, current_style, default_style

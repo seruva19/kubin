@@ -178,7 +178,7 @@
       kubin.UI.fullScreenUI(fullScreenPanel)
     }
 
-    const pipeline = window._kubinParams['general.pipeline']
+    let pipeline = window._kubinParams['general.pipeline']
     const model_name = window._kubinParams['general.model_name']
 
     document.querySelectorAll('body[class*="pipeline-"]').forEach(b => {
@@ -190,13 +190,15 @@
       }
     })
 
-    document.body.classList.add(`pipeline-${pipeline}-${model_name}`)
-
     if (model_name == 'kd20' && pipeline == 'diffusers') {
       kubin.notify.error('You cannot use a 2.0 model with the diffusers pipeline! Native pipeline will be used')
+      pipeline = 'native'
     } else if (model_name == 'kd22' && pipeline == 'native') {
       kubin.notify.error('You cannot use a 2.2 model with the native pipeline! Diffusers pipeline will be used')
+      pipeline = 'diffusers'
     }
+
+    document.body.classList.add(`pipeline-${pipeline}-${model_name}`)
   }
 
   kubin.UI.resizablePanels = panelResize => {

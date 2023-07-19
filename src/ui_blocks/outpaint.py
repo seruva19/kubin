@@ -1,6 +1,8 @@
 from io import BytesIO
 import gradio as gr
+from ui_blocks.shared.samplers import samplers_controls
 from ui_blocks.shared.ui_shared import SharedUI
+from utils.gradio_ui import click_and_disable
 
 
 def outpaint_gallery_select(evt: gr.SelectData):
@@ -110,19 +112,12 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs):
                         interactive=False,
                     )
                 with gr.Row():
-                    sampler = gr.Radio(
-                        ["ddim_sampler", "p_sampler", "plms_sampler"],
-                        value="p_sampler",
-                        label="Sampler",
-                    )
-                    sampler_diffusers = gr.Radio(
-                        ["ddim_sampler"], value="ddim_sampler", label="Sampler"
-                    )
-                    sampler.elem_classes = ["t2i_sampler", "native-control"]
-                    sampler_diffusers.elem_classes = [
-                        "t2i_sampler",
-                        "diffusers-control",
-                    ]
+                    (
+                        sampler_20,
+                        sampler_21_native,
+                        sampler_diffusers,
+                    ) = samplers_controls()
+
                     seed = gr.Number(-1, label="Seed", precision=0)
                 with gr.Row():
                     prior_scale = gr.Slider(
@@ -158,8 +153,8 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs):
 
         with gr.Column(scale=1):
             generate_outpaint = gr.Button("Generate", variant="primary")
-            outpaint_output = gr.Gallery(label="Generated Images").style(
-                grid=2, preview=True
+            outpaint_output = gr.Gallery(
+                label="Generated Images", columns=2, preview=True
             )
             selected_image_info = gr.HTML(value="", elem_classes=["block-info"])
             outpaint_output.select(
@@ -185,7 +180,9 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs):
                 guidance_scale,
                 w,
                 h,
-                sampler,
+                sampler_20,
+                sampler_21_native,
+                sampler_diffusers,
                 prior_cf_scale,
                 prior_steps,
                 negative_prior_prompt,
@@ -198,6 +195,10 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs):
                 infer_size,
                 *injections,
             ):
+                sampler = shared.select_sampler(
+                    sampler_20, sampler_21_native, sampler_diffusers
+                )
+
                 params = {
                     "image": image,
                     "prompt": prompt,
@@ -222,8 +223,9 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs):
                 params = augmentations["exec"](params, injections)
                 return generate_fn(params)
 
-        generate_outpaint.click(
-            generate,
+        click_and_disable(
+            element=generate_outpaint,
+            fn=generate,
             inputs=[
                 shared.input_outpaint_image,
                 prompt,
@@ -234,7 +236,9 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs):
                 guidance_scale,
                 width,
                 height,
-                sampler,
+                sampler_20,
+                sampler_21_native,
+                sampler_diffusers,
                 prior_scale,
                 prior_steps,
                 negative_prior_prompt,

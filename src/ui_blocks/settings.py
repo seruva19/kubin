@@ -85,31 +85,34 @@ def settings_ui(kubin: Kubin, start_fn, ui):
 
         with gr.TabItem("System"):
             with gr.Row():
-                system_info = gr.TextArea(
-                    update_info, lines=10, label="System info", interactive=False
-                ).style(show_copy_button=True)
+                system_info = gr.Textbox(
+                    update_info,
+                    lines=10,
+                    label="System info",
+                    interactive=False,
+                    show_copy_button=True,
+                )
 
-                textbox_log = gr.TextArea(
-                    label="System log", lines=10, interactive=False
-                ).style(show_copy_button=True)
+                textbox_log = gr.Textbox(
+                    label="System log",
+                    lines=10,
+                    interactive=False,
+                    show_copy_button=True,
+                )
 
             with gr.Row():
-                update_btn = gr.Button(value="Update system info").style(
-                    full_width=False, size="sm"
-                )
+                update_btn = gr.Button(value="Update system info", scale=0, size="sm")
                 update_btn.click(update_info, outputs=system_info)
 
-                unload_model = gr.Button(value="Free memory").style(
-                    full_width=False, size="sm"
-                )
+                unload_model = gr.Button(value="Free memory", scale=0, size="sm")
                 unload_model.click(lambda: kubin.model.flush(), queue=False).then(
                     fn=None, _js='_ => kubin.notify.success("Model unloaded")'
                 )
 
-            with gr.Accordion("Model params", open=False):
-                values = []
-                for key in model_config:
-                    value = gr.Textbox(label=str(key), value=model_config[key])
-                    values.append(value)
+            # with gr.Accordion("Model params", open=False):
+            #     values = []
+            #     for key in model_config:
+            #         value = gr.Textbox(label=str(key), value=model_config[key])
+            #         values.append(value)
 
     return settings_block

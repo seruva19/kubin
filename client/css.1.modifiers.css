@@ -10,12 +10,15 @@ body:not([class*="pipeline-diffusers-kd22"]) .diffusers-kd22-control {
   display: none;
 }
 
-body.pipeline-native-kd20 .unsupported2_0,
-body.pipeline-native-kd21 .unsupported2_1,
-body.pipeline-diffusers-kd21 .unsupported2_1d,
-body.pipeline-diffusers-kd22 .unsupported2_2d,
-body.pipeline-native-kd20 .ui-tabs>.tab-nav>button:nth-child(3),
-body.pipeline-native-kd20 .ui-tabs>.tab-nav>button:nth-child(5) {
+body[class*="pipeline-"][class*="-kd20"] [class*="unsupported_20"],
+body[class*="pipeline-native-kd21"] [class*="unsupported_21"],
+body[class*="pipeline-diffusers-kd21"] [class*="unsupported_d21"],
+body[class*="pipeline-"][class*="-kd22"] [class*="unsupported_22"] {
+  display: none;
+}
+
+body[class*="pipeline-"][class*="-kd20"] .ui-tabs>.tab-nav>button:nth-child(3),
+body[class*="pipeline-"][class*="-kd20"] .ui-tabs>.tab-nav>button:nth-child(5) {
   display: none;
 }
 
@@ -54,4 +57,14 @@ body.gradio-full .gradio-container {
 .block.training-misc-params {
   position: absolute;
   bottom: 0;
+}
+
+.send-targets {
+  display: grid !important;
+  grid-auto-flow: column;
+}
+
+.send-targets button {
+  width: initial !important;
+  min-width: initial !important;
 }

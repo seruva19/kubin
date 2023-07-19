@@ -33,11 +33,12 @@ def setup(kubin):
 
             with gr.Column(scale=1):
                 upscale_btn = gr.Button("Upscale", variant="primary")
-                upscale_output = gr.Gallery(label="Upscaled Image").style(preview=True)
+                upscale_output = gr.Gallery(label="Upscaled Image", preview=True)
 
                 ui_shared.create_base_send_targets(upscale_output, gr.State(0), ui_tabs)  # type: ignore
 
-            upscale_btn.click(
+            kubin.ui_utils.click_and_disable(
+                upscale_btn,
                 fn=lambda *p: upscale_with(kubin, *p),
                 inputs=[
                     upscaler,
@@ -59,6 +60,7 @@ def setup(kubin):
         return upscaler_block
 
     return {
+        "send_to": "📐 Send to Upscaler",
         "title": "Upscaler",
         "tab_ui": lambda ui_s, ts: upscaler_ui(ui_s, ts),
         "send_target": source_image,

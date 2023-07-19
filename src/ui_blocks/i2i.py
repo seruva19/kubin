@@ -1,6 +1,7 @@
 import gradio as gr
+from ui_blocks.shared.samplers import samplers_controls
 from ui_blocks.shared.ui_shared import SharedUI
-from utils.gradio_ui import click_and_disable, info_message
+from utils.gradio_ui import click_and_disable
 from utils.logging import k_log
 import os
 from PIL import Image
@@ -11,7 +12,7 @@ def i2i_gallery_select(evt: gr.SelectData):
 
 
 def i2i_ui(generate_fn, shared: SharedUI, tabs):
-    selected_i2i_image_index = gr.State(None)  # type: ignore
+    selected_i2i_image_index = gr.State(None)
     augmentations = shared.create_ext_augment_blocks("i2i")
 
     with gr.Row() as i2i_block:
@@ -122,8 +123,8 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                         0.3,
                         step=0.05,
                         label="Strength",
-                        info=info_message(
-                            shared.ui_params, "Reference image transformation strength"
+                        info=shared.info_message(
+                            "Reference image transformation strength"
                         ),
                     )
 
@@ -146,19 +147,12 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                         label="Height",
                     )
                 with gr.Row():
-                    sampler = gr.Radio(
-                        ["ddim_sampler", "p_sampler", "plms_sampler"],
-                        value="p_sampler",
-                        label="Sampler",
-                    )
-                    sampler_diffusers = gr.Radio(
-                        ["ddim_sampler"], value="ddim_sampler", label="Sampler"
-                    )
-                    sampler.elem_classes = ["t2i_sampler", "native-control"]
-                    sampler_diffusers.elem_classes = [
-                        "t2i_sampler",
-                        "diffusers-control",
-                    ]
+                    (
+                        sampler_20,
+                        sampler_21_native,
+                        sampler_diffusers,
+                    ) = samplers_controls()
+
                     seed = gr.Number(-1, label="Seed", precision=0)
                 with gr.Row() as prior_block:
                     prior_scale = gr.Slider(
@@ -188,9 +182,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
 
         with gr.Column(scale=1):
             generate_i2i = gr.Button("Generate", variant="primary")
-            i2i_output = gr.Gallery(label="Generated Images").style(
-                grid=2, preview=True
-            )
+            i2i_output = gr.Gallery(label="Generated Images", columns=2, preview=True)
             selected_image_info = gr.HTML(value="", elem_classes=["block-info"])
             i2i_output.select(
                 fn=i2i_gallery_select,
@@ -212,7 +204,9 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                 guidance_scale,
                 width,
                 height,
-                sampler,
+                sampler_20,
+                sampler_21_native,
+                sampler_diffusers,
                 prior_scale,
                 prior_steps,
                 seed,
@@ -225,6 +219,10 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                 cnet_img_strength,
                 *injections,
             ):
+                sampler = shared.select_sampler(
+                    sampler_20, sampler_21_native, sampler_diffusers
+                )
+
                 cnet_target_image = image
                 if cnet_enable:
                     if not cnet_img_reuse and cnet_image is None:
@@ -261,8 +259,9 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                 params = augmentations["exec"](params, injections)
                 return generate_fn(params)
 
-            generate_i2i.click(
-                generate,
+            click_and_disable(
+                element=generate_i2i,
+                fn=generate,
                 inputs=[
                     shared.input_i2i_image,
                     prompt,
@@ -274,7 +273,9 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                     guidance_scale,
                     width,
                     height,
-                    sampler,
+                    sampler_20,
+                    sampler_21_native,
+                    sampler_diffusers,
                     prior_scale,
                     prior_steps,
                     seed,
@@ -302,12 +303,18 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                 guidance_scale,
                 width,
                 height,
-                sampler,
+                sampler_20,
+                sampler_21_native,
+                sampler_diffusers,
                 prior_scale,
                 prior_steps,
                 seed,
                 *injections,
             ):
+                sampler = shared.select_sampler(
+                    sampler_20, sampler_21_native, sampler_diffusers
+                )
+
                 if not os.path.exists(input_folder):
                     return "Input folder does not exist"
 
@@ -364,7 +371,9 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                     guidance_scale,
                     width,
                     height,
-                    sampler,
+                    sampler_20,
+                    sampler_21_native,
+                    sampler_diffusers,
                     prior_scale,
                     prior_steps,
                     seed,
@@ -394,7 +403,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                 outputs=[i2i_output, batch_progress],
             )
 
-        batch_size.elem_classes = prior_block.elem_classes = ["unsupported2_0"]
+        batch_size.elem_classes = prior_block.elem_classes = ["unsupported_20"]
 
         i2i_params.elem_classes = ["block-params i2i_params"]
         i2i_advanced_params.elem_classes = ["block-advanced-params i2i_advanced_params"]

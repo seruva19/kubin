@@ -116,10 +116,10 @@ class Model_KD21:
                 h=params["h"],
                 w=params["w"],
                 sampler=params["sampler"],
-                prior_cf_scale=params["prior_cf_scale"],  # type: ignore
-                prior_steps=str(params["prior_steps"]),  # type: ignore
-                negative_prior_prompt=params["negative_prior_prompt"],  # type: ignore
-                negative_decoder_prompt=params["negative_prompt"],  # type: ignore
+                prior_cf_scale=params["prior_cf_scale"],
+                prior_steps=str(params["prior_steps"]),
+                negative_prior_prompt=params["negative_prior_prompt"],
+                negative_decoder_prompt=params["negative_prompt"],
             )
             output_dir = params.get(
                 ".output_dir",
@@ -143,13 +143,13 @@ class Model_KD21:
                 pil_img=image,
                 strength=params["strength"],
                 num_steps=params["num_steps"],
-                batch_size=params["batch_size"],  # type: ignore
+                batch_size=params["batch_size"],
                 guidance_scale=params["guidance_scale"],
-                h=params["h"],  # type: ignore
-                w=params["w"],  # type: ignore
-                sampler=params["sampler"],  # type: ignore
-                prior_cf_scale=params["prior_cf_scale"],  # type: ignore
-                prior_steps=str(params["prior_steps"]),  # type: ignore
+                h=params["h"],
+                w=params["w"],
+                sampler=params["sampler"],
+                prior_cf_scale=params["prior_cf_scale"],
+                prior_steps=str(params["prior_steps"]),
             )
 
             output_dir = params.get(
@@ -173,7 +173,7 @@ class Model_KD21:
 
         images = []
         for _ in itertools.repeat(None, params["batch_count"]):
-            current_batch = self.kd21.mix_images(  # type: ignore
+            current_batch = self.kd21.mix_images(
                 images_texts=images_or_texts(
                     [params["image_1"], params["image_2"]],
                     [params["text_1"], params["text_2"]],
@@ -224,15 +224,15 @@ class Model_KD21:
                 pil_img=image,
                 img_mask=mask,
                 num_steps=params["num_steps"],
-                batch_size=params["batch_size"],  # type: ignore
+                batch_size=params["batch_size"],
                 guidance_scale=params["guidance_scale"],
-                h=params["h"],  # type: ignore
-                w=params["w"],  # type: ignore
+                h=params["h"],
+                w=params["w"],
                 sampler=params["sampler"],
-                prior_cf_scale=params["prior_cf_scale"],  # type: ignore
-                prior_steps=str(params["prior_steps"]),  # type: ignore
-                negative_prior_prompt=params["negative_prior_prompt"],  # type: ignore
-                negative_decoder_prompt=params["negative_prompt"],  # type: ignore
+                prior_cf_scale=params["prior_cf_scale"],
+                prior_steps=str(params["prior_steps"]),
+                negative_prior_prompt=params["negative_prior_prompt"],
+                negative_decoder_prompt=params["negative_prompt"],
             )
 
             output_dir = params.get(
@@ -264,15 +264,15 @@ class Model_KD21:
                 pil_img=image,
                 img_mask=mask,
                 num_steps=params["num_steps"],
-                batch_size=params["batch_size"],  # type: ignore
+                batch_size=params["batch_size"],
                 guidance_scale=params["guidance_scale"],
-                h=width,  # type: ignore
-                w=height,  # type: ignore
+                h=width,
+                w=height,
                 sampler=params["sampler"],
-                prior_cf_scale=params["prior_cf_scale"],  # type: ignore
-                prior_steps=str(params["prior_steps"]),  # type: ignore
-                negative_prior_prompt=params["negative_prior_prompt"],  # type: ignore
-                negative_decoder_prompt=params["negative_prompt"],  # type: ignore
+                prior_cf_scale=params["prior_cf_scale"],
+                prior_steps=str(params["prior_steps"]),
+                negative_prior_prompt=params["negative_prior_prompt"],
+                negative_decoder_prompt=params["negative_prompt"],
             )
 
             output_dir = params.get(

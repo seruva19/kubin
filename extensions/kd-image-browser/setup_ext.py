@@ -90,8 +90,8 @@ def setup(kubin):
                 metadata_info = gr.HTML()
 
             with gr.Column(scale=4):
-                folder_contents = gr.Gallery(label="Images in folder").style(
-                    preview=False, grid=5
+                folder_contents = gr.Gallery(
+                    label="Images in folder", columns=5, preview=False
                 )
                 folder_contents.select(
                     fn=folder_contents_gallery_select,
