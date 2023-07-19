@@ -1,10 +1,11 @@
 import gradio as gr
 from PIL import Image
 from clip_interrogator import Config, Interrogator
-from blip.models.med import BertLMHeadModel
 import pandas as pd
 import torch
 import os
+
+use_monkey_patch = False
 
 
 def patched_prepare_inputs_for_generation(
@@ -37,6 +38,8 @@ def patched_prepare_inputs_for_generation(
 # 1) monkey patch to prevent https://github.com/huggingface/transformers/issues/19290
 # 2) force download of CLIP/BLIP models into app models folder
 def use_patch(kubin):
+    from blip.models.med import BertLMHeadModel
+
     old_method = BertLMHeadModel.prepare_inputs_for_generation
     old_torch_dir = torch.hub.get_dir()
 
@@ -48,6 +51,8 @@ def use_patch(kubin):
 
 
 def cancel_patch(patch):
+    from blip.models.med import BertLMHeadModel
+
     BertLMHeadModel.prepare_inputs_for_generation = patch[0]
     torch.hub.set_dir(patch[1])
 
@@ -79,7 +84,8 @@ def setup(kubin):
         return ci
 
     def interrogate(image, mode, clip_model, blip_type, chunk_size):
-        patch = use_patch(kubin)
+        if use_monkey_patch:
+            patch = use_patch(kubin)
 
         image = image.convert("RGB")
         interrogated_text = ""
@@ -99,7 +105,9 @@ def setup(kubin):
         elif mode == "negative":
             interrogated_text = interrogator.interrogate_negative(image)
 
-        cancel_patch(patch)
+        if use_monkey_patch:
+            cancel_patch(patch)
+
         return interrogated_text
 
     def batch_interrogate(
@@ -199,8 +207,10 @@ def setup(kubin):
                                 "Interrogate", variant="primary"
                             )
                             target_text = gr.Textbox(
-                                lines=5, label="Interrogated text"
-                            ).style(show_copy_button=True)
+                                lines=5,
+                                label="Interrogated text",
+                                show_copy_button=True,
+                            )
 
                             kubin.ui_utils.click_and_disable(
                                 interrogate_btn,
