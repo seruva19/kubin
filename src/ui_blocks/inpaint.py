@@ -4,13 +4,8 @@ from ui_blocks.shared.ui_shared import SharedUI
 from utils.gradio_ui import click_and_disable
 
 
-def inpaint_gallery_select(evt: gr.SelectData):
-    return [evt.index, f"Selected image index: {evt.index}"]
-
-
 # TODO: implement region of inpainting
 def inpaint_ui(generate_fn, shared: SharedUI, tabs):
-    selected_inpaint_image_index = gr.State(None)  # type: ignore
     augmentations = shared.create_ext_augment_blocks("inpaint")
 
     with gr.Row() as inpaint_block:
@@ -113,21 +108,21 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs):
         with gr.Column(scale=1):
             generate_inpaint = gr.Button("Generate", variant="primary")
             inpaint_output = gr.Gallery(
-                label="Generated Images", columns=2, preview=True
-            )
-            selected_image_info = gr.HTML(value="", elem_classes=["block-info"])
-            inpaint_output.select(
-                fn=inpaint_gallery_select,
-                outputs=[selected_inpaint_image_index, selected_image_info],
-                show_progress=False,
+                label="Generated Images",
+                columns=2,
+                preview=True,
+                elem_classes="inpaint-output",
             )
 
-            shared.create_base_send_targets(
-                inpaint_output, selected_inpaint_image_index, tabs
+            inpaint_output.select(
+                fn=None,
+                _js=f"() => kubin.UI.setImageIndex('inpaint-output')",
+                show_progress=False,
+                outputs=gr.State(None),
             )
-            shared.create_ext_send_targets(
-                inpaint_output, selected_inpaint_image_index, tabs
-            )
+
+            shared.create_base_send_targets(inpaint_output, "inpaint-output", tabs)
+            shared.create_ext_send_targets(inpaint_output, "inpaint-output", tabs)
 
             infer_size.change(
                 fn=lambda x: [

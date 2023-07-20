@@ -25,7 +25,7 @@ def ckpt_selector(kubin: Kubin):
 
     with gr.Column() as kd_selector:
         with gr.Row() as kd20_selector:
-            gr.HTML("<h4>Checkpoint switching is not supported for 2.0</h4>")
+            None
 
         kd20_selector.elem_classes = [
             "unsupported_21",
@@ -135,7 +135,7 @@ def ckpt_selector(kubin: Kubin):
         ]
 
         with gr.Row() as kd21d_selector:
-            gr.HTML("<h4>Checkpoint switching is not supported for 2.1 diffusers</h4>")
+            None
 
         kd21d_selector.elem_classes = [
             "unsupported_20",
@@ -145,7 +145,8 @@ def ckpt_selector(kubin: Kubin):
         ]
 
         with gr.Row() as kd22_selector:
-            gr.HTML("<h4>Checkpoint switching is currently not supported for 2.2</h4>")
+            None
+
         kd22_selector.elem_classes = [
             "unsupported_20",
             "unsupported_21",

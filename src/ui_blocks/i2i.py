@@ -7,12 +7,7 @@ import os
 from PIL import Image
 
 
-def i2i_gallery_select(evt: gr.SelectData):
-    return [evt.index, f"Selected image index: {evt.index}"]
-
-
 def i2i_ui(generate_fn, shared: SharedUI, tabs):
-    selected_i2i_image_index = gr.State(None)
     augmentations = shared.create_ext_augment_blocks("i2i")
 
     with gr.Row() as i2i_block:
@@ -34,7 +29,8 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                         with gr.Row():
                             with gr.Column():
                                 cnet_img_reuse = gr.Checkbox(
-                                    True, label="Reuse input image for ControlNet"
+                                    True,
+                                    label="Reuse input image for ControlNet condition",
                                 )
                                 shared.input_cnet_i2i_image.render()
                                 cnet_condition = gr.Radio(
@@ -75,17 +71,23 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                     with gr.Row():
                         input_folder = gr.Textbox(
                             label="Folder with input images",
-                            info="Folder to read images from",
+                            info=shared.info("Folder to read images from"),
                         )
                         output_folder = gr.Textbox(
                             label="Folder with output images",
-                            info="If empty, the default img2img folder will be used",
+                            info=shared.info(
+                                "If empty, the default img2img folder will be used"
+                            ),
                         )
                     batch_prompt = gr.TextArea(
                         "", placeholder="", label="Prompt", lines=2
                     )
                     img_extension = gr.Textbox(
-                        ".jpg;.jpeg;.png;.bmp", label="File extension filter"
+                        ".jpg;.jpeg;.png;.bmp",
+                        label="File extension filter",
+                        info=shared.info(
+                            "Only use images with the following extensions"
+                        ),
                     )
                     with gr.Row():
                         generate_batch_i2i = gr.Button(
@@ -123,9 +125,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                         0.3,
                         step=0.05,
                         label="Strength",
-                        info=shared.info_message(
-                            "Reference image transformation strength"
-                        ),
+                        info=shared.info("Reference image transformation strength"),
                     )
 
                 with gr.Row():
@@ -182,16 +182,22 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
 
         with gr.Column(scale=1):
             generate_i2i = gr.Button("Generate", variant="primary")
-            i2i_output = gr.Gallery(label="Generated Images", columns=2, preview=True)
-            selected_image_info = gr.HTML(value="", elem_classes=["block-info"])
-            i2i_output.select(
-                fn=i2i_gallery_select,
-                outputs=[selected_i2i_image_index, selected_image_info],
-                show_progress=False,
+            i2i_output = gr.Gallery(
+                label="Generated Images",
+                columns=2,
+                preview=True,
+                elem_classes="i2i-output",
             )
 
-            shared.create_base_send_targets(i2i_output, selected_i2i_image_index, tabs)
-            shared.create_ext_send_targets(i2i_output, selected_i2i_image_index, tabs)
+            i2i_output.select(
+                fn=None,
+                _js=f"() => kubin.UI.setImageIndex('i2i-output')",
+                show_progress=False,
+                outputs=gr.State(None),
+            )
+
+            shared.create_base_send_targets(i2i_output, "i2i-output", tabs)
+            shared.create_ext_send_targets(i2i_output, "i2i-output", tabs)
 
             def generate(
                 image,

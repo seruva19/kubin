@@ -242,23 +242,40 @@
     !panelResize && Array.from(document.getElementsByClassName('block-resizable-anchor')).forEach(anchor => {
       anchor.remove
     })
-  },
+  }
 
-    kubin.UI.verticalAlignment = verticalAlignment => {
-      Array.from(document.getElementsByClassName('block-params')).forEach(paramsBlock => {
-        verticalAlignment && paramsBlock.parentElement.classList.add('block-params-vertical-alignment')
-        !verticalAlignment && paramsBlock.parentElement.classList.remove('block-params-vertical-alignment')
-      })
-    },
+  kubin.UI.verticalAlignment = verticalAlignment => {
+    Array.from(document.getElementsByClassName('block-params')).forEach(paramsBlock => {
+      verticalAlignment && paramsBlock.parentElement.classList.add('block-params-vertical-alignment')
+      !verticalAlignment && paramsBlock.parentElement.classList.remove('block-params-vertical-alignment')
+    })
+  }
 
-    kubin.UI.fullScreenUI = fullScreenUI => {
-      fullScreenUI && document.body.classList.add('gradio-full')
-      !fullScreenUI && document.body.classList.remove('gradio-full')
-    },
+  kubin.UI.fullScreenUI = fullScreenUI => {
+    fullScreenUI && document.body.classList.add('gradio-full')
+    !fullScreenUI && document.body.classList.remove('gradio-full')
+  }
 
-    kubin.UI.reveal = () => {
-      document.getElementsByTagName('html')[0].classList.add('is-ready')
-    }
+  const imageIndices = {}
+  kubin.UI.setImageIndex = (source) => {
+    let position = -1
+    Array.from(document.querySelectorAll(`.${source} .thumbnails .thumbnail-item`)).forEach((image, index) => {
+      if (image.classList.contains('selected')) {
+        position = index
+      }
+    })
+
+    imageIndices[source] = position
+    return position
+  }
+
+  kubin.UI.getImageIndex = (o, i, source) => {
+    return [o, parseInt(imageIndices[source])]
+  }
+
+  kubin.UI.reveal = () => {
+    document.getElementsByTagName('html')[0].classList.add('is-ready')
+  }
 })(window)
 ;
 (global => {
@@ -324,6 +341,14 @@
     }
 
     checkWithInterval(url, interval)
+  }
+})(window)
+;
+(global => {
+  kubin.mix = {
+    createWidget: () => {
+
+    }
   }
 })(window)
 ;

@@ -100,10 +100,12 @@ class Model_Diffusers22:
 
         return params, prior_generator, decoder_generator
 
-    def create_batch_images(self, params, mode, batch):
+    def create_batch_images(self, params, task, batch):
+        params["task"] = task
+
         output_dir = params.get(
             ".output_dir",
-            os.path.join(self.params("general", "output_dir"), mode),
+            os.path.join(self.params("general", "output_dir"), task),
         )
         saved_batch = save_output(output_dir, batch, params)
         return saved_batch

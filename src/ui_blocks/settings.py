@@ -73,29 +73,47 @@ def update_info():
     )
 
 
-def settings_ui(kubin: Kubin, start_fn, ui):
-    model_config = flatten_yaml(CONFIG_2_1)
+def model_info(kubin):
+    if (
+        kubin.params("general", "pipeline") == "native"
+        and kubin.params("general", "model_name") == "kd21"
+    ):
+        model_config = flatten_yaml(CONFIG_2_1)
+    else:
+        model_config = {}
 
+    data = []
+    for key in model_config:
+        data.append(f"{str(key)}: {model_config[key]}")
+    return "\n".join(data)
+
+
+def settings_ui(kubin: Kubin, start_fn, ui):
     with gr.Column() as settings_block:
+        settings_block.elem_classes = ["settings-tabs"]
+
         with gr.TabItem("Options"):
             options_ui(kubin, start_fn, ui)
 
-        with gr.TabItem("Checkpoints"):
+        with gr.TabItem("Checkpoints", elem_id="checkpoint-switcher"):
             ckpt_selector(kubin)
 
         with gr.TabItem("System"):
             with gr.Row():
                 system_info = gr.Textbox(
                     update_info,
-                    lines=10,
+                    lines=12,
+                    max_lines=12,
                     label="System info",
                     interactive=False,
                     show_copy_button=True,
                 )
 
                 textbox_log = gr.Textbox(
+                    lambda: model_info(kubin),
                     label="System log",
-                    lines=10,
+                    lines=12,
+                    max_lines=12,
                     interactive=False,
                     show_copy_button=True,
                 )
@@ -108,11 +126,5 @@ def settings_ui(kubin: Kubin, start_fn, ui):
                 unload_model.click(lambda: kubin.model.flush(), queue=False).then(
                     fn=None, _js='_ => kubin.notify.success("Model unloaded")'
                 )
-
-            # with gr.Accordion("Model params", open=False):
-            #     values = []
-            #     for key in model_config:
-            #         value = gr.Textbox(label=str(key), value=model_config[key])
-            #         values.append(value)
 
     return settings_block

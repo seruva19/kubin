@@ -19,6 +19,7 @@ def gradio_ui(kubin: Kubin, start_fn):
     ext_client_folders, ext_client_resources = kubin.ext_registry.locate_resources()
 
     ui_shared = SharedUI(kubin, ext_target_images, kubin.ext_registry.injectable())
+    kubin.ui = ui_shared
 
     with gr.Blocks(
         title="Kubin: Web-GUI for Kandinsky 2.x",

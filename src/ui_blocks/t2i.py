@@ -4,12 +4,7 @@ from ui_blocks.shared.ui_shared import SharedUI
 from utils.gradio_ui import click_and_disable
 
 
-def t2i_gallery_select(evt: gr.SelectData):
-    return [evt.index, f"Selected image index: {evt.index}"]
-
-
 def t2i_ui(generate_fn, shared: SharedUI, tabs):
-    selected_t2i_image_index = gr.State(None)
     augmentations = shared.create_ext_augment_blocks("t2i")
 
     with gr.Row() as t2i_block:
@@ -52,7 +47,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                             0.85,
                             step=0.05,
                             label="Embedding strength",
-                            info=shared.info_message("Strength of reference embedding"),
+                            info=shared.info("Strength of reference embedding"),
                         )
 
                         cnet_neg_emb_transform_strength = gr.Slider(
@@ -61,7 +56,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                             1,
                             step=0.05,
                             label="Negative embedding strength",
-                            info=shared.info_message(
+                            info=shared.info(
                                 "Strength of reference negative embedding"
                             ),
                         )
@@ -72,7 +67,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                             0.5,
                             step=0.05,
                             label="Image strength",
-                            info=shared.info_message("Strength of reference image"),
+                            info=shared.info("Strength of reference image"),
                         )
 
             def pipeline_changed(pipeline):
@@ -108,13 +103,23 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                         shared.ui_params("image_width_default"),
                         step=shared.ui_params("image_width_step"),
                         label="Width",
+                        elem_id="t2i-width",
                     )
+                    width.elem_classes = ["inline-flex"]
                     height = gr.Slider(
                         shared.ui_params("image_height_min"),
                         shared.ui_params("image_height_max"),
                         shared.ui_params("image_height_default"),
                         step=shared.ui_params("image_height_step"),
                         label="Height",
+                        elem_id="t2i-height",
+                    )
+                    height.elem_classes = ["inline-flex"]
+                    aspect_ratio = gr.Dropdown(
+                        choices=["none", "1:1", "16:9", "9:16", "3:2", "2:3"],
+                        value="none",
+                        label="Aspect ratio",
+                        elem_id="t2i-aspect",
                     )
 
                 with gr.Row(equal_height=True):
@@ -161,16 +166,22 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
 
         with gr.Column(scale=1):
             generate_t2i = gr.Button("Generate", variant="primary")
-            t2i_output = gr.Gallery(label="Generated Images", columns=2, preview=True)
-            selected_image_info = gr.HTML(value="", elem_classes=["block-info"])
-            t2i_output.select(
-                fn=t2i_gallery_select,
-                outputs=[selected_t2i_image_index, selected_image_info],
-                show_progress=False,
+            t2i_output = gr.Gallery(
+                label="Generated Images",
+                columns=2,
+                preview=True,
+                elem_classes="t2i-output",
             )
 
-            shared.create_base_send_targets(t2i_output, selected_t2i_image_index, tabs)
-            shared.create_ext_send_targets(t2i_output, selected_t2i_image_index, tabs)
+            t2i_output.select(
+                fn=None,
+                _js=f"() => kubin.UI.setImageIndex('t2i-output')",
+                show_progress=False,
+                outputs=gr.State(None),
+            )
+
+            shared.create_base_send_targets(t2i_output, "t2i-output", tabs)
+            shared.create_ext_send_targets(t2i_output, "t2i-output", tabs)
 
             def generate(
                 prompt,

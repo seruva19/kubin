@@ -60,26 +60,30 @@ class SharedUI:
         return gr.Tabs.update(selected=tab_index)
 
     def send_gallery_image_to_another_tab(self, gallery, gallery_selected_index):
-        image_url = gallery[gallery_selected_index]["data"]
-        img = image_path_to_pil(
-            image_url
-        )  # for some reason just passing url does not work
+        gallery_selected_index = int(gallery_selected_index, 10)
+        image_data = gallery[gallery_selected_index]
+        image_url = image_data["data"]
 
+        img = image_path_to_pil(image_url)
         return gr.update(value=img)
 
-    def create_base_send_targets(self, output, selected_image_index, tabs):
+    def create_base_send_targets(self, output, sender, tabs):
         with gr.Row() as base_targets:
+            sender_index = gr.Textbox("-1", visible=False)
+
             send_i2i_btn = gr.Button(
                 "📸 Send to Img2img", variant="secondary", size="sm"
             )
+
             send_i2i_btn.click(
                 fn=self.open_another_tab,
                 inputs=[gr.State(1)],
                 outputs=tabs,
                 queue=False,
             ).then(
-                self.send_gallery_image_to_another_tab,
-                inputs=[output, selected_image_index],
+                fn=self.send_gallery_image_to_another_tab,
+                _js=f"(o, i) => kubin.UI.getImageIndex(o, i, '{sender}')",
+                inputs=[output, sender_index],
                 outputs=[self.input_i2i_image],
             )
 
@@ -92,8 +96,9 @@ class SharedUI:
                 outputs=tabs,
                 queue=False,
             ).then(
-                self.send_gallery_image_to_another_tab,
-                inputs=[output, selected_image_index],
+                fn=self.send_gallery_image_to_another_tab,
+                _js=f"(o, i) => kubin.UI.getImageIndex(o, i, '{sender}')",
+                inputs=[output, sender_index],
                 outputs=[self.input_mix_image_1],
             )
 
@@ -106,8 +111,9 @@ class SharedUI:
                 outputs=tabs,
                 queue=False,
             ).then(
-                self.send_gallery_image_to_another_tab,
-                inputs=[output, selected_image_index],
+                fn=self.send_gallery_image_to_another_tab,
+                _js=f"(o, i) => kubin.UI.getImageIndex(o, i, '{sender}')",
+                inputs=[output, sender_index],
                 outputs=[self.input_mix_image_2],
             )
 
@@ -120,11 +126,12 @@ class SharedUI:
             send_inpaint_btn.click(
                 fn=self.open_another_tab,
                 inputs=[gr.State(3)],
-                outputs=tabs,  # type: ignore
+                outputs=tabs,
                 queue=False,
             ).then(
-                self.send_gallery_image_to_another_tab,
-                inputs=[output, selected_image_index],
+                fn=self.send_gallery_image_to_another_tab,
+                _js=f"(o, i) => kubin.UI.getImageIndex(o, i, '{sender}')",
+                inputs=[output, sender_index],
                 outputs=[self.input_inpaint_image],
             )
 
@@ -137,11 +144,12 @@ class SharedUI:
             send_outpaint_btn.click(
                 fn=self.open_another_tab,
                 inputs=[gr.State(4)],
-                outputs=tabs,  # type: ignore
+                outputs=tabs,
                 queue=False,
             ).then(
-                self.send_gallery_image_to_another_tab,
-                inputs=[output, selected_image_index],
+                fn=self.send_gallery_image_to_another_tab,
+                _js=f"(o, i) => kubin.UI.getImageIndex(o, i, '{sender}')",
+                inputs=[output, sender_index],
                 outputs=[self.input_outpaint_image],
             )
         base_targets.elem_classes = ["send-targets"]
@@ -159,8 +167,9 @@ class SharedUI:
                 outputs=tabs,
                 queue=False,
             ).then(
-                self.send_gallery_image_to_another_tab,
-                inputs=[output, selected_image_index],
+                fn=self.send_gallery_image_to_another_tab,
+                _js=f"(o, i) => kubin.UI.getImageIndex(o, i, '{sender}')",
+                inputs=[output, sender_index],
                 outputs=[self.input_cnet_t2i_image],
             )
 
@@ -176,8 +185,9 @@ class SharedUI:
                 outputs=tabs,
                 queue=False,
             ).then(
-                self.send_gallery_image_to_another_tab,
-                inputs=[output, selected_image_index],
+                fn=self.send_gallery_image_to_another_tab,
+                _js=f"(o, i) => kubin.UI.getImageIndex(o, i, '{sender}')",
+                inputs=[output, sender_index],
                 outputs=[self.input_cnet_i2i_image],
             )
 
@@ -193,28 +203,17 @@ class SharedUI:
                 outputs=tabs,
                 queue=False,
             ).then(
-                self.send_gallery_image_to_another_tab,
-                inputs=[output, selected_image_index],
+                fn=self.send_gallery_image_to_another_tab,
+                _js=f"(o, i) => kubin.UI.getImageIndex(o, i, '{sender}')",
+                inputs=[output, sender_index],
                 outputs=[self.input_cnet_mix_image],
             )
         cnet_targets.elem_classes = ["send-targets"]
 
-    def info_message(self, text):
-        return text if self.ui_params("show_help_text") else None
-
-    def select_sampler(self, sampler20, sampler21, sampler_diffusers):
-        model = self.general_params("model_name")
-        pipeline = self.general_params("pipeline")
-
-        if model == "kd20":
-            return sampler20
-        if model == "kd21" and pipeline == "native":
-            return sampler21
-        else:
-            return sampler_diffusers
-
-    def create_ext_send_targets(self, output, selected_image_index, tabs):
+    def create_ext_send_targets(self, output, sender, tabs):
         with gr.Row() as send_targets:
+            sender_index = gr.Textbox("-1", visible=False)
+
             ext_image_targets = []
             for ext in self.extensions_images_targets:
                 send_target_title = (
@@ -234,8 +233,9 @@ class SharedUI:
                     outputs=tabs,
                     queue=False,
                 ).then(
-                    self.send_gallery_image_to_another_tab,
-                    inputs=[output, selected_image_index],
+                    fn=self.send_gallery_image_to_another_tab,
+                    _js=f"(o, i) => kubin.UI.getImageIndex(o, i, '{sender}')",
+                    inputs=[output, sender_index],
                     outputs=[ext[1]],
                 )
 
@@ -282,3 +282,17 @@ class SharedUI:
             "exec": lambda p, a: augment_params(target, p, a),
             "injections": ext_injections,
         }
+
+    def info(self, text):
+        return text if self.ui_params("show_help_text") else None
+
+    def select_sampler(self, sampler20, sampler21, sampler_diffusers):
+        model = self.general_params("model_name")
+        pipeline = self.general_params("pipeline")
+
+        if model == "kd20":
+            return sampler20
+        if model == "kd21" and pipeline == "native":
+            return sampler21
+        else:
+            return sampler_diffusers
