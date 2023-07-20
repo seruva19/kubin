@@ -88,7 +88,7 @@
       kubin.UI.fullScreenUI(fullScreenPanel)
     }
 
-    const pipeline = window._kubinParams['general.pipeline']
+    let pipeline = window._kubinParams['general.pipeline']
     const model_name = window._kubinParams['general.model_name']
 
     document.querySelectorAll('body[class*="pipeline-"]').forEach(b => {
@@ -100,13 +100,15 @@
       }
     })
 
-    document.body.classList.add(`pipeline-${pipeline}-${model_name}`)
-
     if (model_name == 'kd20' && pipeline == 'diffusers') {
       kubin.notify.error('You cannot use a 2.0 model with the diffusers pipeline! Native pipeline will be used')
+      pipeline = 'native'
     } else if (model_name == 'kd22' && pipeline == 'native') {
       kubin.notify.error('You cannot use a 2.2 model with the native pipeline! Diffusers pipeline will be used')
+      pipeline = 'diffusers'
     }
+
+    document.body.classList.add(`pipeline-${pipeline}-${model_name}`)
   }
 
   kubin.UI.resizablePanels = panelResize => {
@@ -150,21 +152,38 @@
     !panelResize && Array.from(document.getElementsByClassName('block-resizable-anchor')).forEach(anchor => {
       anchor.remove
     })
-  },
+  }
 
-    kubin.UI.verticalAlignment = verticalAlignment => {
-      Array.from(document.getElementsByClassName('block-params')).forEach(paramsBlock => {
-        verticalAlignment && paramsBlock.parentElement.classList.add('block-params-vertical-alignment')
-        !verticalAlignment && paramsBlock.parentElement.classList.remove('block-params-vertical-alignment')
-      })
-    },
+  kubin.UI.verticalAlignment = verticalAlignment => {
+    Array.from(document.getElementsByClassName('block-params')).forEach(paramsBlock => {
+      verticalAlignment && paramsBlock.parentElement.classList.add('block-params-vertical-alignment')
+      !verticalAlignment && paramsBlock.parentElement.classList.remove('block-params-vertical-alignment')
+    })
+  }
 
-    kubin.UI.fullScreenUI = fullScreenUI => {
-      fullScreenUI && document.body.classList.add('gradio-full')
-      !fullScreenUI && document.body.classList.remove('gradio-full')
-    },
+  kubin.UI.fullScreenUI = fullScreenUI => {
+    fullScreenUI && document.body.classList.add('gradio-full')
+    !fullScreenUI && document.body.classList.remove('gradio-full')
+  }
 
-    kubin.UI.reveal = () => {
-      document.getElementsByTagName('html')[0].classList.add('is-ready')
-    }
+  const imageIndices = {}
+  kubin.UI.setImageIndex = (source) => {
+    let position = -1
+    Array.from(document.querySelectorAll(`.${source} .thumbnails .thumbnail-item`)).forEach((image, index) => {
+      if (image.classList.contains('selected')) {
+        position = index
+      }
+    })
+
+    imageIndices[source] = position
+    return position
+  }
+
+  kubin.UI.getImageIndex = (o, i, source) => {
+    return [o, parseInt(imageIndices[source])]
+  }
+
+  kubin.UI.reveal = () => {
+    document.getElementsByTagName('html')[0].classList.add('is-ready')
+  }
 })(window)

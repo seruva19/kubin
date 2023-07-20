@@ -57,13 +57,14 @@ def setup(kubin):
 
         return [image_files, gr.update(value="")]
 
-    def folder_contents_gallery_select(gallery, evt: gr.SelectData):
-        html = metadata_to_html(gallery[evt.index]["name"])
-        return [gr.update(value=html), evt.index]
+    def folder_contents_gallery_select(index, gallery):
+        index = int(index, 10)
+        html = metadata_to_html(gallery[index]["name"])
+
+        return gr.update(value=html)
 
     def image_browser_ui(ui_shared, ui_tabs):
         folders = get_folders()
-        selected_folder_contents_index = gr.State(None)  # type: ignore
 
         with gr.Row() as image_browser_block:
             with gr.Column(scale=3) as folder_block:
@@ -90,21 +91,27 @@ def setup(kubin):
                 metadata_info = gr.HTML()
 
             with gr.Column(scale=4):
-                folder_contents = gr.Gallery(label="Images in folder").style(
-                    preview=False, grid=5
+                folder_contents = gr.Gallery(
+                    label="Images in folder",
+                    columns=5,
+                    preview=False,
+                    elem_classes="kd-image-browser-output",
                 )
+
+                sender_index = gr.Textbox("-1", visible=False)
                 folder_contents.select(
                     fn=folder_contents_gallery_select,
-                    inputs=[folder_contents],
-                    outputs=[metadata_info, selected_folder_contents_index],
+                    _js=f"(si, fc) => ([kubin.UI.setImageIndex('kd-image-browser-output'), fc])",
+                    inputs=[sender_index, folder_contents],
+                    outputs=[metadata_info],
                     show_progress=False,
                 )
 
                 ui_shared.create_base_send_targets(
-                    folder_contents, selected_folder_contents_index, ui_tabs
+                    folder_contents, "kd-image-browser-output", ui_tabs
                 )
                 ui_shared.create_ext_send_targets(
-                    folder_contents, selected_folder_contents_index, ui_tabs
+                    folder_contents, "kd-image-browser-output", ui_tabs
                 )
                 image_folders.change(
                     fn=view_folder,

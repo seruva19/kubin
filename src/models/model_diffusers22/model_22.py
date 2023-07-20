@@ -8,34 +8,26 @@ from params import KubinParams
 from utils.file_system import save_output
 from utils.logging import k_log
 
-try:
-    from model_utils.diffusers_utils import use_scheduler
-    from models.model_diffusers22.model_22_cnet import generate_hint
-    from models.model_diffusers22.model_22_utils import (
-        flush_if_required,
-        prepare_weights_for_task,
-        images_or_texts,
-        finalize,
-    )
-    from transformers import CLIPVisionModelWithProjection
-    from diffusers.models import UNet2DConditionModel
-    from diffusers import (
-        KandinskyV22PriorPipeline,
-        KandinskyV22PriorEmb2EmbPipeline,
-        KandinskyV22Pipeline,
-        KandinskyV22Img2ImgPipeline,
-        KandinskyV22InpaintPipeline,
-        KandinskyV22ControlnetPipeline,
-        KandinskyV22ControlnetImg2ImgPipeline,
-    )
-    from diffusers.models.attention_processor import AttnAddedKVProcessor2_0
-except:
-    k_log(
-        "warning (2.2): seems like diffusers are not installed, run 'pip install -r diffusers/requirements.txt' to install"
-    )
-    k_log(
-        "warning (2.2): if you are not going to use diffusers, just ignore this message"
-    )
+from model_utils.diffusers_utils import use_scheduler
+from models.model_diffusers22.model_22_cnet import generate_hint
+from models.model_diffusers22.model_22_utils import (
+    flush_if_required,
+    prepare_weights_for_task,
+    images_or_texts,
+    finalize,
+)
+from transformers import CLIPVisionModelWithProjection
+from diffusers.models import UNet2DConditionModel
+from diffusers import (
+    KandinskyV22PriorPipeline,
+    KandinskyV22PriorEmb2EmbPipeline,
+    KandinskyV22Pipeline,
+    KandinskyV22Img2ImgPipeline,
+    KandinskyV22InpaintPipeline,
+    KandinskyV22ControlnetPipeline,
+    KandinskyV22ControlnetImg2ImgPipeline,
+)
+from diffusers.models.attention_processor import AttnAddedKVProcessor2_0
 
 
 class Model_Diffusers22:
@@ -108,10 +100,12 @@ class Model_Diffusers22:
 
         return params, prior_generator, decoder_generator
 
-    def create_batch_images(self, params, mode, batch):
+    def create_batch_images(self, params, task, batch):
+        params["task"] = task
+
         output_dir = params.get(
             ".output_dir",
-            os.path.join(self.params("general", "output_dir"), mode),
+            os.path.join(self.params("general", "output_dir"), task),
         )
         saved_batch = save_output(output_dir, batch, params)
         return saved_batch

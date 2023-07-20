@@ -1,4 +1,3 @@
-import gradio as gr
 from env import Kubin
 from utils.image import image_path_to_pil
 import gradio as gr
@@ -9,6 +8,7 @@ class SharedUI:
     def __init__(self, kubin: Kubin, extension_targets, injected_exts):
         self.general_params = lambda a: kubin.params("general", a)
         self.ui_params = lambda a: kubin.params("ui", a)
+        self.get_ext_property = lambda a, b: a.get(b, None)
 
         self.input_cnet_t2i_image = gr.Image(
             type="pil",
@@ -60,156 +60,187 @@ class SharedUI:
         return gr.Tabs.update(selected=tab_index)
 
     def send_gallery_image_to_another_tab(self, gallery, gallery_selected_index):
-        image_url = gallery[gallery_selected_index]["data"]
-        img = image_path_to_pil(
-            image_url
-        )  # for some reason just passing url does not work
+        gallery_selected_index = int(gallery_selected_index, 10)
+        image_data = gallery[gallery_selected_index]
+        image_url = image_data["data"]
 
+        img = image_path_to_pil(image_url)
         return gr.update(value=img)
 
-    def create_base_send_targets(self, output, selected_image_index, tabs):
-        send_i2i_btn = gr.Button("Send to Img2img", variant="secondary").style(
-            size="sm"
-        )
-        send_i2i_btn.click(
-            fn=self.open_another_tab,
-            inputs=[gr.State(1)],
-            outputs=tabs,
-            queue=False,
-        ).then(
-            self.send_gallery_image_to_another_tab,
-            inputs=[output, selected_image_index],
-            outputs=[self.input_i2i_image],
-        )
+    def create_base_send_targets(self, output, sender, tabs):
+        with gr.Row() as base_targets:
+            sender_index = gr.Textbox("-1", visible=False)
 
-        with gr.Row() as mix_buttons:
-            send_mix_1_btn = gr.Button("Send to Mix (1)", variant="secondary").style(
-                size="sm"
+            send_i2i_btn = gr.Button(
+                "📸 Send to Img2img", variant="secondary", size="sm"
+            )
+
+            send_i2i_btn.click(
+                fn=self.open_another_tab,
+                inputs=[gr.State(1)],
+                outputs=tabs,
+                queue=False,
+            ).then(
+                fn=self.send_gallery_image_to_another_tab,
+                _js=f"(o, i) => kubin.UI.getImageIndex(o, i, '{sender}')",
+                inputs=[output, sender_index],
+                outputs=[self.input_i2i_image],
+            )
+
+            send_mix_1_btn = gr.Button(
+                "🎨 Send to Mix (1)", variant="secondary", size="sm"
             )
             send_mix_1_btn.click(
                 fn=self.open_another_tab,
                 inputs=[gr.State(2)],
-                outputs=tabs,  # type: ignore
+                outputs=tabs,
                 queue=False,
             ).then(
-                self.send_gallery_image_to_another_tab,
-                inputs=[output, selected_image_index],
+                fn=self.send_gallery_image_to_another_tab,
+                _js=f"(o, i) => kubin.UI.getImageIndex(o, i, '{sender}')",
+                inputs=[output, sender_index],
                 outputs=[self.input_mix_image_1],
             )
 
             send_mix_2_btn = gr.Button(
-                "Send to Mix (2)",
-                variant="secondary",
-            ).style(size="sm")
+                "🎨 Send to Mix (2)", variant="secondary", size="sm"
+            )
             send_mix_2_btn.click(
                 fn=self.open_another_tab,
                 inputs=[gr.State(2)],
-                outputs=tabs,  # type: ignore
+                outputs=tabs,
                 queue=False,
             ).then(
-                self.send_gallery_image_to_another_tab,
-                inputs=[output, selected_image_index],
+                fn=self.send_gallery_image_to_another_tab,
+                _js=f"(o, i) => kubin.UI.getImageIndex(o, i, '{sender}')",
+                inputs=[output, sender_index],
                 outputs=[self.input_mix_image_2],
             )
-        mix_buttons.elem_classes = ["unsupported2_0"]
-        send_inpaint_btn = gr.Button("Send to Inpaint", variant="secondary").style(
-            size="sm"
-        )
-        send_inpaint_btn.click(
-            fn=self.open_another_tab,
-            inputs=[gr.State(3)],
-            outputs=tabs,  # type: ignore
-            queue=False,
-        ).then(
-            self.send_gallery_image_to_another_tab,
-            inputs=[output, selected_image_index],
-            outputs=[self.input_inpaint_image],
-        )
 
-        send_outpaint_btn = gr.Button(
-            "Send to Outpaint", variant="secondary", elem_classes=["unsupported2_0"]
-        ).style(size="sm")
-        send_outpaint_btn.click(
-            fn=self.open_another_tab,
-            inputs=[gr.State(4)],
-            outputs=tabs,  # type: ignore
-            queue=False,
-        ).then(
-            self.send_gallery_image_to_another_tab,
-            inputs=[output, selected_image_index],
-            outputs=[self.input_outpaint_image],
-        )
+            send_mix_1_btn.elem_classes = ["unsupported_20"]
+            send_mix_2_btn.elem_classes = ["unsupported_20"]
 
-        gr.HTML()
-
-        send_cnet_t2i_btn = gr.Button(
-            "Send to T2I ControlNet",
-            variant="secondary",
-            elem_classes=["diffusers-kd22-control"],
-        ).style(size="sm")
-        send_cnet_t2i_btn.click(
-            fn=self.open_another_tab,
-            inputs=[gr.State(0)],
-            outputs=tabs,
-            queue=False,
-        ).then(
-            self.send_gallery_image_to_another_tab,
-            inputs=[output, selected_image_index],
-            outputs=[self.input_cnet_t2i_image],
-        )
-
-        send_cnet_i2i_btn = gr.Button(
-            "Send to I2I ControlNet",
-            variant="secondary",
-            elem_classes=["diffusers-kd22-control"],
-        ).style(size="sm")
-        send_cnet_i2i_btn.click(
-            fn=self.open_another_tab,
-            inputs=[gr.State(1)],
-            outputs=tabs,
-            queue=False,
-        ).then(
-            self.send_gallery_image_to_another_tab,
-            inputs=[output, selected_image_index],
-            outputs=[self.input_cnet_i2i_image],
-        )
-
-        send_cnet_mix_btn = gr.Button(
-            "Send to Mix ControlNet",
-            variant="secondary",
-            elem_classes=["diffusers-kd22-control"],
-        ).style(size="sm")
-        send_cnet_mix_btn.click(
-            fn=self.open_another_tab,
-            inputs=[gr.State(2)],
-            outputs=tabs,
-            queue=False,
-        ).then(
-            self.send_gallery_image_to_another_tab,
-            inputs=[output, selected_image_index],
-            outputs=[self.input_cnet_mix_image],
-        )
-
-        gr.HTML()
-
-    def create_ext_send_targets(self, output, selected_image_index, tabs):
-        ext_image_targets = []
-        for ext in self.extensions_images_targets:
-            send_toext_btn = gr.Button(f"Send to {ext[0]}", variant="secondary").style(
-                size="sm"
+            send_inpaint_btn = gr.Button(
+                "🖌️ Send to Inpaint", variant="secondary", size="sm"
             )
-            send_toext_btn.click(
+            send_inpaint_btn.click(
                 fn=self.open_another_tab,
-                inputs=[gr.State(ext[2])],
-                outputs=tabs,  # type: ignore
+                inputs=[gr.State(3)],
+                outputs=tabs,
                 queue=False,
             ).then(
-                self.send_gallery_image_to_another_tab,
-                inputs=[output, selected_image_index],
-                outputs=[ext[1]],
+                fn=self.send_gallery_image_to_another_tab,
+                _js=f"(o, i) => kubin.UI.getImageIndex(o, i, '{sender}')",
+                inputs=[output, sender_index],
+                outputs=[self.input_inpaint_image],
             )
 
-            ext_image_targets.append(send_toext_btn)
+            send_outpaint_btn = gr.Button(
+                "🖋️ Send to Outpaint",
+                variant="secondary",
+                size="sm",
+                elem_classes=["unsupported_20"],
+            )
+            send_outpaint_btn.click(
+                fn=self.open_another_tab,
+                inputs=[gr.State(4)],
+                outputs=tabs,
+                queue=False,
+            ).then(
+                fn=self.send_gallery_image_to_another_tab,
+                _js=f"(o, i) => kubin.UI.getImageIndex(o, i, '{sender}')",
+                inputs=[output, sender_index],
+                outputs=[self.input_outpaint_image],
+            )
+        base_targets.elem_classes = ["send-targets"]
+
+        with gr.Row() as cnet_targets:
+            send_cnet_t2i_btn = gr.Button(
+                "🖼️ Send to T2I ControlNet",
+                variant="secondary",
+                elem_classes=["diffusers-kd22-control"],
+                size="sm",
+            )
+            send_cnet_t2i_btn.click(
+                fn=self.open_another_tab,
+                inputs=[gr.State(0)],
+                outputs=tabs,
+                queue=False,
+            ).then(
+                fn=self.send_gallery_image_to_another_tab,
+                _js=f"(o, i) => kubin.UI.getImageIndex(o, i, '{sender}')",
+                inputs=[output, sender_index],
+                outputs=[self.input_cnet_t2i_image],
+            )
+
+            send_cnet_i2i_btn = gr.Button(
+                "🖼️ Send to I2I ControlNet",
+                variant="secondary",
+                elem_classes=["diffusers-kd22-control"],
+                size="sm",
+            )
+            send_cnet_i2i_btn.click(
+                fn=self.open_another_tab,
+                inputs=[gr.State(1)],
+                outputs=tabs,
+                queue=False,
+            ).then(
+                fn=self.send_gallery_image_to_another_tab,
+                _js=f"(o, i) => kubin.UI.getImageIndex(o, i, '{sender}')",
+                inputs=[output, sender_index],
+                outputs=[self.input_cnet_i2i_image],
+            )
+
+            send_cnet_mix_btn = gr.Button(
+                "🖼️ Send to Mix ControlNet",
+                variant="secondary",
+                elem_classes=["diffusers-kd22-control"],
+                size="sm",
+            )
+            send_cnet_mix_btn.click(
+                fn=self.open_another_tab,
+                inputs=[gr.State(2)],
+                outputs=tabs,
+                queue=False,
+            ).then(
+                fn=self.send_gallery_image_to_another_tab,
+                _js=f"(o, i) => kubin.UI.getImageIndex(o, i, '{sender}')",
+                inputs=[output, sender_index],
+                outputs=[self.input_cnet_mix_image],
+            )
+        cnet_targets.elem_classes = ["send-targets"]
+
+    def create_ext_send_targets(self, output, sender, tabs):
+        with gr.Row() as send_targets:
+            sender_index = gr.Textbox("-1", visible=False)
+
+            ext_image_targets = []
+            for ext in self.extensions_images_targets:
+                send_target_title = (
+                    self.get_ext_property(ext[0], "send_to")
+                    or f"Send to {ext[0]['title']}"
+                )
+
+                send_toext_btn = gr.Button(
+                    send_target_title,
+                    variant="secondary",
+                    size="sm",
+                    scale=0,
+                )
+                send_toext_btn.click(
+                    fn=self.open_another_tab,
+                    inputs=[gr.State(ext[2])],
+                    outputs=tabs,
+                    queue=False,
+                ).then(
+                    fn=self.send_gallery_image_to_another_tab,
+                    _js=f"(o, i) => kubin.UI.getImageIndex(o, i, '{sender}')",
+                    inputs=[output, sender_index],
+                    outputs=[ext[1]],
+                )
+
+                ext_image_targets.append(send_toext_btn)
+        send_targets.elem_classes = ["send-targets"]
 
     def create_ext_augment_blocks(self, target):
         ext_exec = {}
@@ -251,3 +282,17 @@ class SharedUI:
             "exec": lambda p, a: augment_params(target, p, a),
             "injections": ext_injections,
         }
+
+    def info(self, text):
+        return text if self.ui_params("show_help_text") else None
+
+    def select_sampler(self, sampler20, sampler21, sampler_diffusers):
+        model = self.general_params("model_name")
+        pipeline = self.general_params("pipeline")
+
+        if model == "kd20":
+            return sampler20
+        if model == "kd21" and pipeline == "native":
+            return sampler21
+        else:
+            return sampler_diffusers

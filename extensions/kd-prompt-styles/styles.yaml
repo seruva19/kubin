@@ -95,3 +95,7 @@ styles:
   negative: null
   prompt: christmas, winter, x-mas, decorations, new year eve, snowflakes, 4k
   source: fusionbrain.ai
+- name: sticker
+  negative: null
+  prompt: sticker
+  source: habr.com

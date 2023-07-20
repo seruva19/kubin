@@ -33,73 +33,65 @@
 🕒 Easy-to-use installer <br>
 🕒 Documentation <br>
 
-## Screenshots (outdated)
+## Screenshots
 <details> 
 <summary>Click to expand</summary>
 
-### txt2img tab
+### Txt2img tab
 	
 ![img](/sshots/t2i.png)
+
+### Txt2img tab (with ControlNet)
 	
-### img2img tab
+![img](/sshots/t2i_cnet.png)	
+
+### Img2img tab
 	
 ![img](/sshots/i2i.png)
 
-### mixing tab
+### Mix tab
 	
 ![img](/sshots/mix.png)
 
-### inpainting tab
+### Inpainting tab
     
 ![img](/sshots/inpaint.png)
 
-### outpainting tab
+### Outpainting tab
     
 ![img](/sshots/outpaint.png)
 
-### upscaler extension tab
+### Upscaler extension tab
     
 ![img](/sshots/upscale.png)
 
-### image segmentation extension tab
+### Segmentation extension tab
     
 ![img](/sshots/segmentation.png)
 
-### mesh generator extension tab
+### Mesh generator extension tab
     
-![img](/sshots/mesh_model.png)
+![img](/sshots/mesh.png)
 
-### interrogator extension tab
+### Interrogator extension tab
     
 ![img](/sshots/interrogate.png)
 
-### image browser extension tab
+### Image browser extension tab
     
 ![img](/sshots/image_browser.png)
 
-### training extension tab (prior)
+### Training extension tab
     
-![img](/sshots/training-1.png)
+![img](/sshots/training.png)
 
-### training extension tab (unclip)
-    
-![img](/sshots/training-2.png)
-
-### training extension tab (dataset)
-    
-![img](/sshots/training-3.png)
-
-### extensions tab
+### Extensions tab
     
 ![img](/sshots/extensions.png)
 
-### settings tab (checkpoints)
+### Settings tab
     
-![img](/sshots/settings-1.png)
-
-### settings tab (system)
-    
-![img](/sshots/settings-2.png)
+![img](/sshots/settings.png)
 
 </details>
 

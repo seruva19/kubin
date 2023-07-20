@@ -1,13 +1,10 @@
 import gradio as gr
+from ui_blocks.shared.samplers import samplers_controls
 from ui_blocks.shared.ui_shared import SharedUI
-
-
-def t2i_gallery_select(evt: gr.SelectData):
-    return [evt.index, f"Selected image index: {evt.index}"]
+from utils.gradio_ui import click_and_disable
 
 
 def t2i_ui(generate_fn, shared: SharedUI, tabs):
-    selected_t2i_image_index = gr.State(None)  # type: ignore
     augmentations = shared.create_ext_augment_blocks("t2i")
 
     with gr.Row() as t2i_block:
@@ -19,6 +16,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                 label="Negative prompt",
                 lines=2,
             )
+            negative_prompt.elem_classes = ["unsupported_20"]
 
             with gr.Accordion("ControlNet", open=False) as t2i_cnet:
                 cnet_enable = gr.Checkbox(
@@ -49,7 +47,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                             0.85,
                             step=0.05,
                             label="Embedding strength",
-                            # info="Strength of reference embedding",
+                            info=shared.info("Strength of reference embedding"),
                         )
 
                         cnet_neg_emb_transform_strength = gr.Slider(
@@ -58,7 +56,9 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                             1,
                             step=0.05,
                             label="Negative embedding strength",
-                            # info="Strength of reference negative embedding",
+                            info=shared.info(
+                                "Strength of reference negative embedding"
+                            ),
                         )
 
                         cnet_img_strength = gr.Slider(
@@ -67,7 +67,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                             0.5,
                             step=0.05,
                             label="Image strength",
-                            # info="Strength of reference image",
+                            info=shared.info("Strength of reference image"),
                         )
 
             def pipeline_changed(pipeline):
@@ -95,9 +95,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                         label="Steps",
                     )
                     guidance_scale = gr.Slider(1, 30, 4, step=1, label="Guidance scale")
-                with gr.Row():
                     batch_count = gr.Slider(1, 16, 4, step=1, label="Batch count")
-                    batch_size = gr.Slider(1, 16, 1, step=1, label="Batch size")
                 with gr.Row():
                     width = gr.Slider(
                         shared.ui_params("image_width_min"),
@@ -105,32 +103,35 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                         shared.ui_params("image_width_default"),
                         step=shared.ui_params("image_width_step"),
                         label="Width",
+                        elem_id="t2i-width",
                     )
+                    width.elem_classes = ["inline-flex"]
                     height = gr.Slider(
                         shared.ui_params("image_height_min"),
                         shared.ui_params("image_height_max"),
                         shared.ui_params("image_height_default"),
                         step=shared.ui_params("image_height_step"),
                         label="Height",
+                        elem_id="t2i-height",
                     )
-                with gr.Row():
-                    sampler = gr.Radio(
-                        ["ddim_sampler", "p_sampler", "plms_sampler"],
-                        value="p_sampler",
-                        label="Sampler",
+                    height.elem_classes = ["inline-flex"]
+                    aspect_ratio = gr.Dropdown(
+                        choices=["none", "1:1", "16:9", "9:16", "3:2", "2:3"],
+                        value="none",
+                        label="Aspect ratio",
+                        elem_id="t2i-aspect",
                     )
-                    sampler.elem_classes = ["t2i_sampler", "native-control"]
 
-                    sampler_diffusers = gr.Radio(
-                        ["ddim_sampler", "ddpm_sampler"],
-                        value="ddpm_sampler",
-                        label="Sampler",
-                    )
-                    sampler_diffusers.elem_classes = [
-                        "t2i_sampler",
-                        "diffusers-control",
-                    ]
+                with gr.Row(equal_height=True):
+                    (
+                        sampler_20,
+                        sampler_21_native,
+                        sampler_diffusers,
+                    ) = samplers_controls()
                     seed = gr.Number(-1, label="Seed", precision=0)
+                    batch_size = gr.Slider(1, 16, 1, step=1, label="Batch size")
+                    batch_size.elem_classes = ["unsupported_20", "inline-flex"]
+
                 with gr.Row() as prior_block:
                     prior_scale = gr.Slider(
                         1,
@@ -154,24 +155,33 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                         elem_classes=["inline-flex"],
                         lines=2,
                     )
+                prior_block.elem_classes = ["unsupported_20"]
+            t2i_advanced_params.elem_classes = [
+                "block-advanced-params t2i_advanced_params"
+            ]
 
             augmentations["ui"]()
 
+        t2i_params.elem_classes = ["block-params", "t2i_params"]
+
         with gr.Column(scale=1):
             generate_t2i = gr.Button("Generate", variant="primary")
-            t2i_output = gr.Gallery(label="Generated Images").style(
-                grid=2,
+            t2i_output = gr.Gallery(
+                label="Generated Images",
+                columns=2,
                 preview=True,
-            )
-            selected_image_info = gr.HTML(value="", elem_classes=["block-info"])
-            t2i_output.select(
-                fn=t2i_gallery_select,
-                outputs=[selected_t2i_image_index, selected_image_info],
-                show_progress=False,
+                elem_classes="t2i-output",
             )
 
-            shared.create_base_send_targets(t2i_output, selected_t2i_image_index, tabs)
-            shared.create_ext_send_targets(t2i_output, selected_t2i_image_index, tabs)
+            t2i_output.select(
+                fn=None,
+                _js=f"() => kubin.UI.setImageIndex('t2i-output')",
+                show_progress=False,
+                outputs=gr.State(None),
+            )
+
+            shared.create_base_send_targets(t2i_output, "t2i-output", tabs)
+            shared.create_ext_send_targets(t2i_output, "t2i-output", tabs)
 
             def generate(
                 prompt,
@@ -182,7 +192,9 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                 guidance_scale,
                 w,
                 h,
-                sampler,
+                sampler_20,
+                sampler_21_native,
+                sampler_diffusers,
                 prior_cf_scale,
                 prior_steps,
                 negative_prior_prompt,
@@ -196,6 +208,10 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                 cnet_img_strength,
                 *injections,
             ):
+                sampler = shared.select_sampler(
+                    sampler_20, sampler_21_native, sampler_diffusers
+                )
+
                 params = {
                     "prompt": prompt,
                     "negative_prompt": negative_prompt,
@@ -223,8 +239,9 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                 params = augmentations["exec"](params, injections)
                 return generate_fn(params)
 
-            generate_t2i.click(
-                generate,
+            click_and_disable(
+                element=generate_t2i,
+                fn=generate,
                 inputs=[
                     prompt,
                     negative_prompt,
@@ -234,7 +251,9 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                     guidance_scale,
                     width,
                     height,
-                    sampler,
+                    sampler_20,
+                    sampler_21_native,
+                    sampler_diffusers,
                     prior_scale,
                     prior_steps,
                     negative_prior_prompt,
@@ -251,9 +270,4 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                 outputs=t2i_output,
             )
 
-        prior_block.elem_classes = (
-            batch_size.elem_classes
-        ) = negative_prompt.elem_classes = ["unsupported2_0"]
-        t2i_params.elem_classes = ["block-params t2i_params"]
-        t2i_advanced_params.elem_classes = ["block-advanced-params t2i_advanced_params"]
     return t2i_block

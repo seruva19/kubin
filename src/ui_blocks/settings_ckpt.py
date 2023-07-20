@@ -23,10 +23,17 @@ def ckpt_selector(kubin: Kubin):
         kubin.params("general", "cache_dir")
     )
 
-    with gr.TabItem("2.1") as selector_kd21:
-        selector_kd21.elem_classes = ["ckpt-selector-kd21"]
+    with gr.Column() as kd_selector:
+        with gr.Row() as kd20_selector:
+            None
 
-        with gr.Row() as selector:
+        kd20_selector.elem_classes = [
+            "unsupported_21",
+            "unsupported_d21",
+            "unsupported_22",
+        ]
+
+        with gr.Row() as kd21_selector:
             with gr.Column():
                 current_checkpoints = gr.HTML(
                     show_current_checkpoints(kubin), elem_classes=["block-info"]
@@ -85,9 +92,7 @@ def ckpt_selector(kubin: Kubin):
                 )
 
             with gr.Accordion("Checkpoint location settings", open=True):
-                rescan_btn = gr.Button(value="🔄 Rescan checkpoints").style(
-                    full_width=False
-                )
+                rescan_btn = gr.Button(value="🔄 Rescan checkpoints", scale=0)
 
                 directories = gr.Textbox(
                     value=scanned_directories, label="Directories to scan"
@@ -123,7 +128,32 @@ def ckpt_selector(kubin: Kubin):
                     outputs=[prior_select, decoder_select, inpaint_select],
                 )
 
-    return selector
+        kd21_selector.elem_classes = [
+            "unsupported_20",
+            "unsupported_d21",
+            "unsupported_22",
+        ]
+
+        with gr.Row() as kd21d_selector:
+            None
+
+        kd21d_selector.elem_classes = [
+            "unsupported_20",
+            "unsupported_21",
+            "unsupported_22",
+            "unsupported_d22",
+        ]
+
+        with gr.Row() as kd22_selector:
+            None
+
+        kd22_selector.elem_classes = [
+            "unsupported_20",
+            "unsupported_21",
+            "unsupported_d21",
+        ]
+
+    return kd_selector
 
 
 def select_prior_checkpoint(prior_path, kubin: Kubin):

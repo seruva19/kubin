@@ -13,7 +13,7 @@ def setup(kubin):
     )
 
     def segment_anything_ui(ui_shared, ui_tabs):
-        selected_mask_index = gr.State(None)  # type: ignore
+        selected_mask_index = gr.State(None)
 
         with gr.Row() as segment_block:
             with gr.Column(scale=1) as segment_params_block:
@@ -42,8 +42,8 @@ def setup(kubin):
 
             with gr.Column(scale=1):
                 segment_btn = gr.Button("Segment image", variant="primary")
-                segment_output = gr.Gallery(label="Segmented Masks").style(
-                    preview=True, grid=4
+                segment_output = gr.Gallery(
+                    label="Segmented Masks", columns=4, preview=True
                 )
 
                 ui_shared.create_base_send_targets(
@@ -51,20 +51,21 @@ def setup(kubin):
                 )
 
             def select_point(img, evt: gr.SelectData):
-                selected_point = img[evt.index[1], evt.index[0]]  # type: ignore
+                selected_point = img[evt.index[1], evt.index[0]]
                 print(evt)
                 print(f"Selected point: {selected_point}")
 
             source_image.select(select_point, source_image)
 
-            segment_btn.click(
+            kubin.ui_utils.click_and_disable(
+                segment_btn,
                 fn=lambda *p: segment_image(kubin, *p),
                 inputs=[
                     source_image,
                     prompt,
                     model_type,
-                    gr.State(kubin.params("general", "cache_dir")),  # type: ignore
-                    gr.State(kubin.params("general", "device")),  # type: ignore
+                    gr.State(kubin.params("general", "cache_dir")),
+                    gr.State(kubin.params("general", "device")),
                 ],
                 outputs=segment_output,
             )
@@ -74,6 +75,7 @@ def setup(kubin):
 
     return {
         "title": "Segmentation",
+        "send_to": "🎭 Send to Segmentation",
         "tab_ui": lambda ui_s, ts: segment_anything_ui(ui_s, ts),
         "send_target": source_image,
     }

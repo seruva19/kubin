@@ -1,14 +1,11 @@
 import gradio as gr
+from ui_blocks.shared.samplers import samplers_controls
 from ui_blocks.shared.ui_shared import SharedUI
-
-
-def inpaint_gallery_select(evt: gr.SelectData):
-    return [evt.index, f"Selected image index: {evt.index}"]
+from utils.gradio_ui import click_and_disable
 
 
 # TODO: implement region of inpainting
 def inpaint_ui(generate_fn, shared: SharedUI, tabs):
-    selected_inpaint_image_index = gr.State(None)  # type: ignore
     augmentations = shared.create_ext_augment_blocks("inpaint")
 
     with gr.Row() as inpaint_block:
@@ -76,19 +73,12 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs):
                         interactive=False,
                     )
                 with gr.Row():
-                    sampler = gr.Radio(
-                        ["ddim_sampler", "p_sampler", "plms_sampler"],
-                        value="p_sampler",
-                        label="Sampler",
-                    )
-                    sampler_diffusers = gr.Radio(
-                        ["ddim_sampler"], value="ddim_sampler", label="Sampler"
-                    )
-                    sampler.elem_classes = ["t2i_sampler", "native-control"]
-                    sampler_diffusers.elem_classes = [
-                        "t2i_sampler",
-                        "diffusers-control",
-                    ]
+                    (
+                        sampler_20,
+                        sampler_21_native,
+                        sampler_diffusers,
+                    ) = samplers_controls()
+
                     seed = gr.Number(-1, label="Seed", precision=0)
                 with gr.Row() as prior_block:
                     prior_scale = gr.Slider(
@@ -117,22 +107,22 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs):
 
         with gr.Column(scale=1):
             generate_inpaint = gr.Button("Generate", variant="primary")
-            inpaint_output = gr.Gallery(label="Generated Images").style(
-                grid=2, preview=True
-            )
-            selected_image_info = gr.HTML(value="", elem_classes=["block-info"])
-            inpaint_output.select(
-                fn=inpaint_gallery_select,
-                outputs=[selected_inpaint_image_index, selected_image_info],
-                show_progress=False,
+            inpaint_output = gr.Gallery(
+                label="Generated Images",
+                columns=2,
+                preview=True,
+                elem_classes="inpaint-output",
             )
 
-            shared.create_base_send_targets(
-                inpaint_output, selected_inpaint_image_index, tabs
+            inpaint_output.select(
+                fn=None,
+                _js=f"() => kubin.UI.setImageIndex('inpaint-output')",
+                show_progress=False,
+                outputs=gr.State(None),
             )
-            shared.create_ext_send_targets(
-                inpaint_output, selected_inpaint_image_index, tabs
-            )
+
+            shared.create_base_send_targets(inpaint_output, "inpaint-output", tabs)
+            shared.create_ext_send_targets(inpaint_output, "inpaint-output", tabs)
 
             infer_size.change(
                 fn=lambda x: [
@@ -155,7 +145,9 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs):
                 guidance_scale,
                 w,
                 h,
-                sampler,
+                sampler_20,
+                sampler_21_native,
+                sampler_diffusers,
                 prior_cf_scale,
                 prior_steps,
                 negative_prior_prompt,
@@ -163,6 +155,10 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs):
                 infer_size,
                 *injections,
             ):
+                sampler = shared.select_sampler(
+                    sampler_20, sampler_21_native, sampler_diffusers
+                )
+
                 params = {
                     "image_mask": image_mask,
                     "prompt": prompt,
@@ -186,8 +182,9 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs):
                 params = augmentations["exec"](params, injections)
                 return generate_fn(params)
 
-        generate_inpaint.click(
-            generate,
+        click_and_disable(
+            element=generate_inpaint,
+            fn=generate,
             inputs=[
                 shared.input_inpaint_image,
                 prompt,
@@ -200,7 +197,9 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs):
                 guidance_scale,
                 width,
                 height,
-                sampler,
+                sampler_20,
+                sampler_21_native,
+                sampler_diffusers,
                 prior_scale,
                 prior_steps,
                 negative_prior_prompt,
@@ -213,7 +212,7 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs):
 
         batch_size.elem_classes = (
             negative_prompt.elem_classes
-        ) = prior_block.elem_classes = ["unsupported2_0"]
+        ) = prior_block.elem_classes = ["unsupported_20"]
         inpaint_params.elem_classes = ["block-params inpaint_params"]
         inpaint_advanced_params.elem_classes = [
             "block-advanced-params inpaint_advanced_params"

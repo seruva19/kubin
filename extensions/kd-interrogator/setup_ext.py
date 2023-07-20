@@ -268,6 +268,7 @@ def setup(kubin):
                             "Interrogate", variant="primary"
                         )
                         progress = gr.HTML(label="Interrogation progress")
+
                         kubin.ui_utils.click_and_disable(
                             batch_interrogate_btn,
                             fn=batch_interrogate,
@@ -291,6 +292,7 @@ def setup(kubin):
 
     return {
         "title": "Interrogator",
+        "send_to": "📄 Send to Interrogator",
         "tab_ui": lambda ui_s, ts: interrogator_ui(ui_s, ts),
         "send_target": source_image,
         "api": {

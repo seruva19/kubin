@@ -39,7 +39,8 @@ def setup(kubin):
                     clear_color=[0.0, 0.0, 0.0, 0.0], label="Generated model"
                 )
 
-            create_btn.click(
+            kubin.ui_utils.click_and_disable(
+                create_btn,
                 fn=lambda *p: create_model(kubin, *p),
                 inputs=[
                     source_image,
@@ -48,11 +49,13 @@ def setup(kubin):
                 ],
                 outputs=model_output,
             )
+
             model_3d_params_block.elem_classes = ["block-params"]
 
         return model_3d_block
 
     return {
+        "send_to": "🗿 Send to Mesh Generator",
         "title": "Mesh Generator",
         "tab_ui": lambda ui_s, ts: model_3d_ui(ui_s, ts),
         "send_target": source_image,
