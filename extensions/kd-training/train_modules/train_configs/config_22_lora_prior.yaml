@@ -29,7 +29,7 @@ training:
   dataloader_num_workers: 0
   logging_dir: logs
   mixed_precision: fp16
-  report_to: none
+  report_to: tensorboard
   local_rank: -1
   checkpointing_steps: 500
   checkpoints_total_limit:

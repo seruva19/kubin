@@ -1,6 +1,7 @@
 import os
 import numpy as np
 from PIL import Image, ImageOps
+from omegaconf import OmegaConf
 from tqdm import tqdm
 import pandas as pd
 import math
@@ -71,9 +72,6 @@ def fix_lora_prior_config(config):
         config["training"]["checkpoints_total_limit"] = int(
             config["training"]["checkpoints_total_limit"]
         )
-
-    if config["training"]["report_to"] == "none":
-        config["training"]["report_to"] = None
 
     if config["training"]["seed"] == "":
         config["training"]["seed"] = None
@@ -325,7 +323,7 @@ def launch_lora_prior_training(kubin, config, progress):
     )
 
     if accelerator.is_main_process:
-        tracker_config = dict(vars(config.to_container()))
+        tracker_config = OmegaConf.to_container(config)
         accelerator.init_trackers("kubin-lora", tracker_config)
 
     total_batch_size = (

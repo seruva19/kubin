@@ -199,7 +199,7 @@ def train_lora_decoder_ui(kubin, tabs):
                     )
 
                     report_to = gr.Dropdown(
-                        choices=["none", "all", "tensorboard", "wandb", "comet_ml"],
+                        choices=["all", "tensorboard", "wandb", "comet_ml"],
                         value=default_lora_config["training"]["report_to"],
                         label="Report to",
                         info=text_tip(

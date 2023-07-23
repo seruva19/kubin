@@ -17,6 +17,7 @@ html.has-lightbox body {
 
 .sl-overlay {
   background: black !important;
+  opacity: 0.7 !important;
 }
 
 .sl-wrapper * {
