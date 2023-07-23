@@ -1,27 +1,27 @@
 from utils.logging import k_log
-from diffusers import (
-    DDIMInverseScheduler,
-    DDIMScheduler,
-    DDPMScheduler,
-    DPMSolverMultistepInverseScheduler,
-    DPMSolverMultistepScheduler,
-    DPMSolverSDEScheduler,
-    DPMSolverSinglestepScheduler,
-    EulerDiscreteScheduler,
-    EulerAncestralDiscreteScheduler,
-    HeunDiscreteScheduler,
-    KarrasVeScheduler,
-    KDPM2AncestralDiscreteScheduler,
-    KDPM2DiscreteScheduler,
-    LMSDiscreteScheduler,
-    PNDMScheduler,
-    UniPCMultistepScheduler,
-)
-from diffusers import DiffusionPipeline, KandinskyPipeline
 from params import KubinParams
 
 
-def use_scheduler(pipeline: KandinskyPipeline, sampler):
+def use_scheduler(pipeline, sampler):
+    from diffusers import (
+        DDIMInverseScheduler,
+        DDIMScheduler,
+        DDPMScheduler,
+        DPMSolverMultistepInverseScheduler,
+        DPMSolverMultistepScheduler,
+        DPMSolverSDEScheduler,
+        DPMSolverSinglestepScheduler,
+        EulerDiscreteScheduler,
+        EulerAncestralDiscreteScheduler,
+        HeunDiscreteScheduler,
+        KarrasVeScheduler,
+        KDPM2AncestralDiscreteScheduler,
+        KDPM2DiscreteScheduler,
+        LMSDiscreteScheduler,
+        PNDMScheduler,
+        UniPCMultistepScheduler,
+    )
+
     k_log(f"using scheduler: {sampler}")
 
     if sampler == "ddpm_sampler":

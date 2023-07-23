@@ -4,10 +4,6 @@ from huggingface_hub import hf_hub_url, cached_download
 from copy import deepcopy
 from omegaconf.dictconfig import DictConfig
 
-from kandinsky2.configs import CONFIG_2_0, CONFIG_2_1
-from kandinsky2.kandinsky2_model import Kandinsky2
-from kandinsky2.kandinsky2_1_model import Kandinsky2_1
-
 
 @dataclass
 class KandinskyCheckpoint:
@@ -73,6 +69,10 @@ def get_checkpoint(
     use_flash_attention=False,
     checkpoint_info=KandinskyCheckpoint(),
 ):
+    from kandinsky2.configs import CONFIG_2_0, CONFIG_2_1
+    from kandinsky2.kandinsky2_model import Kandinsky2
+    from kandinsky2.kandinsky2_1_model import Kandinsky2_1
+
     cache_dir = os.path.join(cache_dir, "2_1")
 
     config = DictConfig(deepcopy(CONFIG_2_1))

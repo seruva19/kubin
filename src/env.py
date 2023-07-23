@@ -2,12 +2,7 @@ import os
 
 import torch
 from extension.ext_registry import ExtensionRegistry
-from models.model_diffusers22.model_22 import Model_Diffusers22
 from params import KubinParams
-from models.model_mock import Model_Mock
-from models.model_kd20 import Model_KD20
-from models.model_kd21 import Model_KD21
-from models.model_diffusers import Model_Diffusers
 from utils.logging import k_log
 
 
@@ -40,17 +35,33 @@ class Kubin:
         if self.model is not None:
             self.model.flush()
 
-        self.model = (
-            Model_Mock(self.params)
-            if use_mock
-            else Model_Diffusers22(self.params)
-            if pipeline == "diffusers" and model_name == "kd22"
-            else Model_Diffusers(self.params)
-            if pipeline == "diffusers" and model_name == "kd21"
-            else Model_KD21(self.params)
-            if pipeline == "native" and model_name == "kd21"
-            else Model_KD20(self.params)
-        )
+        if use_mock:
+            from models.model_mock import Model_Mock
+
+            self.model = Model_Mock(self.params)
+
+        elif pipeline == "diffusers" and model_name == "kd22":
+            from models.model_diffusers22.model_22 import Model_Diffusers22
+
+            self.model = Model_Diffusers22(self.params)
+
+        elif pipeline == "diffusers" and model_name == "kd21":
+            from models.model_diffusers import Model_Diffusers
+
+            self.model = Model_Diffusers(self.params)
+
+        elif pipeline == "native" and model_name == "kd21":
+            from models.model_kd21 import Model_KD21
+
+            self.model = Model_KD21(self.params)
+
+        elif pipeline == "native" and model_name == "kd20":
+            from models.model_kd20 import Model_KD20
+
+            self.model = Model_KD20(self.params)
+
+        else:
+            raise Exception("No suitable model found!")
 
         if not torch.cuda.is_available():
             k_log(

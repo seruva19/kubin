@@ -6,16 +6,16 @@ from PIL import Image, ImageOps
 import numpy as np
 import torch
 import torch.backends
-
 from params import KubinParams
-from model_utils.kandinsky_utils import get_checkpoint
-from kandinsky2 import Kandinsky2_1
+
 from utils.file_system import save_output
 from utils.image import create_inpaint_targets, create_outpaint_targets
 
 
 class Model_KD21:
     def __init__(self, params: KubinParams):
+        from kandinsky2 import Kandinsky2_1
+
         print("activating pipeline: native (2.1)")
         self.params = params
 
@@ -23,6 +23,8 @@ class Model_KD21:
         self.kd21_inpaint: Kandinsky2_1 | None = None
 
     def prepareModel(self, task):
+        from model_utils.kandinsky_utils import get_checkpoint
+
         print(f"task queued: {task}")
         assert task in ["text2img", "img2img", "mix", "inpainting", "outpainting"]
 

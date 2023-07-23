@@ -4,23 +4,7 @@ import torch
 import torch.backends
 
 from utils.image import create_inpaint_targets, create_outpaint_targets
-
-try:
-    from model_utils.diffusers_utils import use_scheduler
-    from diffusers import (
-        KandinskyPipeline,
-        KandinskyImg2ImgPipeline,
-        KandinskyPriorPipeline,
-        KandinskyInpaintPipeline,
-    )
-    from diffusers.models.attention_processor import AttnAddedKVProcessor2_0
-except:
-    print(
-        "warning (2.1): seems like diffusers are not installed, run 'pip install -r diffusers/requirements.txt' to install"
-    )
-    print(
-        "warning (2.1): if you are not going to use diffusers, just ignore this message"
-    )
+from model_utils.diffusers_utils import use_scheduler
 
 import itertools
 import os
@@ -31,6 +15,13 @@ from utils.file_system import save_output
 
 class Model_Diffusers:
     def __init__(self, params: KubinParams):
+        from diffusers import (
+            KandinskyPipeline,
+            KandinskyImg2ImgPipeline,
+            KandinskyPriorPipeline,
+            KandinskyInpaintPipeline,
+        )
+
         print("activating pipeline: diffusers (2.1)")
         self.params = params
 
@@ -43,6 +34,14 @@ class Model_Diffusers:
         self.cublas_config = os.environ.get("CUBLAS_WORKSPACE_CONFIG", None)
 
     def prepareModel(self, task):
+        from diffusers import (
+            KandinskyPipeline,
+            KandinskyImg2ImgPipeline,
+            KandinskyPriorPipeline,
+            KandinskyInpaintPipeline,
+        )
+        from diffusers.models.attention_processor import AttnAddedKVProcessor2_0
+
         print(f"task queued: {task}")
         assert task in ["text2img", "img2img", "mix", "inpainting", "outpainting"]
 
