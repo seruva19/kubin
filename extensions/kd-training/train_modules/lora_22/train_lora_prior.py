@@ -323,7 +323,7 @@ def launch_lora_prior_training(kubin, config, progress):
     )
 
     if accelerator.is_main_process:
-        tracker_config = OmegaConf.to_container(config)
+        tracker_config = kubin.yaml_utils.flatten_yaml(OmegaConf.to_container(config))
         accelerator.init_trackers("kubin-lora", tracker_config)
 
     total_batch_size = (

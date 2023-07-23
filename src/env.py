@@ -61,10 +61,12 @@ class Kubin:
         import utils.file_system as fs_utils
         import utils.image as img_utils
         import utils.gradio_ui as ui_utils
+        import utils.yaml as yaml_utils
 
         self.fs_utils = fs_utils
         self.img_utils = img_utils
         self.ui_utils = ui_utils
+        self.yaml_utils = yaml_utils
 
     def with_extensions(self):
         if not self.params("general", "safe_mode"):
