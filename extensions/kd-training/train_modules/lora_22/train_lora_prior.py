@@ -72,6 +72,9 @@ def fix_lora_prior_config(config):
             config["training"]["checkpoints_total_limit"]
         )
 
+    if config["training"]["report_to"] == "none":
+        config["training"]["report_to"] = None
+
     if config["training"]["seed"] == "":
         config["training"]["seed"] = None
     if config["training"]["seed"] is not None:
@@ -322,8 +325,8 @@ def launch_lora_prior_training(kubin, config, progress):
     )
 
     if accelerator.is_main_process:
-        tracker_config = dict(vars(config))
-        accelerator.init_trackers("test", tracker_config)
+        tracker_config = dict(vars(config.to_container()))
+        accelerator.init_trackers("kubin-lora", tracker_config)
 
     total_batch_size = (
         config["training"]["train_batch_size"]

@@ -79,6 +79,9 @@ def fix_lora_decoder_config(config):
             config["training"]["checkpoints_total_limit"]
         )
 
+    if config["training"]["report_to"] == "none":
+        config["training"]["report_to"] = None
+
     if config["training"]["seed"] == "":
         config["training"]["seed"] = None
     if config["training"]["seed"] is not None:
@@ -117,6 +120,7 @@ def launch_lora_decoder_training(kubin, config, progress):
 
     if config["training"]["seed"] is not None:
         set_seed(config["training"]["seed"])
+
     if accelerator.is_main_process:
         if config["training"]["output_dir"] is not None:
             os.makedirs(config["training"]["output_dir"], exist_ok=True)
@@ -295,8 +299,8 @@ def launch_lora_decoder_training(kubin, config, progress):
     )
 
     if accelerator.is_main_process:
-        tracker_config = dict(vars(config))
-        accelerator.init_trackers("test", tracker_config)  # args.tracker_project_name
+        tracker_config = dict(vars(config.to_container()))
+        accelerator.init_trackers("kubin-lora", tracker_config)
 
     total_batch_size = (
         config["training"]["train_batch_size"]

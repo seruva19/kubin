@@ -1,6 +1,6 @@
 #training-dataset-df {
   height: 1000px;
-  overflow-y: scroll;
+  overflow-y: scroll !important;
 }
 
 #training-dataset-df td {

@@ -184,9 +184,7 @@ def train_lora_prior_ui(kubin, tabs):
                     logging_dir = gr.Textbox(
                         value=default_lora_config["training"]["logging_dir"],
                         label="Logging dir",
-                        info=text_tip(
-                            "TensorBoard log directory, relative to output dir"
-                        ),
+                        info=text_tip("Log directory, relative to output dir"),
                     )
                 with gr.Row():
                     resume_from_checkpoint = gr.Textbox(
@@ -197,7 +195,7 @@ def train_lora_prior_ui(kubin, tabs):
                         ),
                     )
                     report_to = gr.Dropdown(
-                        choices=["all", "tensorboard", "wandb", "comet_ml"],
+                        choices=["none", "all", "tensorboard", "wandb", "comet_ml"],
                         value=default_lora_config["training"]["report_to"],
                         label="Report to",
                         info=text_tip(
