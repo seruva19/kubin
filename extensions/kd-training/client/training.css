@@ -1,0 +1,29 @@
+#training-dataset-df {
+  height: 1000px;
+  overflow-y: scroll;
+}
+
+#training-dataset-df td {
+  white-space: normal;
+  vertical-align: top;
+}
+
+#training-dataset-df .table-wrap {
+  margin-right: 10px;
+}
+
+#training-dataset-df .controls-wrap {
+  display: none;
+}
+
+.lora-prior-progress>.wrap,
+.lora-decoder-progress>.wrap {
+  overflow: visible !important;
+}
+
+.lora-prior-progress>.wrap>.progress-text,
+.lora-decoder-progress>.wrap>.progress-text {
+  margin-top: 35px;
+  text-align: center;
+  width: 100%;
+}

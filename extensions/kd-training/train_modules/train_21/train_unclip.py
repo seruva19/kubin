@@ -99,8 +99,8 @@ def process_unclip_config(config):
 
 
 def start_unclip_training(kubin, config):
-    print(f"launching training of unclip model with params: {config}")
     config = process_unclip_config(config)
+    print(f"launching training of unclip model with params: {config}")
 
     get_unclip_model(kubin, config["inpainting"])
 

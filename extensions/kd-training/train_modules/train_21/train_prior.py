@@ -13,7 +13,7 @@ from train_modules.train_utils.train_module_pl2_1 import Decoder
 from train_modules.train_utils.trainer_prior import train_prior
 
 default_prior_config_path = (
-    "extensions/kd-training/train_modules/train_configs/config_prior.yaml"
+    "extensions/kd-training/train_modules/train_configs/config_21_prior.yaml"
 )
 
 
@@ -50,8 +50,8 @@ def process_prior_config(config):
 
 
 def start_prior_training(kubin, config):
-    print(f"launching training of prior model with params: {config}")
     config = process_prior_config(config)
+    print(f"launching training of prior model with params: {config}")
 
     get_prior_model(kubin)
 
