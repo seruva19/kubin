@@ -44,7 +44,7 @@
   kubin.notify = {
     lib: undefined,
     success: message => kubin.notify.lib.success(message),
-    warning: message => kubin.notify.lib.warning(message),
+    warning: message => kubin.notify.lib.open({ type: 'warning', message }),
     error: message => kubin.notify.lib.error(message)
   }
 
@@ -271,6 +271,14 @@
 
   kubin.UI.getImageIndex = (o, i, source) => {
     return [o, parseInt(imageIndices[source])]
+  }
+
+  kubin.UI.wakeAll = () => {
+    document.querySelectorAll('[disabled]').forEach(disabled => {
+      disabled.removeAttribute("disabled")
+    })
+
+    kubin.notify.warning('UI was waked up, disabled elements should be active now!')
   }
 
   kubin.UI.reveal = () => {

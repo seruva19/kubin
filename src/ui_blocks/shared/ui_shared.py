@@ -152,7 +152,7 @@ class SharedUI:
                 inputs=[output, sender_index],
                 outputs=[self.input_outpaint_image],
             )
-        base_targets.elem_classes = ["send-targets"]
+        base_targets.elem_classes = ["send-targets", "send-targets-base"]
 
         with gr.Row() as cnet_targets:
             send_cnet_t2i_btn = gr.Button(
@@ -208,7 +208,7 @@ class SharedUI:
                 inputs=[output, sender_index],
                 outputs=[self.input_cnet_mix_image],
             )
-        cnet_targets.elem_classes = ["send-targets"]
+        cnet_targets.elem_classes = ["send-targets", "send-targets-cnet"]
 
     def create_ext_send_targets(self, output, sender, tabs):
         with gr.Row() as send_targets:
@@ -240,7 +240,7 @@ class SharedUI:
                 )
 
                 ext_image_targets.append(send_toext_btn)
-        send_targets.elem_classes = ["send-targets"]
+        send_targets.elem_classes = ["send-targets", "send-targets-extensions"]
 
     def create_ext_augment_blocks(self, target):
         ext_exec = {}

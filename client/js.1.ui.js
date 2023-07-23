@@ -183,6 +183,14 @@
     return [o, parseInt(imageIndices[source])]
   }
 
+  kubin.UI.wakeAll = () => {
+    document.querySelectorAll('[disabled]').forEach(disabled => {
+      disabled.removeAttribute("disabled")
+    })
+
+    kubin.notify.warning('UI was waked up, disabled elements should be active now!')
+  }
+
   kubin.UI.reveal = () => {
     document.getElementsByTagName('html')[0].classList.add('is-ready')
   }

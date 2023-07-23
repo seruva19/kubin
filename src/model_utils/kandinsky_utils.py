@@ -191,6 +191,9 @@ def get_checkpoint(
     config["prior"]["clip_mean_std_path"] = os.path.join(cache_dir, "ViT-L-14_stats.th")
     config["image_enc_params"]["ckpt_path"] = os.path.join(cache_dir, "movq_final.ckpt")
 
+    # import gc
+    # gc.collect()
+
     model = Kandinsky2_1(
         config, cache_model_name, cache_prior_name, device, task_type=task_type
     )

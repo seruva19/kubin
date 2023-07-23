@@ -48,6 +48,14 @@ def update_info():
     except:
         pass
 
+    accelerate_info = ""
+    try:
+        import accelerate
+
+        accelerate_info = f"accelerate: {accelerate.__version__}\n"
+    except:
+        pass
+
     vmem = psutil.virtual_memory()
     ram_total = vmem.total
     ram_available = vmem.available
@@ -70,6 +78,7 @@ def update_info():
         f"{xformers_info}"
         f"{diffusers_info}"
         f"{transformers_info}"
+        f"{accelerate_info}"
     )
 
 
@@ -127,4 +136,6 @@ def settings_ui(kubin: Kubin, start_fn, ui):
                     fn=None, _js='_ => kubin.notify.success("Model unloaded")'
                 )
 
+                wake_ui = gr.Button(value="Wake UI", scale=0, size="sm")
+                wake_ui.click(fn=None, _js="_ => kubin.UI.wakeAll()")
     return settings_block

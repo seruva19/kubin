@@ -66,12 +66,22 @@ body.gradio-full .gradio-container {
   bottom: 0;
 }
 
-.send-targets {
+.send-targets-base,
+.send-targets-cnet {
   display: grid !important;
   grid-auto-flow: column;
 }
 
-.send-targets button {
+.send-targets-base button,
+.send-targets-cnet button {
   width: initial !important;
   min-width: initial !important;
+}
+
+.send-targets-extensions {}
+
+.send-targets-extensions button {
+  width: initial !important;
+  min-width: initial !important;
+  flex-grow: 1 !important;
 }
