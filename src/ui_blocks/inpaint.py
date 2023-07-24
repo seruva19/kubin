@@ -47,7 +47,13 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs):
                         1, 30, 10, step=1, label="Guidance scale"
                     )
                 with gr.Row():
-                    batch_count = gr.Slider(1, 16, 4, step=1, label="Batch count")
+                    batch_count = gr.Slider(
+                        1,
+                        shared.ui_params("max_batch_count"),
+                        4,
+                        step=1,
+                        label="Batch count",
+                    )
                     batch_size = gr.Slider(1, 16, 1, step=1, label="Batch size")
                     # TODO: fix https://github.com/ai-forever/Kandinsky-2/issues/53
                 with gr.Row():

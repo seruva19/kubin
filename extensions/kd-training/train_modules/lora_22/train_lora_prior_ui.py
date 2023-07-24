@@ -317,6 +317,7 @@ def train_lora_prior_ui(kubin, tabs):
                             value=default_lora_config["prior"]["use_ema"],
                             label="Use EMA",
                             info=text_tip("Whether to use EMA model"),
+                            interactive=False,
                         )
                     with gr.Column(scale=2):
                         output_name = gr.Textbox(

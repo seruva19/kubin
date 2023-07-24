@@ -144,20 +144,19 @@ def launch_lora_prior_training(kubin, config, progress):
     elif accelerator.mixed_precision == "bf16":
         weight_dtype = torch.bfloat16
 
-    with ContextManagers(deepspeed_zero_init_disabled_context_manager()):
-        image_encoder = CLIPVisionModelWithProjection.from_pretrained(
-            config["paths"]["pretrained_image_encoder"],
-            subfolder="image_encoder",
-            torch_dtype=weight_dtype,
-            cache_dir=cache_dir,
-        ).eval()
+    image_encoder = CLIPVisionModelWithProjection.from_pretrained(
+        config["paths"]["pretrained_image_encoder"],
+        subfolder="image_encoder",
+        torch_dtype=weight_dtype,
+        cache_dir=cache_dir,
+    ).eval()
 
-        text_encoder = CLIPTextModelWithProjection.from_pretrained(
-            config["paths"]["text_encoder_path"],
-            subfolder="text_encoder",
-            torch_dtype=weight_dtype,
-            cache_dir=cache_dir,
-        ).eval()
+    text_encoder = CLIPTextModelWithProjection.from_pretrained(
+        config["paths"]["text_encoder_path"],
+        subfolder="text_encoder",
+        torch_dtype=weight_dtype,
+        cache_dir=cache_dir,
+    ).eval()
 
     print("pretrained_prior_path =", config["paths"]["pretrained_prior_path"])
     prior = PriorTransformer.from_pretrained(
@@ -166,19 +165,18 @@ def launch_lora_prior_training(kubin, config, progress):
 
     text_encoder.requires_grad_(False)
     image_encoder.requires_grad_(False)
+    prior.requires_grad_(False)
+    image_encoder.to(accelerator.device, dtype=weight_dtype)
+    text_encoder.to(accelerator.device, dtype=weight_dtype)
+    prior.to(accelerator.device, dtype=weight_dtype)
 
-    if config["prior"]["use_ema"]:
-        ema_prior = PriorTransformer.from_pretrained(
-            config["paths"]["pretrained_prior_path"],
-            subfolder="prior",
-            cache_dir=cache_dir,
+    lora_attn_procs = {}
+    for name in prior.attn_processors.keys():
+        lora_attn_procs[name] = LoRAAttnProcessor(
+            hidden_size=2048, rank=config["training"]["rank"]
         )
-        ema_prior = EMAModel(
-            ema_prior.parameters(),
-            model_cls=PriorTransformer,
-            model_config=ema_prior.config,
-        )
-        ema_prior.to(accelerator.device)
+
+    prior.set_attn_processor(lora_attn_procs)
 
     def compute_snr(timesteps):
         alphas_cumprod = noise_scheduler.alphas_cumprod
@@ -202,38 +200,7 @@ def launch_lora_prior_training(kubin, config, progress):
         snr = (alpha / sigma) ** 2
         return snr
 
-    if version.parse(accelerate.__version__) >= version.parse("0.16.0"):
-
-        def save_model_hook(models, weights, output_dir):
-            if config["prior"]["use_ema"]:
-                ema_prior.save_pretrained(os.path.join(output_dir, "prior_ema"))
-
-            for i, model in enumerate(models):
-                model.save_pretrained(os.path.join(output_dir, "prior"))
-                weights.pop()
-
-        def load_model_hook(models, input_dir):
-            if config["prior"]["use_ema"]:
-                load_model = EMAModel.from_pretrained(
-                    os.path.join(input_dir, "prior_ema"), PriorTransformer
-                )
-                ema_prior.load_state_dict(load_model.state_dict())
-                ema_prior.to(accelerator.device)
-                del load_model
-
-            for i in range(len(models)):
-                model = models.pop()
-
-                load_model = PriorTransformer.from_pretrained(
-                    input_dir, subfolder="prior"
-                )
-                model.register_to_config(**load_model.config)
-
-                model.load_state_dict(load_model.state_dict())
-                del load_model
-
-        accelerator.register_save_state_pre_hook(save_model_hook)
-        accelerator.register_load_state_pre_hook(load_model_hook)
+    lora_layers = AttnProcsLayers(prior.attn_processors)
 
     if config["training"]["allow_tf32"]:
         torch.backends.cuda.matmul.allow_tf32 = True
@@ -250,7 +217,7 @@ def launch_lora_prior_training(kubin, config, progress):
     else:
         optimizer_cls = torch.optim.AdamW
     optimizer = optimizer_cls(
-        prior.parameters(),
+        lora_layers.parameters(),
         lr=config["training"]["lr"],
         betas=(config["training"]["adam_beta1"], config["training"]["adam_beta2"]),
         weight_decay=config["training"]["weight_decay"],
@@ -301,14 +268,10 @@ def launch_lora_prior_training(kubin, config, progress):
     )
     clip_mean = prior.clip_mean
     clip_std = prior.clip_std
-    prior.clip_mean = None
-    prior.clip_std = None
-    prior, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
-        prior, optimizer, train_dataloader, lr_scheduler
-    )
 
-    image_encoder.to(accelerator.device, dtype=weight_dtype)
-    text_encoder.to(accelerator.device, dtype=weight_dtype)
+    lora_layers, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
+        lora_layers, optimizer, train_dataloader, lr_scheduler
+    )
 
     num_update_steps_per_epoch = math.ceil(
         len(train_dataloader) / config["training"]["gradient_accumulation_steps"]
@@ -383,6 +346,7 @@ def launch_lora_prior_training(kubin, config, progress):
     )
 
     progress_bar.set_description("lora prior training progress")
+
     clip_mean = clip_mean.to(weight_dtype).to(accelerator.device)
     clip_std = clip_std.to(weight_dtype).to(accelerator.device)
     for epoch in range(first_epoch, config["training"]["num_train_epochs"]):
@@ -479,8 +443,6 @@ def launch_lora_prior_training(kubin, config, progress):
                 optimizer.zero_grad()
 
             if accelerator.sync_gradients:
-                if config["prior"]["use_ema"]:
-                    ema_prior.step(prior.parameters())
                 progress_bar.update(1)
                 global_step += 1
 

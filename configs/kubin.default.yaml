@@ -5,6 +5,7 @@ general:
   output_dir: output
   pipeline: diffusers
   mock: false
+  profiler: none
   extensions_path: extensions
   enabled_extensions: null
   disabled_extensions: null
@@ -31,6 +32,7 @@ ui:
   image_height_step: 64
   image_height_default: 768
   decoder_steps_default: 50
+  max_batch_count: 128
   allow_params_panel_resize: true
   enable_vertical_alignment: false
   collapse_advanced_params: false

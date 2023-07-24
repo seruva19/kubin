@@ -95,7 +95,13 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                         label="Steps",
                     )
                     guidance_scale = gr.Slider(1, 30, 4, step=1, label="Guidance scale")
-                    batch_count = gr.Slider(1, 16, 4, step=1, label="Batch count")
+                    batch_count = gr.Slider(
+                        1,
+                        shared.ui_params("max_batch_count"),
+                        4,
+                        step=1,
+                        label="Batch count",
+                    )
                 with gr.Row():
                     width = gr.Slider(
                         shared.ui_params("image_width_min"),

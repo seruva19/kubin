@@ -27,6 +27,7 @@ def prepare_weights_for_task(model, task):
             "kandinsky-community/kandinsky-2-2-prior",
             subfolder="image_encoder",
             cache_dir=cache_dir,
+            # device_map="auto",
         )
 
         if not run_prior_on_cpu and half_weights:
@@ -42,6 +43,7 @@ def prepare_weights_for_task(model, task):
             if run_prior_on_cpu
             else type_of_weights(model.params),
             cache_dir=cache_dir,
+            # device_map="auto",
         )
     current_prior = model.pipe_prior
 
@@ -54,6 +56,7 @@ def prepare_weights_for_task(model, task):
                     "kandinsky-community/kandinsky-2-2-decoder",
                     subfolder="unet",
                     cache_dir=cache_dir,
+                    # device_map="auto",
                 )
                 .half()
                 .to(device)
@@ -64,6 +67,7 @@ def prepare_weights_for_task(model, task):
                 unet=model.unet_2d,
                 torch_dtype=type_of_weights(model.params),
                 cache_dir=cache_dir,
+                # device_map="auto",
             )
 
         current_decoder = model.t2i_pipe
@@ -80,6 +84,7 @@ def prepare_weights_for_task(model, task):
                     "kandinsky-community/kandinsky-2-2-controlnet-depth",
                     subfolder="unet",
                     cache_dir=cache_dir,
+                    # device_map="auto",
                 )
                 .half()
                 .to(device)
@@ -90,6 +95,7 @@ def prepare_weights_for_task(model, task):
                 unet=model.unet_2d,
                 torch_dtype=type_of_weights(model.params),
                 cache_dir=cache_dir,
+                # device_map="auto",
             )
 
         current_decoder = model.cnet_t2i_pipe
@@ -120,6 +126,7 @@ def prepare_weights_for_task(model, task):
                     "kandinsky-community/kandinsky-2-2-decoder-inpaint",
                     subfolder="unet",
                     cache_dir=cache_dir,
+                    # device_map="auto",
                 )
                 .half()
                 .to(device)
@@ -130,6 +137,7 @@ def prepare_weights_for_task(model, task):
                 torch_dtype=type_of_weights(model.params),
                 unet=model.unet_2d,
                 cache_dir=cache_dir,
+                # device_map="auto",
             )
 
         current_decoder = model.inpaint_pipe
