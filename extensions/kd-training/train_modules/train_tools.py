@@ -28,7 +28,7 @@ def save_config_to_path(config, path):
 
 def train_tools_ui(kubin, tabs):
     with gr.Row() as train_tools_block:
-        with gr.Accordion("Conversion", open=True) as conversion_tools:
+        with gr.Accordion("Data conversion", open=True) as conversion_tools:
             with gr.Row():
                 conversion_from = gr.Dropdown(
                     choices=["parquet"],

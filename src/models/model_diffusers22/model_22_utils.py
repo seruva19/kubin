@@ -233,6 +233,8 @@ def flush_if_required(model, target):
                     torch.cuda.empty_cache()
                     torch.cuda.ipc_collect()
 
+        model.config = {}
+
 
 def type_of_weights(k_params):
     return torch.float16 if k_params("diffusers", "half_precision_weights") else "auto"
@@ -262,12 +264,18 @@ def to_device(k_params, prior, decoder):
     if k_params("diffusers", "enable_xformers"):
         if xformers_available:
             if prior_device != "cpu":
-                from xformers.ops import MemoryEfficientAttentionFlashAttentionOp
-
-                prior.enable_xformers_memory_efficient_attention(
-                    attention_op=MemoryEfficientAttentionFlashAttentionOp
+                from xformers.ops import (
+                    MemoryEfficientAttentionFlashAttentionOp,
+                    MemoryEfficientAttentionOp,
                 )
-                applied_optimizations.append("xformers for prior")
+
+                try:
+                    prior.enable_xformers_memory_efficient_attention(
+                        # attention_op=MemoryEfficientAttentionOp
+                    )
+                    applied_optimizations.append("xformers for prior")
+                except:
+                    k_log("cannot apply xformers for prior")
         else:
             k_log("xformers use for prior requested, but no xformers installed")
     else:
@@ -299,10 +307,13 @@ def to_device(k_params, prior, decoder):
 
     if k_params("diffusers", "enable_xformers"):
         if xformers_available:
-            from xformers.ops import MemoryEfficientAttentionFlashAttentionOp
+            from xformers.ops import (
+                MemoryEfficientAttentionFlashAttentionOp,
+                MemoryEfficientAttentionOp,
+            )
 
             decoder.unet.enable_xformers_memory_efficient_attention(
-                attention_op=MemoryEfficientAttentionFlashAttentionOp
+                # attention_op=MemoryEfficientAttentionOp
             )
             applied_optimizations.append("xformers for decoder")
         else:
@@ -331,10 +342,6 @@ def to_device(k_params, prior, decoder):
         f"optimizations: {'none' if len(applied_optimizations) == 0 else ';'.join(applied_optimizations)}"
     )
     decoder.safety_checker = None
-
-
-def finalize(model):
-    None
 
 
 def images_or_texts(images, texts):

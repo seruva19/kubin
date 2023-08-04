@@ -8,9 +8,10 @@ def options_tab_gradio(kubin: Kubin):
 
     with gr.Column(elem_classes=["options-block", "options-gradio"]) as gradio_options:
         theme = gr.Dropdown(
-            value=kubin.params("gradio", "theme"),
+            value=lambda: kubin.params("gradio", "theme"),
             choices=["base", "default", "glass", "monochrome", "soft"],
             label="Gradio theme",
+            elem_classes=["options-small"],
         )
 
     theme.change(

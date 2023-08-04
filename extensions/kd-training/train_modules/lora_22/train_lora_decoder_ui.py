@@ -53,17 +53,16 @@ def train_lora_decoder_ui(kubin, tabs):
 
             with gr.Accordion("Dataset", open=True):
                 with gr.Row():
-                    train_image_folder = gr.Textbox(
-                        value=default_lora_config["dataset"]["train_image_folder"],
-                        label="Train images folder",
-                        info=text_tip("Path to train image folder"),
-                    )
                     train_images_paths_csv = gr.Textbox(
                         value=default_lora_config["dataset"]["train_images_paths_csv"],
                         label="Train images path (CSV)",
                         info=text_tip("Path to csv with train images paths"),
                     )
-
+                    train_image_folder = gr.Textbox(
+                        value=default_lora_config["dataset"]["train_image_folder"],
+                        label="Train images folder",
+                        info=text_tip("Path to train image folder"),
+                    )
                     open_tools = gr.Button("📷 Dataset preparation", size="sm", scale=0)
                     open_tools.click(
                         lambda: gr.Tabs.update(selected="training-dataset"),
@@ -319,13 +318,6 @@ def train_lora_decoder_ui(kubin, tabs):
 
             with gr.Accordion("Other", open=True):
                 with gr.Row():
-                    with gr.Column(scale=1):
-                        image_resolution = gr.Number(
-                            value=default_lora_config["decoder"]["image_resolution"],
-                            label="Image resolution",
-                            info=text_tip("Image resolution"),
-                            precision=0,
-                        )
                     with gr.Column(scale=2):
                         output_name = gr.Textbox(
                             value=default_lora_config["decoder"]["output_name"],
@@ -333,6 +325,20 @@ def train_lora_decoder_ui(kubin, tabs):
                             info=text_tip(
                                 "Name of the LoRA decoder checkpoint in output directory"
                             ),
+                        )
+                    with gr.Column(scale=1):
+                        image_resolution = gr.Number(
+                            value=default_lora_config["decoder"]["image_resolution"],
+                            label="Image resolution",
+                            info=text_tip("Image resolution"),
+                            precision=0,
+                        )
+                        convert_to_sf = gr.Checkbox(
+                            value=default_lora_config["decoder"][
+                                "convert_to_safetensors"
+                            ],
+                            label="Convert to safetensors",
+                            info=text_tip("Convert pytorch model to safetensors"),
                         )
 
             config_params = {
@@ -376,6 +382,7 @@ def train_lora_decoder_ui(kubin, tabs):
                 max_grad_norm,
                 image_resolution,
                 output_name,
+                convert_to_sf,
             }
 
             def insert_values_to_ui(current_config):
@@ -441,6 +448,7 @@ def train_lora_decoder_ui(kubin, tabs):
                     max_grad_norm: current_config["training"]["max_grad_norm"],
                     image_resolution: current_config["decoder"]["image_resolution"],
                     output_name: current_config["decoder"]["output_name"],
+                    convert_to_sf: current_config["decoder"]["convert_to_safetensors"],
                 }
 
             def update_config_from_ui(params):
@@ -514,6 +522,9 @@ def train_lora_decoder_ui(kubin, tabs):
 
                 updated_config["decoder"]["image_resolution"] = params[image_resolution]
                 updated_config["decoder"]["output_name"] = params[output_name]
+                updated_config["decoder"]["convert_to_safetensors"] = params[
+                    convert_to_sf
+                ]
 
                 return updated_config
 

@@ -5,20 +5,24 @@ from utils.gradio_ui import click_and_disable
 
 
 # TODO: implement region of inpainting
-def inpaint_ui(generate_fn, shared: SharedUI, tabs):
+def inpaint_ui(generate_fn, shared: SharedUI, tabs, session):
     augmentations = shared.create_ext_augment_blocks("inpaint")
 
     with gr.Row() as inpaint_block:
         with gr.Column(scale=2) as inpaint_params:
             with gr.Row():
-                with gr.Column(scale=1):
-                    shared.input_inpaint_image.render()
+                shared.input_inpaint_image.render()
 
-                with gr.Column():
-                    prompt = gr.TextArea("", placeholder="", label="Prompt", lines=2)
-                    negative_prompt = gr.TextArea(
-                        "", placeholder="", label="Negative prompt", lines=2
-                    )
+                # shared.input_inpaint_image.change(
+                #     fn=None,
+                #     _js="(x) => console.log(x)",
+                #     inputs=[shared.input_inpaint_image],
+                # )
+            with gr.Column():
+                prompt = gr.TextArea("", placeholder="", label="Prompt", lines=2)
+                negative_prompt = gr.TextArea(
+                    "", placeholder="", label="Negative prompt", lines=2
+                )
 
             with gr.Accordion(
                 "Advanced params", open=not shared.ui_params("collapse_advanced_params")
@@ -140,6 +144,7 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs):
             )
 
             def generate(
+                session,
                 image_mask,
                 prompt,
                 negative_prompt,
@@ -166,6 +171,7 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs):
                 )
 
                 params = {
+                    ".session": session,
                     "image_mask": image_mask,
                     "prompt": prompt,
                     "negative_prompt": negative_prompt,
@@ -192,6 +198,7 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs):
             element=generate_inpaint,
             fn=generate,
             inputs=[
+                session,
                 shared.input_inpaint_image,
                 prompt,
                 negative_prompt,

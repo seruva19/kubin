@@ -2,6 +2,7 @@ import os
 
 import torch
 from extension.ext_registry import ExtensionRegistry
+from hooks.hooks import HookStore
 from params import KubinParams
 from utils.logging import k_log
 
@@ -73,14 +74,19 @@ class Kubin:
         import utils.image as img_utils
         import utils.gradio_ui as ui_utils
         import utils.yaml as yaml_utils
+        import utils.nn as nn_utils
 
         self.fs_utils = fs_utils
         self.img_utils = img_utils
         self.ui_utils = ui_utils
         self.yaml_utils = yaml_utils
+        self.nn_utils = nn_utils
 
     def with_extensions(self):
         if not self.params("general", "safe_mode"):
             self.ext_registry.register(self)
         else:
             print("safe mode was initiated, skipping extension init phase")
+
+    def with_hooks(self):
+        self.ext_registry.bind_hooks(self)

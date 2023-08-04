@@ -112,6 +112,7 @@ class ExtensionRegistry:
                         sys.modules[extension] = module
                         if spec.loader is not None:
                             spec.loader.exec_module(module)
+
                             extension_info = module.setup(kubin)
                             extension_info["_name"] = extension
                             extension_info["_path"] = extension_folder
@@ -140,7 +141,7 @@ class ExtensionRegistry:
             [sys.executable, "-m", "pip", "install", "-r", f"{reqs_path}"] + arguments
         )
 
-    def standalone(self):  # collect extensions with dedicated tab
+    def standalone(self):
         return list(
             {
                 key: value
@@ -149,7 +150,7 @@ class ExtensionRegistry:
             }.values()
         )
 
-    def injectable(self):  # collect extensions that are injected into UI blocks
+    def injectable(self):
         return list(
             {
                 key: value
@@ -189,3 +190,11 @@ class ExtensionRegistry:
                         client_files.append(client_file_path)
 
         return client_folders, client_files
+
+    def bind_hooks(self, kubin):
+        for ext_name, ext_target in {
+            key: value
+            for key, value in self.extensions.items()
+            if value.get("hook_fn", None) is not None
+        }.items():
+            kubin.params.hook_store.register_hook(ext_name, ext_target["hook_fn"])

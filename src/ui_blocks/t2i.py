@@ -4,7 +4,7 @@ from ui_blocks.shared.ui_shared import SharedUI
 from utils.gradio_ui import click_and_disable
 
 
-def t2i_ui(generate_fn, shared: SharedUI, tabs):
+def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
     augmentations = shared.create_ext_augment_blocks("t2i")
 
     with gr.Row() as t2i_block:
@@ -190,6 +190,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
             shared.create_ext_send_targets(t2i_output, "t2i-output", tabs)
 
             def generate(
+                session,
                 prompt,
                 negative_prompt,
                 num_steps,
@@ -219,6 +220,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                 )
 
                 params = {
+                    ".session": session,
                     "prompt": prompt,
                     "negative_prompt": negative_prompt,
                     "num_steps": num_steps,
@@ -249,6 +251,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                 element=generate_t2i,
                 fn=generate,
                 inputs=[
+                    session,
                     prompt,
                     negative_prompt,
                     steps,

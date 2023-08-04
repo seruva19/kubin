@@ -7,7 +7,7 @@ import os
 from PIL import Image
 
 
-def i2i_ui(generate_fn, shared: SharedUI, tabs):
+def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
     augmentations = shared.create_ext_augment_blocks("i2i")
 
     with gr.Row() as i2i_block:
@@ -227,6 +227,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
             shared.create_ext_send_targets(i2i_output, "i2i-output", tabs)
 
             def generate(
+                session,
                 image,
                 prompt,
                 negative_prior_prompt,
@@ -266,6 +267,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                         cnet_target_image = cnet_image
 
                 params = {
+                    ".session": session,
                     "init_image": image,
                     "prompt": prompt,
                     "negative_prior_prompt": negative_prior_prompt,
@@ -296,6 +298,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                 element=generate_i2i,
                 fn=generate,
                 inputs=[
+                    session,
                     shared.input_i2i_image,
                     prompt,
                     negative_prior_prompt,

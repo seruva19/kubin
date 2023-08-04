@@ -14,7 +14,7 @@ import accelerate
 from accelerate import Accelerator
 from accelerate.logging import get_logger
 from accelerate.state import AcceleratorState
-from accelerate.utils import ProjectConfiguration, set_seed
+from accelerate.utils import ProjectConfiguration, set_seed, constants
 from torchvision import transforms
 import transformers
 from transformers import (
@@ -82,6 +82,13 @@ def fix_lora_prior_config(config):
 
 
 def launch_lora_prior_training(kubin, config, progress):
+    OmegaConf.save(
+        config,
+        os.path.join(
+            config["training"]["output_dir"],
+            config["prior"]["output_name"] + ".prior.yaml",
+        ),
+    )
     cache_dir = kubin.params("general", "cache_dir")
 
     config = fix_lora_prior_config(config)
@@ -455,8 +462,17 @@ def launch_lora_prior_training(kubin, config, progress):
                             config["training"]["output_dir"],
                             f"{config['prior']['output_name']}-{global_step}",
                         )
+
                         accelerator.save_state(save_path)
                         logger.info(f"saved state to {save_path}")
+
+                        if config["prior"]["convert_to_safetensors"]:
+                            pt_path = os.path.join(save_path, "pytorch_model.bin")
+                            sf_path = os.path.join(
+                                save_path,
+                                f"{config['prior']['output_name']}.safetensors",
+                            )
+                            kubin.nn_utils.convert_pt_to_safetensors(pt_path, sf_path)
 
             logs = {
                 "step_loss": loss.detach().item(),

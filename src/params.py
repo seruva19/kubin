@@ -1,7 +1,8 @@
 import os
 import json
 from omegaconf import OmegaConf
-from model_utils.kandinsky_utils import KandinskyCheckpoint
+from hooks.hooks import HookStore
+from model_utils.kd21_utils import KandinskyCheckpoint
 from utils.yaml import flatten_yaml
 
 default_value = "__default__"
@@ -10,6 +11,7 @@ default_value = "__default__"
 class KubinParams:
     def __init__(self, args):
         self.args = args
+        self.hook_store = HookStore(self)
         self.checkpoint = KandinskyCheckpoint()
 
     def get_conf_item(self, conf, keys):

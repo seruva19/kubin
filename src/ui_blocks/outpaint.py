@@ -5,7 +5,7 @@ from ui_blocks.shared.ui_shared import SharedUI
 from utils.gradio_ui import click_and_disable
 
 
-def outpaint_ui(generate_fn, shared: SharedUI, tabs):
+def outpaint_ui(generate_fn, shared: SharedUI, tabs, session):
     augmentations = shared.create_ext_augment_blocks("outpaint")
 
     with gr.Row() as outpaint_block:
@@ -15,7 +15,7 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs):
                     shared.input_outpaint_image.render()
 
                 with gr.Column(scale=1):
-                    manual_control = gr.Checkbox(True, label="Expansion offset")
+                    manual_control = gr.Checkbox(True, label="Outpaint area")
                     offset_top = gr.Slider(
                         1,
                         1024,
@@ -172,6 +172,7 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs):
             shared.create_ext_send_targets(outpaint_output, "outpaint-output", tabs)
 
             def generate(
+                session,
                 image,
                 prompt,
                 negative_prompt,
@@ -201,6 +202,7 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs):
                 )
 
                 params = {
+                    ".session": session,
                     "image": image,
                     "prompt": prompt,
                     "negative_prompt": negative_prompt,
@@ -228,6 +230,7 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs):
             element=generate_outpaint,
             fn=generate,
             inputs=[
+                session,
                 shared.input_outpaint_image,
                 prompt,
                 negative_prompt,

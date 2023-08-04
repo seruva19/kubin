@@ -15,7 +15,7 @@ def update(image):
 
 # TODO: add mixing for images > 2
 # gradio does not directly support dynamic number of elements https://github.com/gradio-app/gradio/issues/2680
-def mix_ui(generate_fn, shared: SharedUI, tabs):
+def mix_ui(generate_fn, shared: SharedUI, tabs, session):
     augmentations = shared.create_ext_augment_blocks("mix")
 
     with gr.Row() as mix_block:
@@ -147,6 +147,7 @@ def mix_ui(generate_fn, shared: SharedUI, tabs):
             shared.create_ext_send_targets(mix_output, "mix-output", tabs)
 
             def generate(
+                session,
                 image_1,
                 image_2,
                 text_1,
@@ -178,6 +179,7 @@ def mix_ui(generate_fn, shared: SharedUI, tabs):
                 )
 
                 params = {
+                    ".session": session,
                     "image_1": image_1,
                     "image_2": image_2,
                     "text_1": text_1,
@@ -209,6 +211,7 @@ def mix_ui(generate_fn, shared: SharedUI, tabs):
             element=generate_mix,
             fn=generate,
             inputs=[
+                session,
                 shared.input_mix_image_1,
                 shared.input_mix_image_2,
                 text_1,

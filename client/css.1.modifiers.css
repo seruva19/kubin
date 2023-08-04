@@ -33,9 +33,11 @@ body:not(.pipeline-diffusers-kd22) .control-net {
   display: none;
 }
 
+.k-form>div.form,
 .control-net>div:nth-child(3)>div>div.form {
   box-shadow: none;
   border: none;
+  background: initial;
 }
 
 body.gradio-full .gradio-container {
@@ -78,10 +80,12 @@ body.gradio-full .gradio-container {
   min-width: initial !important;
 }
 
-.send-targets-extensions {}
-
 .send-targets-extensions button {
   width: initial !important;
   min-width: initial !important;
   flex-grow: 1 !important;
+}
+
+.options-small {
+  width: 100px !important;
 }

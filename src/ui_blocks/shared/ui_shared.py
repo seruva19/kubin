@@ -36,7 +36,7 @@ class SharedUI:
             label="Reference image",
         )
         self.input_inpaint_image = gr.ImageMask(
-            type="pil", elem_classes=["inpaint_image"]
+            type="pil", elem_classes=["inpaint_image"], height=600
         )
         self.input_outpaint_image = gr.ImageMask(
             type="pil", tool="editor", elem_classes=["outpaint_image"]
@@ -250,18 +250,25 @@ class SharedUI:
             for ext_augment in self.extensions_augment:
                 name = ext_augment["_name"]
                 if target in ext_augment["targets"]:
-                    current_ext = ext_exec[name] = {"fn": ext_augment["inject_fn"]}
+                    current_ext = ext_exec[name] = {
+                        "fn": ext_augment.get("inject_fn", lambda t, p, a: p)
+                    }
 
                     with gr.Row() as row:
                         title = ext_augment.get("inject_title", ext_augment["title"])
                         with gr.Accordion(
                             title,
                             open=ext_augment.get("opened", lambda o: False)(target),
-                        ):
+                        ) as ext_container:
+                            ext_container.elem_classes = ["extension-container", name]
+
                             ext_info = ext_augment["inject_ui"](target)
                             if isinstance(ext_info, Iterable):
-                                current_ext["input_size"] = (len(ext_injections), len(ext_injections) + len(ext_info[1:]))  # type: ignore
-                                for ext_injection in ext_info[1:]:  # type: ignore
+                                current_ext["input_size"] = (
+                                    len(ext_injections),
+                                    len(ext_injections) + len(ext_info[1:]),
+                                )
+                                for ext_injection in ext_info[1:]:
                                     ext_injections.append(ext_injection)
                             else:
                                 ext_injections.append(gr.State(None))

@@ -82,6 +82,14 @@ body.unselectable * {
 .block-params-vertical-alignment .block-resizable-anchor {
   display: none;
 }
+
+.kd-extension-settings-container {
+  margin-top: 15px;
+}
+
+.kd-extension-settings-container.hidden {
+  display: none;
+}
 body[class*="pipeline-native"] .diffusers-control {
   display: none;
 }
@@ -117,9 +125,11 @@ body:not(.pipeline-diffusers-kd22) .control-net {
   display: none;
 }
 
+.k-form>div.form,
 .control-net>div:nth-child(3)>div>div.form {
   box-shadow: none;
   border: none;
+  background: initial;
 }
 
 body.gradio-full .gradio-container {
@@ -162,12 +172,14 @@ body.gradio-full .gradio-container {
   min-width: initial !important;
 }
 
-.send-targets-extensions {}
-
 .send-targets-extensions button {
   width: initial !important;
   min-width: initial !important;
   flex-grow: 1 !important;
+}
+
+.options-small {
+  width: 100px !important;
 }
 html.has-lightbox {
   overflow-x: hidden;
@@ -188,6 +200,7 @@ html.has-lightbox body {
 
 .sl-overlay {
   background: black !important;
+  opacity: 0.7 !important;
 }
 
 .sl-wrapper * {

@@ -82,3 +82,11 @@ body.unselectable * {
 .block-params-vertical-alignment .block-resizable-anchor {
   display: none;
 }
+
+.kd-extension-settings-container {
+  margin-top: 15px;
+}
+
+.kd-extension-settings-container.hidden {
+  display: none;
+}

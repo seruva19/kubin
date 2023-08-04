@@ -1,4 +1,3 @@
-import argparse
 import os
 import numpy as np
 from PIL import Image, ImageOps
@@ -7,7 +6,6 @@ from tqdm import tqdm
 import pandas as pd
 import math
 from packaging import version
-
 import torch
 import torch.nn.functional as F
 import torch.utils.checkpoint
@@ -15,7 +13,7 @@ import accelerate
 from accelerate import Accelerator
 from accelerate.logging import get_logger
 from accelerate.state import AcceleratorState
-from accelerate.utils import ProjectConfiguration, set_seed
+from accelerate.utils import ProjectConfiguration, set_seed, constants
 from torchvision import transforms
 import transformers
 from transformers import CLIPImageProcessor, CLIPVisionModelWithProjection
@@ -89,6 +87,13 @@ def fix_lora_decoder_config(config):
 
 
 def launch_lora_decoder_training(kubin, config, progress):
+    OmegaConf.save(
+        config,
+        os.path.join(
+            config["training"]["output_dir"],
+            config["decoder"]["output_name"] + ".decoder.yaml",
+        ),
+    )
     cache_dir = kubin.params("general", "cache_dir")
 
     config = fix_lora_decoder_config(config)
@@ -455,8 +460,17 @@ def launch_lora_decoder_training(kubin, config, progress):
                             config["training"]["output_dir"],
                             f"{config['decoder']['output_name']}-{global_step}",
                         )
+
                         accelerator.save_state(save_path)
                         logger.info(f"saved state to {save_path}")
+
+                        if config["decoder"]["convert_to_safetensors"]:
+                            pt_path = os.path.join(save_path, "pytorch_model.bin")
+                            sf_path = os.path.join(
+                                save_path,
+                                f"{config['decoder']['output_name']}.safetensors",
+                            )
+                            kubin.nn_utils.convert_pt_to_safetensors(pt_path, sf_path)
 
             logs = {
                 "step_loss": loss.detach().item(),

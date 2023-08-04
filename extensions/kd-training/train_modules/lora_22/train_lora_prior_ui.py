@@ -312,13 +312,6 @@ def train_lora_prior_ui(kubin, tabs):
 
             with gr.Accordion("Other", open=True):
                 with gr.Row():
-                    with gr.Column(scale=1):
-                        use_ema = gr.Checkbox(
-                            value=default_lora_config["prior"]["use_ema"],
-                            label="Use EMA",
-                            info=text_tip("Whether to use EMA model"),
-                            interactive=False,
-                        )
                     with gr.Column(scale=2):
                         output_name = gr.Textbox(
                             value=default_lora_config["prior"]["output_name"],
@@ -326,6 +319,21 @@ def train_lora_prior_ui(kubin, tabs):
                             info=text_tip(
                                 "Name of the LoRA prior checkpoint in output directory"
                             ),
+                        )
+
+                    with gr.Column(scale=1):
+                        use_ema = gr.Checkbox(
+                            value=default_lora_config["prior"]["use_ema"],
+                            label="Use EMA",
+                            info=text_tip("Whether to use EMA model"),
+                            interactive=False,
+                        )
+                        convert_to_sf = gr.Checkbox(
+                            value=default_lora_config["prior"][
+                                "convert_to_safetensors"
+                            ],
+                            label="Convert to safetensors",
+                            info=text_tip("Convert pytorch model to safetensors"),
                         )
 
             config_params = {
@@ -368,6 +376,7 @@ def train_lora_prior_ui(kubin, tabs):
                 max_grad_norm,
                 use_ema,
                 output_name,
+                convert_to_sf,
             }
 
             def insert_values_to_ui(current_config):
@@ -432,6 +441,7 @@ def train_lora_prior_ui(kubin, tabs):
                     max_grad_norm: current_config["training"]["max_grad_norm"],
                     use_ema: current_config["prior"]["use_ema"],
                     output_name: current_config["prior"]["output_name"],
+                    convert_to_sf: current_config["prior"]["convert_to_safetensors"],
                 }
 
             def update_config_from_ui(params):
@@ -499,6 +509,9 @@ def train_lora_prior_ui(kubin, tabs):
                 updated_config["training"]["max_grad_norm"] = params[max_grad_norm]
                 updated_config["prior"]["use_ema"] = params[use_ema]
                 updated_config["prior"]["output_name"] = params[output_name]
+                updated_config["prior"]["convert_to_safetensors"] = params[
+                    convert_to_sf
+                ]
 
                 return updated_config
 

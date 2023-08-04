@@ -29,11 +29,28 @@ def samplers_controls():
         "unsupported_22",
     ]
 
-    sampler_diffusers = gr.Radio(
-        ["ddim_sampler", "ddpm_sampler"],
+    sampler_diffusers = gr.Dropdown(
+        [
+            "ddpm_sampler",
+            "ddim_sampler",
+            "ddim_inverse_sampler",
+            "dpms_m_sampler",
+            "dpms_m_inverse_sampler",
+            "dpms_sde_sampler",
+            "dpms_ss_sampler",
+            "euler_sampler",
+            "euler_a_sampler",
+            "heun_sampler",
+            "karras_sampler",
+            "lms_sampler",
+            "kdpm2_sampler",
+            "kdpm2_a_sampler",
+            "pndm_sampler",
+            "unipc_sampler",
+        ],
         value="ddpm_sampler",
         label="Sampler",
-        interactive=True,
+        interactive=False,
     )
     sampler_diffusers.elem_classes = [
         "t2i_sampler",

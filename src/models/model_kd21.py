@@ -23,7 +23,7 @@ class Model_KD21:
         self.kd21_inpaint: Kandinsky2_1 | None = None
 
     def prepareModel(self, task):
-        from model_utils.kandinsky_utils import get_checkpoint
+        from model_utils.kd21_utils import get_checkpoint
 
         print(f"task queued: {task}")
         assert task in ["text2img", "img2img", "mix", "inpainting", "outpainting"]

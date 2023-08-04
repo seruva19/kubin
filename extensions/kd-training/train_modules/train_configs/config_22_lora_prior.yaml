@@ -18,9 +18,9 @@ training:
   num_epochs: 0
   output_dir: train/lora
   lr_scheduler: constant
-  max_train_steps: 500
+  max_train_steps: 5000
   gradient_accumulation_steps: 1
-  gradient_checkpointing: true
+  gradient_checkpointing: false
   lr_warmup_steps: 0
   snr_gamma:
   use_8bit_adam: false
@@ -31,9 +31,9 @@ training:
   mixed_precision: fp16
   report_to: tensorboard
   local_rank: -1
-  checkpointing_steps: 500
+  checkpointing_steps: 1000
   checkpoints_total_limit:
-  rank: 4
+  rank: 16
   seed:
   adam_beta1: 0.9
   adam_beta2: 0.999
@@ -43,3 +43,5 @@ training:
 prior:
   use_ema: false
   output_name: lora_prior
+  convert_to_safetensors: false
+  
