@@ -43,5 +43,5 @@ training:
 prior:
   use_ema: false
   output_name: lora_prior
-  convert_to_safetensors: false
+  convert_to_safetensors: true
   

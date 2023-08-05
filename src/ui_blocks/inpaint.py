@@ -10,19 +10,18 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs, session):
 
     with gr.Row() as inpaint_block:
         with gr.Column(scale=2) as inpaint_params:
+            augmentations["ui_before_prompt"]()
+
             with gr.Row():
                 shared.input_inpaint_image.render()
-
-                # shared.input_inpaint_image.change(
-                #     fn=None,
-                #     _js="(x) => console.log(x)",
-                #     inputs=[shared.input_inpaint_image],
-                # )
             with gr.Column():
                 prompt = gr.TextArea("", placeholder="", label="Prompt", lines=2)
                 negative_prompt = gr.TextArea(
                     "", placeholder="", label="Negative prompt", lines=2
                 )
+
+            augmentations["ui_before_cnet"]()
+            augmentations["ui_before_params"]()
 
             with gr.Accordion(
                 "Advanced params", open=not shared.ui_params("collapse_advanced_params")

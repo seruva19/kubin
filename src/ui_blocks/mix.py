@@ -20,6 +20,8 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
 
     with gr.Row() as mix_block:
         with gr.Column(scale=2) as mix_params:
+            augmentations["ui_before_prompt"]()
+
             with gr.Row():
                 with gr.Column(scale=1):
                     shared.input_mix_image_1.render()
@@ -37,6 +39,8 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
                     weight_2 = gr.Slider(0, 1, 0.5, step=0.05, label="Weight")
 
             negative_prompt = gr.TextArea("", label="Negative prompt", lines=2)
+
+            augmentations["ui_before_cnet"]()
 
             with gr.Accordion("ControlNet", open=False) as mix_cnet:
                 cnet_enable = gr.Checkbox(
@@ -57,6 +61,8 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
                         )
 
             mix_cnet.elem_classes = ["control-net"]
+
+            augmentations["ui_before_params"]()
 
             with gr.Accordion(
                 "Advanced params", open=not shared.ui_params("collapse_advanced_params")

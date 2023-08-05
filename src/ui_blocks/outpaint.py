@@ -10,12 +10,14 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs, session):
 
     with gr.Row() as outpaint_block:
         with gr.Column(scale=2) as outpaint_params:
+            augmentations["ui_before_prompt"]()
+
             with gr.Row():
                 with gr.Column(scale=1):
                     shared.input_outpaint_image.render()
 
                 with gr.Column(scale=1):
-                    manual_control = gr.Checkbox(True, label="Outpaint area")
+                    manual_control = gr.Checkbox(True, label="Outpaint area offset")
                     offset_top = gr.Slider(
                         1,
                         1024,
@@ -66,6 +68,9 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs, session):
                 negative_prompt = gr.TextArea(
                     "", placeholder="", label="Negative prompt", lines=2
                 )
+
+            augmentations["ui_before_cnet"]()
+            augmentations["ui_before_params"]()
 
             with gr.Accordion(
                 "Advanced params", open=not shared.ui_params("collapse_advanced_params")

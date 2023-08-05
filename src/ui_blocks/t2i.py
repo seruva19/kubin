@@ -9,6 +9,8 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
 
     with gr.Row() as t2i_block:
         with gr.Column(scale=2) as t2i_params:
+            augmentations["ui_before_prompt"]()
+
             prompt = gr.TextArea("", label="Prompt", placeholder="", lines=2)
             negative_prompt = gr.TextArea(
                 "",
@@ -17,6 +19,8 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
                 lines=2,
             )
             negative_prompt.elem_classes = ["unsupported_20"]
+
+            augmentations["ui_before_cnet"]()
 
             with gr.Accordion("ControlNet", open=False) as t2i_cnet:
                 cnet_enable = gr.Checkbox(
@@ -81,6 +85,8 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
             )
 
             t2i_cnet.elem_classes = ["control-net"]
+
+            augmentations["ui_before_params"]()
 
             with gr.Accordion(
                 "Advanced params", open=not shared.ui_params("collapse_advanced_params")

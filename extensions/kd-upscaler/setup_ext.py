@@ -17,16 +17,16 @@ def setup(kubin):
                 with gr.Row():
                     source_image.render()
 
-                    with gr.Column() as upscale_selector:
-                        upscaler = gr.Radio(
-                            ["Real-ESRGAN"], value="Real-ESRGAN", label="Upscaler"
-                        )
-                        scale = gr.Radio(
-                            ["2", "4", "8"],
-                            value="2",
-                            label="Upscale by",
-                            interactive=True,
-                        )
+                with gr.Column() as upscale_selector:
+                    upscaler = gr.Radio(
+                        ["Real-ESRGAN"], value="Real-ESRGAN", label="Upscaler"
+                    )
+                    scale = gr.Radio(
+                        ["2", "4", "8"],
+                        value="2",
+                        label="Upscale by",
+                        interactive=True,
+                    )
 
                 with gr.Row():
                     clear_memory = gr.Checkbox(False, label="Clear VRAM before upscale")

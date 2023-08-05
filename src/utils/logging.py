@@ -2,7 +2,7 @@ import requests
 import time
 
 app_log = []
-clear_log_after = 50
+clear_log_after = 1000
 
 
 def get_log(tags=["INFO"]):

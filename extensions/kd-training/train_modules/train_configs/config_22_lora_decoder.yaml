@@ -44,4 +44,4 @@ training:
 decoder:
   image_resolution: 768
   output_name: lora_decoder
-  convert_to_safetensors: false
+  convert_to_safetensors: true

@@ -133,4 +133,5 @@ def setup(kubin):
         "hook_fn": on_hook,
         "settings_ui": settings_ui,
         "supports": ["diffusers-kd22"],
+        "inject_position": "before_params",
     }

@@ -12,6 +12,8 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
 
     with gr.Row() as i2i_block:
         with gr.Column(scale=2) as i2i_params:
+            augmentations["ui_before_prompt"]()
+
             with gr.Tabs():
                 with gr.TabItem("Single image"):
                     with gr.Row():
@@ -31,6 +33,8 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
                                     "Reference image transformation strength"
                                 ),
                             )
+
+                    augmentations["ui_before_cnet"]()
 
                     with gr.Accordion("ControlNet", open=False) as i2i_cnet:
                         cnet_enable = gr.Checkbox(
@@ -117,6 +121,8 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
                             "🔍 Show images from output folder", variant="secondary"
                         )
                     batch_progress = gr.HTML(label="Batch progress")
+
+            augmentations["ui_before_params"]()
 
             with gr.Accordion(
                 "Advanced params", open=not shared.ui_params("collapse_advanced_params")
@@ -328,6 +334,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
             )
 
             def generate_batch(
+                session,
                 input_folder,
                 output_folder,
                 extensions,
@@ -369,6 +376,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
                     image = Image.open(imagepath)
 
                     params = {
+                        ".session": session,
                         "init_image": image,
                         "prompt": batch_prompt,
                         "strength": batch_strength,
@@ -396,6 +404,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
                 generate_batch_i2i,
                 generate_batch,
                 [
+                    session,
                     input_folder,
                     output_folder,
                     img_extension,
