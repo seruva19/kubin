@@ -114,7 +114,7 @@ def apply_lora_to_decoder(kubin, lora_decoder_path, decoder):
     device = kubin.params("general", "device")
 
     lora_attn_procs = {}
-    lora_model = torch.load(lora_decoder_path)
+    lora_model = load_model_from_path(lora_decoder_path)
     rank, _ = get_rank_and_hidden_size(lora_model)
 
     for name in decoder.unet.attn_processors.keys():
