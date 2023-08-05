@@ -28,7 +28,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
                     with gr.Column():
                         cnet_pipeline = gr.Dropdown(
                             choices=["ControlNetPipeline", "ControlNetImg2ImgPipeline"],
-                            value="ControlNetPipeline",
+                            value="ControlNetImg2ImgPipeline",
                             type="value",
                             label="Processing pipeline",
                             allow_custom_value=False,
@@ -39,36 +39,35 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
                             label="Condition",
                         )
 
-                with gr.Column(visible=False) as cnet_i2i_params:
-                    with gr.Row():
-                        cnet_emb_transform_strength = gr.Slider(
-                            0,
-                            1,
-                            0.85,
-                            step=0.05,
-                            label="Embedding strength",
-                            info=shared.info("Strength of reference embedding"),
-                        )
+                        with gr.Column(visible=False) as cnet_i2i_params:
+                            cnet_emb_transform_strength = gr.Slider(
+                                0,
+                                1,
+                                0.85,
+                                step=0.05,
+                                label="Embedding strength",
+                                info=shared.info("Strength of reference embedding"),
+                            )
 
-                        cnet_neg_emb_transform_strength = gr.Slider(
-                            0,
-                            1,
-                            1,
-                            step=0.05,
-                            label="Negative embedding strength",
-                            info=shared.info(
-                                "Strength of reference negative embedding"
-                            ),
-                        )
+                            cnet_neg_emb_transform_strength = gr.Slider(
+                                0,
+                                1,
+                                1,
+                                step=0.05,
+                                label="Negative embedding strength",
+                                info=shared.info(
+                                    "Strength of reference negative embedding"
+                                ),
+                            )
 
-                        cnet_img_strength = gr.Slider(
-                            0,
-                            1,
-                            0.5,
-                            step=0.05,
-                            label="Image strength",
-                            info=shared.info("Strength of reference image"),
-                        )
+                            cnet_img_strength = gr.Slider(
+                                0,
+                                1,
+                                0.5,
+                                step=0.05,
+                                label="Image strength",
+                                info=shared.info("Strength of reference image"),
+                            )
 
             def pipeline_changed(pipeline):
                 return gr.update(

@@ -27,6 +27,8 @@ def prepare_weights_for_task(model, task):
             "kandinsky-community/kandinsky-2-2-prior",
             subfolder="image_encoder",
             cache_dir=cache_dir,
+            # resume_download=True,
+            # local_files_only=True,
             # device_map="auto",
         )
 
@@ -168,20 +170,20 @@ def flush_if_required(model, target):
         ]
 
     if clear_memory_targets is not None:
-        print(
+        k_log(
             f"following pipelines, if active, will be released for {target + ' task' if target is not None else 'another model'}: {clear_memory_targets}"
         )
         offload_enabled = model.params("diffusers", "sequential_cpu_offload")
 
         if "prior" in clear_memory_targets:
             if model.pipe_prior is not None:
-                print("releasing prior pipeline")
+                k_log("releasing prior pipeline")
                 if not offload_enabled:
                     model.pipe_prior.to("cpu")
                 model.pipe_prior = None
 
             if model.pipe_prior_e2e is not None:
-                print("releasing prior_e2e pipeline")
+                k_log("releasing prior_e2e pipeline")
                 if not offload_enabled:
                     model.pipe_prior_e2e.to("cpu")
                 model.pipe_prior_e2e = None
@@ -190,13 +192,13 @@ def flush_if_required(model, target):
             value in clear_memory_targets for value in ["text2img", "img2img", "mix"]
         ):
             if model.t2i_pipe is not None:
-                print("releasing t2i pipeline")
+                k_log("releasing t2i pipeline")
                 if not offload_enabled:
                     model.t2i_pipe.to("cpu")
                 model.t2i_pipe = None
 
             if model.i2i_pipe is not None:
-                print("releasing i2i pipeline")
+                k_log("releasing i2i pipeline")
                 if not offload_enabled:
                     model.i2i_pipe.to("cpu")
                 model.i2i_pipe = None
@@ -205,7 +207,7 @@ def flush_if_required(model, target):
             value in clear_memory_targets for value in ["inpainting", "outpainting"]
         ):
             if model.inpaint_pipe is not None:
-                print("releasing inpaint pipeline")
+                k_log("releasing inpaint pipeline")
                 if not offload_enabled:
                     model.inpaint_pipe.to("cpu")
                 model.inpaint_pipe = None
@@ -214,13 +216,13 @@ def flush_if_required(model, target):
             value in clear_memory_targets for value in ["text2img_cnet", "img2img_cnet"]
         ):
             if model.cnet_t2i_pipe is not None:
-                print("releasing t2i_cnet pipeline")
+                k_log("releasing t2i_cnet pipeline")
                 if not offload_enabled:
                     model.cnet_t2i_pipe.to("cpu")
                 model.cnet_t2i_pipe = None
 
             if model.cnet_i2i_pipe is not None:
-                print("releasing i2i_cnet pipeline")
+                k_log("releasing i2i_cnet pipeline")
                 if not offload_enabled:
                     model.cnet_i2i_pipe.to("cpu")
                 model.cnet_i2i_pipe = None

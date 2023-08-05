@@ -2,9 +2,8 @@ import os
 
 import torch
 from extension.ext_registry import ExtensionRegistry
-from hooks.hooks import HookStore
 from params import KubinParams
-from utils.logging import k_log
+from utils.logging import k_error, k_log
 
 
 class Kubin:
@@ -12,10 +11,13 @@ class Kubin:
         pass
 
     def with_args(self, args):
+        self.log = k_log
+        self.elog = k_error
+
         self.model = None
 
         self.root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-        print(f"root dir: {self.root}")
+        k_log(f"root dir: {self.root}")
 
         self.params = KubinParams(args)
         self.params.load_config()
@@ -75,18 +77,20 @@ class Kubin:
         import utils.gradio_ui as ui_utils
         import utils.yaml as yaml_utils
         import utils.nn as nn_utils
+        import utils.env_data as env_utils
 
         self.fs_utils = fs_utils
         self.img_utils = img_utils
         self.ui_utils = ui_utils
         self.yaml_utils = yaml_utils
         self.nn_utils = nn_utils
+        self.env_utils = env_utils
 
     def with_extensions(self):
         if not self.params("general", "safe_mode"):
             self.ext_registry.register(self)
         else:
-            print("safe mode was initiated, skipping extension init phase")
+            k_log("safe mode was initiated, skipping extension init phase")
 
     def with_hooks(self):
         self.ext_registry.bind_hooks(self)

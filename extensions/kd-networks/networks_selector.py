@@ -61,7 +61,9 @@ def networks_selector_ui(
                 "prior": prior_path,
                 "decoder": decoder_path,
             }
-            networks_info["lora"][session] = lora_state
+
+            task = kubin.env_utils.map_target_to_task(target)
+            networks_info["lora"][f"{task}-{session}"] = lora_state
 
         session = gr.Textbox(visible=False)
         enable_lora.change(

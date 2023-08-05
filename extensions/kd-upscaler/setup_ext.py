@@ -89,7 +89,7 @@ def upscale_with(
         return upscaled_image_path
 
     else:
-        print(f"upscale method {upscaler} not implemented")
+        kubin.log(f"upscale method {upscaler} not implemented")
         return []
 
 

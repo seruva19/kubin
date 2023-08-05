@@ -64,16 +64,16 @@ def networks_browser_ui(kubin, config, prior_loras, decoder_loras, networks_list
         model = kubin.params("general", "model_name")
         pipeline = kubin.params("general", "pipeline")
 
-        if model != "kd22" and pipeline != "diffusers":
+        if model == "kd21" and pipeline == "native":
             return [
-                gr.update(
-                    visible=True,
-                    value=f"Scanning ({model}, {pipeline}) model metadata is not implemented yet",
-                ),
                 None,
-                None,
+                {
+                    "model": kubin.model,
+                },
+                gr.update(choices=["model"], visible=True),
             ]
-        else:
+
+        elif model == "kd22" and pipeline == "diffusers":
             try:
                 components = {
                     "pipe_prior": kubin.model.pipe_prior,
@@ -96,23 +96,42 @@ def networks_browser_ui(kubin, config, prior_loras, decoder_loras, networks_list
                         visible=True,
                         value=f"Failed to read model metadata with error: {exception}",
                     ),
-                    None,
-                    None,
+                    gr.update(visible=False),
+                    gr.update(visible=False),
                 ]
+        else:
+            return [
+                gr.update(
+                    visible=True,
+                    value=f"Scanning ({model}, {pipeline}) model metadata is not implemented yet",
+                ),
+                gr.update(visible=False),
+                gr.update(visible=False),
+            ]
 
     def read_component_metadata(pipe_name, components):
-        pipe = components[pipe_name]
+        model = kubin.params("general", "model_name")
+        pipeline = kubin.params("general", "pipeline")
 
-        if pipe is None:
-            return gr.update(
-                visible=True,
-                value="Component is not loaded, activate required pipeline to analyze",
-            )
+        if model == "kd21" and pipeline == "native":
+            data = []
+            system_conf = kubin.model.system_config
+            for key in system_conf:
+                data.append(f"{str(key)}: {system_conf[key]}")
+            return gr.update(visible=True, value="\n".join(data))
 
-        if "prior" in pipe_name:
-            return gr.update(visible=True, value=read_model_info(pipe.prior))
-        else:
-            return gr.update(visible=True, value=read_model_info(pipe.unet))
+        elif model == "kd22" and pipeline == "diffusers":
+            pipe = components[pipe_name]
+            if pipe is None:
+                return gr.update(
+                    visible=True,
+                    value="Component is not loaded, activate required pipeline to analyze",
+                )
+
+            if "prior" in pipe_name:
+                return gr.update(visible=True, value=read_model_info(pipe.prior))
+            else:
+                return gr.update(visible=True, value=read_model_info(pipe.unet))
 
     def read_network_metadata(name_hash):
         path = get_path_by_name_and_hash(networks_list["loras"], name_hash)

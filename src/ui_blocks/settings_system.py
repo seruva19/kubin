@@ -3,9 +3,8 @@ import gradio as gr
 import torch
 import psutil
 import platform
-from kandinsky2 import CONFIG_2_1
 from env import Kubin
-from utils.yaml import flatten_yaml
+from utils.logging import get_log, k_log
 
 
 def in_mb(bytes: float):
@@ -13,7 +12,7 @@ def in_mb(bytes: float):
 
 
 def update_info():
-    print("scanning system information")
+    k_log("scanning system information")
     torch_version = torch.__version__
     cuda_version = torch.version.cuda
 
@@ -80,44 +79,33 @@ def update_info():
     )
 
 
-def model_info(kubin):
-    if (
-        kubin.params("general", "pipeline") == "native"
-        and kubin.params("general", "model_name") == "kd21"
-    ):
-        model_config = flatten_yaml(CONFIG_2_1)
-    else:
-        model_config = {}
-
-    data = []
-    for key in model_config:
-        data.append(f"{str(key)}: {model_config[key]}")
-    return "\n".join(data)
-
-
 def system_ui(kubin: Kubin):
     with gr.Row() as system_block:
-        system_info = gr.Textbox(
+        system_log = gr.Textbox(
             update_info,
-            lines=12,
-            max_lines=12,
+            lines=15,
+            max_lines=15,
             label="System info",
             interactive=False,
             show_copy_button=True,
+            elem_classes=["system-info"],
         )
 
-        textbox_log = gr.Textbox(
-            lambda: model_info(kubin),
-            label="System log",
-            lines=12,
-            max_lines=12,
-            interactive=False,
-            show_copy_button=True,
+    with gr.Row(equal_height=False):
+        update_btn = gr.Button(value="💻 Output system info", scale=0, size="sm")
+        update_btn.click(update_info, outputs=system_log)
+
+        show_log = gr.Button(value="📅 Output log", scale=0, size="sm")
+        show_log.click(
+            fn=lambda: "\n".join(get_log(["INFO"])),
+            outputs=system_log,
         )
 
-    with gr.Row():
-        update_btn = gr.Button(value="💻 Update system info", scale=0, size="sm")
-        update_btn.click(update_info, outputs=system_info)
+        show_errors = gr.Button(value="⚠️ Output only errors", scale=0, size="sm")
+        show_errors.click(
+            fn=lambda: "\n".join(get_log(["ERROR"])),
+            outputs=system_log,
+        )
 
         unload_model = gr.Button(value="📉 Free memory", scale=0, size="sm")
         unload_model.click(lambda: kubin.model.flush(), queue=False).then(

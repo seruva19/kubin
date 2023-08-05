@@ -1,4 +1,4 @@
-from nn_tools.nn_attach import bind_unbind_networks
+from nn_tools.nn_attach import bind_networks
 from networks_selector import networks_selector_ui
 from networks_browser import networks_browser_ui
 from networks_converter import networks_converter_ui
@@ -58,18 +58,19 @@ def setup(kubin):
         if hook == kubin.params.HOOK.BEFORE_PREPARE_PARAMS:
             model = kwargs["model"]
             if hasattr(model, "config"):
-                bind_unbind_networks(
+                bind_networks(
                     kubin,
                     model.config,
                     kwargs["prior"],
                     kwargs["decoder"],
                     kwargs["params"],
+                    kwargs["task"],
                     networks_info,
                 )
             else:
                 if not ignored:
                     ignored = True
-                    print(
+                    kubin.log(
                         "Current model does not support additional networks, so 'BEFORE_PREPARE_PARAMS' hook is ignored."
                     )
 
@@ -131,4 +132,5 @@ def setup(kubin):
         ),
         "hook_fn": on_hook,
         "settings_ui": settings_ui,
+        "supports": ["diffusers-kd22"],
     }

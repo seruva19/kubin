@@ -260,7 +260,10 @@ class SharedUI:
                             title,
                             open=ext_augment.get("opened", lambda o: False)(target),
                         ) as ext_container:
-                            ext_container.elem_classes = ["extension-container", name]
+                            ext_container.elem_classes = [
+                                "extension-container",
+                                *self.availability_classes(ext_augment),
+                            ]
 
                             ext_info = ext_augment["inject_ui"](target)
                             if isinstance(ext_info, Iterable):
@@ -303,3 +306,20 @@ class SharedUI:
             return sampler21
         else:
             return sampler_diffusers
+
+    def availability_classes(self, ext_augment):
+        classes = []
+        supports_pipeline_model = ext_augment.get("supports", ["diffusers-kd22"])
+        if "kd20" not in supports_pipeline_model:
+            classes.append("unsupported_20")
+
+        if "native-kd21" not in supports_pipeline_model:
+            classes.append("unsupported_21")
+
+        if "diffusers-kd21" not in supports_pipeline_model:
+            classes.append("unsupported_d21")
+
+        if "diffusers-kd22" not in supports_pipeline_model:
+            classes.append("unsupported_d21")
+
+        return classes

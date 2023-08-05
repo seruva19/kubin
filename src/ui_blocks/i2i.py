@@ -26,7 +26,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
                                 1,
                                 0.3,
                                 step=0.05,
-                                label="Strength",
+                                label="Transformation strength",
                                 info=shared.info(
                                     "Reference image transformation strength"
                                 ),
@@ -362,7 +362,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
                     if filename.endswith(tuple(extensions.split(";"))):
                         i2i_source.append(filename)
 
-                print(f"found {len(i2i_source)} images for i2i processing")
+                k_log(f"found {len(i2i_source)} images for i2i processing")
 
                 for index, imagename in enumerate(i2i_source):
                     imagepath = f"{input_folder}/{imagename}"
@@ -388,7 +388,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
                     if output_folder != "":
                         params[".output_dir"] = output_folder
 
-                    print(f"{index+1}/{len(i2i_source)}: processing {imagepath}")
+                    k_log(f"{index+1}/{len(i2i_source)}: processing {imagepath}")
                     _ = generate_fn(params)
                 return f"{len(i2i_source)} images successfully processed"
 

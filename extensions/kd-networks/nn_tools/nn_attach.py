@@ -12,70 +12,78 @@ from diffusers.models.attention_processor import (
 )
 
 
-def bind_unbind_networks(kubin, model_config, prior, decoder, params, networks_info):
-    bind_unbind_lora(kubin, model_config, prior, decoder, params, networks_info["lora"])
+def bind_networks(kubin, model_config, prior, decoder, params, task, networks_info):
+    bind_lora(kubin, model_config, prior, decoder, params, task, networks_info["lora"])
 
 
-def bind_unbind_lora(kubin, model_config, prior, decoder, params, loras):
+def bind_lora(kubin, model_config, prior, decoder, params, task, loras):
     params_session = params[".session"]
-    lora_info = loras.get(params_session, None)
-    lora_binded = model_config.get(".lora", None)
+    current_lora = loras.get(f"{task}-{params_session}", None)
 
-    if lora_info is not None:
-        lora_enabled = lora_info["enabled"]
-        lora_prior_path = lora_info["prior"]
-        lora_decoder_path = lora_info["decoder"]
+    if model_config.get(".lora", None) is not None and current_lora is None:
+        remove_lora_from_prior(kubin, prior)
+        remove_lora_from_decoder(kubin, decoder)
+        model_config.pop(".lora")
+
+    lora_already_binded = model_config.get(".lora", None)
+    if current_lora is not None:
+        lora_enabled = current_lora["enabled"]
+        lora_prior_path = current_lora["prior"]
+        lora_decoder_path = current_lora["decoder"]
 
         if lora_enabled:
-            if lora_binded:
-                b_prior, b_decoder = lora_binded
+            same_lora_prior_already_applied = False
+            same_lora_decoder_already_applied = False
 
-                if b_prior != lora_prior_path:
-                    remove_lora_from_prior(prior)
-                    print("removing previous LoRA attention layers from prior")
+            if lora_already_binded is not None:
+                binded_prior, binded_decoder = lora_already_binded
+                if binded_prior != lora_prior_path:
+                    remove_lora_from_prior(kubin, prior)
+                else:
+                    same_lora_prior_already_applied = True
+                if binded_decoder != lora_decoder_path:
+                    remove_lora_from_decoder(kubin, decoder)
+                else:
+                    same_lora_decoder_already_applied = True
 
-                if b_decoder != lora_decoder_path:
-                    remove_lora_from_decoder(decoder)
-                    print("removing previous LoRA attention layers from decoder")
+            if not same_lora_prior_already_applied and lora_prior_path is not None:
+                apply_lora_to_prior(kubin, lora_prior_path, prior)
+                params[
+                    "lora_prior"
+                ] = f"{os.path.basename(lora_prior_path)} [{calculate_file_hash(lora_prior_path)}]"
+            else:
+                kubin.log(f"no prior LoRA path declared")
+
+            if not same_lora_decoder_already_applied and lora_decoder_path is not None:
+                apply_lora_to_decoder(kubin, lora_decoder_path, decoder)
+                params[
+                    "lora_decoder"
+                ] = f"{os.path.basename(lora_decoder_path)} [{calculate_file_hash(lora_decoder_path)}]"
 
             else:
-                if lora_prior_path is not None:
-                    apply_lora_to_prior(kubin, lora_prior_path, prior)
-                    params[
-                        "lora_prior"
-                    ] = f"{os.path.basename(lora_prior_path)} [{calculate_file_hash(lora_prior_path)}]"
-                    print(
-                        f"applying prior LoRA attention layers from {lora_prior_path}"
-                    )
-                else:
-                    print(f"no prior LoRA path declared")
+                kubin.log(f"no decoder LoRA path declared")
 
-                if lora_decoder_path is not None:
-                    apply_lora_to_decoder(kubin, lora_decoder_path, decoder)
-                    params[
-                        "lora_decoder"
-                    ] = f"{os.path.basename(lora_decoder_path)} [{calculate_file_hash(lora_decoder_path)}]"
-                    print(
-                        f"applying decoder LoRA attention layers from {lora_decoder_path}"
-                    )
-                else:
-                    print(f"no decoder LoRA path declared")
-
-                model_config[".lora"] = lora_prior_path, lora_decoder_path
+            model_config[".lora"] = lora_prior_path, lora_decoder_path
 
         else:
-            if lora_binded:
-                b_prior, b_decoder = lora_binded
-                if b_prior is not None:
-                    remove_lora_from_prior(prior)
-                    print("discarding LoRA attention layers from prior")
-                if b_decoder is not None:
-                    remove_lora_from_decoder(decoder)
-                    print("discarding LoRA attention layers from decoder")
+            if lora_already_binded is not None:
+                binded_prior, binded_decoder = lora_already_binded
+                if binded_prior is not None:
+                    remove_lora_from_prior(kubin, prior)
+                if binded_decoder is not None:
+                    remove_lora_from_decoder(kubin, decoder)
+
                 model_config.pop(".lora")
 
 
+def get_rank_and_hidden_size(lora_model):
+    # there should be a better way to do it, but anyway
+    return tuple(lora_model[list(lora_model.keys())[0]].size())
+
+
 def apply_lora_to_prior(kubin, lora_prior_path, prior):
+    kubin.log(f"applying prior LoRA attention layers from {lora_prior_path}")
+
     device = (
         "cpu"
         if kubin.params("diffusers", "run_prior_on_cpu")
@@ -95,16 +103,14 @@ def apply_lora_to_prior(kubin, lora_prior_path, prior):
     prior.prior.load_state_dict(lora_model, strict=False)
 
 
-def remove_lora_from_prior(prior):
+def remove_lora_from_prior(kubin, prior):
+    kubin.log("removing existing LoRA attention layers from prior")
     prior.prior.set_default_attn_processor()
 
 
-def get_rank_and_hidden_size(lora_model):
-    # there should be a better way to do it, but anyway
-    return tuple(lora_model[list(lora_model.keys())[0]].size())
-
-
 def apply_lora_to_decoder(kubin, lora_decoder_path, decoder):
+    kubin.log(f"applying decoder LoRA attention layers from {lora_decoder_path}")
+
     device = kubin.params("general", "device")
 
     lora_attn_procs = {}
@@ -139,8 +145,9 @@ def apply_lora_to_decoder(kubin, lora_decoder_path, decoder):
     decoder.unet.load_state_dict(lora_model, strict=False)
 
 
-def remove_lora_from_decoder(decoder):
-    # decoder.unet.set_default_attn_processor()
+def remove_lora_from_decoder(kubin, decoder):
+    kubin.log("removing existing LoRA attention layers from decoder")
+
     unet_attention_classes = {
         type(processor) for _, processor in decoder.unet.attn_processors.items()
     }

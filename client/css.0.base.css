@@ -90,3 +90,7 @@ body.unselectable * {
 .kd-extension-settings-container.hidden {
   display: none;
 }
+
+.system-info textarea {
+  resize: none;
+}

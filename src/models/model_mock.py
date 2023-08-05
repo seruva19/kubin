@@ -7,6 +7,7 @@ import numpy as np
 from hooks.hooks import HOOK
 from params import KubinParams
 from utils.image import create_inpaint_targets
+from utils.logging import k_log
 
 # used for testing
 
@@ -14,7 +15,7 @@ from utils.image import create_inpaint_targets
 class Model_Mock:
     def __init__(self, params: KubinParams):
         self.params = params
-        print("activating pipeline: mock")
+        k_log("activating pipeline: mock")
 
         self.prior = type("obj", (object,), {"model": "prior"})
         self.decoder = type("obj", (object,), {"model": "decoder"})
@@ -23,11 +24,22 @@ class Model_Mock:
 
         self.params.hook_store.register_hook(
             ".mock",
-            lambda t, **k: print(f"mock model received hook event: {t}"),
+            lambda t, **k: k_log(f"mock model received hook event: {t}"),
         )
 
     def prepareModel(self, task):
-        print(f"preparing mock for {task}")
+        assert task in [
+            "text2img",
+            "text2img_cnet",
+            "img2img",
+            "img2img_cnet",
+            "mix",
+            "mix_cnet",
+            "inpainting",
+            "outpainting",
+        ]
+
+        k_log(f"preparing mock for {task}")
         return self.prior, self.decoder
 
     def flush(self, target=None):
@@ -35,7 +47,7 @@ class Model_Mock:
             HOOK.BEFORE_FLUSH_MODEL,
             **{"model": self, "target": target},
         )
-        print(f"mock memory freed")
+        k_log(f"mock memory freed")
         self.params.hook_store.call(
             HOOK.AFTER_FLUSH_MODEL,
             **{"model": self, "target": target},
@@ -44,8 +56,8 @@ class Model_Mock:
         self.config = {}
 
     def prepareParams(self, params):
-        print(params)
-        print("mock seed generated")
+        k_log(params)
+        k_log("mock seed generated")
 
     def t2i(self, params):
         self.params.hook_store.call(
@@ -67,20 +79,36 @@ class Model_Mock:
         )
 
         self.prepareParams(params)
-        print("mock t2i executed")
+        k_log("mock t2i executed")
         return self.dummyImages()
 
     def i2i(self, params):
-        self.prepareModel("i2i")
-        self.prepareParams(params)
-        print("mock i2i executed")
+        self.params.hook_store.call(
+            HOOK.BEFORE_PREPARE_MODEL,
+            **{"model": self, "params": params, "task": "img2img"},
+        )
 
+        prior, decoder = self.prepareModel("img2img")
+
+        self.params.hook_store.call(
+            HOOK.BEFORE_PREPARE_PARAMS,
+            **{
+                "model": self,
+                "params": params,
+                "task": "img2img",
+                "prior": prior,
+                "decoder": decoder,
+            },
+        )
+
+        self.prepareParams(params)
+        k_log("mock i2i executed")
         return self.dummyImages()
 
     def mix(self, params):
         self.prepareModel("mix")
         self.prepareParams(params)
-        print("mock mix executed")
+        k_log("mock mix executed")
 
         return self.dummyImages()
 
@@ -104,7 +132,7 @@ class Model_Mock:
         mask = mask.resize(output_size, resample=Image.LANCZOS)
         mask = mask.convert("L")
 
-        print("mock inpaint executed")
+        k_log("mock inpaint executed")
         return [image, mask]
 
     def outpaint(self, params):
@@ -145,7 +173,7 @@ class Model_Mock:
         )
         image = image.resize(mask_img.size, resample=Image.LANCZOS)
 
-        print("mock outpaint executed")
+        k_log("mock outpaint executed")
         return [image, mask_img]
 
     def dummyImages(self):
