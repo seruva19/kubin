@@ -53,8 +53,8 @@ def options_ui(kubin: Kubin, start_fn, ui):
             interactive=False,
         )
 
-        reset_changes = gr.Button(value="⏮️ Reset to default", label="Reset to default")
         restart_app = gr.Button(value="♻️ Restart app", label="Restart app")
+        reset_changes = gr.Button(value="⏮️ Reset to default", label="Reset to default")
 
     with gr.Row():
         options_info = gr.HTML("", elem_id="options-info", elem_classes=["block-info"])
@@ -103,18 +103,18 @@ def options_ui(kubin: Kubin, start_fn, ui):
         outputs=[apply_changes_success],
     )
 
-    reset_changes.click(
-        fn=lambda: kubin.params.reset_config(), queue=False, show_progress=False
-    ).then(
-        fn=None,
-        _js='() => kubin.notify.success("Restored default config. Restart the app for changes to take effect")',
-    )
-
     restart_app.click(
         fn=lambda: start_fn(kubin, ui),
         queue=False,
         show_progress=False,
         _js="() => kubin.utils.reloadUI()",
+    )
+
+    reset_changes.click(
+        fn=lambda: kubin.params.reset_config(), queue=False, show_progress=False
+    ).then(
+        fn=None,
+        _js='() => kubin.notify.success("Restored default config. Restart the app for changes to take effect")',
     )
 
     return options_block

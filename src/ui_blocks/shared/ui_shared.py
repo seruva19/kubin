@@ -36,7 +36,7 @@ class SharedUI:
             label="Reference image",
         )
         self.input_inpaint_image = gr.ImageMask(
-            type="pil", elem_classes=["inpaint_image"]
+            type="pil", elem_classes=["inpaint_image"], height=600
         )
         self.input_outpaint_image = gr.ImageMask(
             type="pil", tool="editor", elem_classes=["outpaint_image"]
@@ -152,7 +152,7 @@ class SharedUI:
                 inputs=[output, sender_index],
                 outputs=[self.input_outpaint_image],
             )
-        base_targets.elem_classes = ["send-targets"]
+        base_targets.elem_classes = ["send-targets", "send-targets-base"]
 
         with gr.Row() as cnet_targets:
             send_cnet_t2i_btn = gr.Button(
@@ -208,7 +208,7 @@ class SharedUI:
                 inputs=[output, sender_index],
                 outputs=[self.input_cnet_mix_image],
             )
-        cnet_targets.elem_classes = ["send-targets"]
+        cnet_targets.elem_classes = ["send-targets", "send-targets-cnet"]
 
     def create_ext_send_targets(self, output, sender, tabs):
         with gr.Row() as send_targets:
@@ -240,35 +240,51 @@ class SharedUI:
                 )
 
                 ext_image_targets.append(send_toext_btn)
-        send_targets.elem_classes = ["send-targets"]
+        send_targets.elem_classes = ["send-targets", "send-targets-extensions"]
 
     def create_ext_augment_blocks(self, target):
         ext_exec = {}
         ext_injections = []
 
-        def create_block():
+        def create_block(position):
             for ext_augment in self.extensions_augment:
                 name = ext_augment["_name"]
-                if target in ext_augment["targets"]:
-                    current_ext = ext_exec[name] = {"fn": ext_augment["inject_fn"]}
+                ext_position = ext_augment.get("inject_position", "after_params")
+                if position == ext_position:
+                    if target in ext_augment["targets"]:
+                        current_ext = ext_exec[name] = {
+                            "fn": ext_augment.get("inject_fn", lambda t, p, a: p)
+                        }
 
-                    with gr.Row() as row:
-                        title = ext_augment.get("inject_title", ext_augment["title"])
-                        with gr.Accordion(
-                            title,
-                            open=ext_augment.get("opened", lambda o: False)(target),
-                        ):
-                            ext_info = ext_augment["inject_ui"](target)
-                            if isinstance(ext_info, Iterable):
-                                current_ext["input_size"] = (len(ext_injections), len(ext_injections) + len(ext_info[1:]))  # type: ignore
-                                for ext_injection in ext_info[1:]:  # type: ignore
-                                    ext_injections.append(ext_injection)
-                            else:
-                                ext_injections.append(gr.State(None))
-                                current_ext["input_size"] = (
-                                    len(ext_injections),
-                                    len(ext_injections) + 1,
-                                )
+                        with gr.Row() as row:
+                            title = ext_augment.get(
+                                "inject_title", ext_augment["title"]
+                            )
+                            with gr.Accordion(
+                                title,
+                                open=ext_augment.get("opened", lambda o: False)(target),
+                            ) as ext_container:
+                                ext_container.elem_classes = [
+                                    "extension-container",
+                                    *self.availability_classes(ext_augment),
+                                ]
+
+                                ext_info = ext_augment["inject_ui"](target)
+                                if isinstance(ext_info, Iterable):
+                                    current_ext["input_size"] = (
+                                        len(ext_injections),
+                                        len(ext_injections) + len(ext_info[1:]),
+                                    )
+                                    for ext_injection in ext_info[1:]:
+                                        ext_injections.append(ext_injection)
+                                else:
+                                    ext_injections.append(gr.State(None))
+                                    current_ext["input_size"] = (
+                                        len(ext_injections),
+                                        len(ext_injections) + 1,
+                                    )
+                else:
+                    None
 
         def augment_params(target, params, injections):
             for _, data in ext_exec.items():
@@ -278,7 +294,10 @@ class SharedUI:
             return params
 
         return {
-            "ui": lambda: create_block(),
+            "ui": lambda: create_block("after_params"),
+            "ui_before_prompt": lambda: create_block("before_prompt"),
+            "ui_before_cnet": lambda: create_block("before_cnet"),
+            "ui_before_params": lambda: create_block("before_params"),
             "exec": lambda p, a: augment_params(target, p, a),
             "injections": ext_injections,
         }
@@ -296,3 +315,20 @@ class SharedUI:
             return sampler21
         else:
             return sampler_diffusers
+
+    def availability_classes(self, ext_augment):
+        classes = []
+        supports_pipeline_model = ext_augment.get("supports", ["diffusers-kd22"])
+        if "kd20" not in supports_pipeline_model:
+            classes.append("unsupported_20")
+
+        if "native-kd21" not in supports_pipeline_model:
+            classes.append("unsupported_21")
+
+        if "diffusers-kd21" not in supports_pipeline_model:
+            classes.append("unsupported_d21")
+
+        if "diffusers-kd22" not in supports_pipeline_model:
+            classes.append("unsupported_d21")
+
+        return classes

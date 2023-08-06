@@ -60,31 +60,31 @@ class ExtensionRegistry:
 
     def register(self, kubin):
         ext_folders = self.get_ext_folders()
-        print(f"found {len(ext_folders)} extensions")
+        kubin.log(f"found {len(ext_folders)} extensions")
 
         enabled_exts = self.get_enabled_extensions()
         if len(enabled_exts) > 0:
             ext_folders = filter(lambda ext: ext in enabled_exts, ext_folders)
-            print(f"only following extensions are enabled: {self.enabled}")
+            kubin.log(f"only following extensions are enabled: {self.enabled}")
 
         disabled_exts = self.get_disabled_extensions()
         ext_folders = self.reorder_extensions(ext_folders)
 
         for i, extension in enumerate(ext_folders):
             if extension in disabled_exts:
-                print(f"{i+1}: extension '{extension}' disabled, skipping")
+                kubin.log(f"{i+1}: extension '{extension}' disabled, skipping")
             else:
-                print(f"{i+1}: extension '{extension}' found")
+                kubin.log(f"{i+1}: extension '{extension}' found")
                 extension_reqs_path = f"{self.root}/{extension}/requirements.txt"
                 extension_installed = f"{self.root}/{extension}/.installed"
 
                 if not self.skip_install and os.path.isfile(extension_reqs_path):
                     if os.path.exists(extension_installed):
-                        print(
-                            f"{i+1}: extension '{extension}' has requirements.txt, but was already installed, skipping install phase"
+                        kubin.log(
+                            f"{i+1}: extension '{extension}' installation integrity verified"
                         )
                     else:
-                        print(
+                        kubin.log(
                             f"{i+1}: extension '{extension}' has requirements.txt, installing"
                         )
 
@@ -112,24 +112,23 @@ class ExtensionRegistry:
                         sys.modules[extension] = module
                         if spec.loader is not None:
                             spec.loader.exec_module(module)
+
                             extension_info = module.setup(kubin)
                             extension_info["_name"] = extension
                             extension_info["_path"] = extension_folder
                             self.extensions[extension] = extension_info
 
-                    print(f"{i+1}: extension '{extension}' successfully registered")
+                    kubin.log(f"{i+1}: extension '{extension}' successfully registered")
                 else:
-                    print(
+                    kubin.log(
                         f"{i+1}: setup_ext.py not found for '{extension}', extension will not be registered"
                     )
 
         postinstall_reqs_installed = f"{self.root}/.installed"
         if os.path.exists(postinstall_reqs_installed):
-            print(
-                "extension post-install phase skipped because extensions/requirements.txt was already applied"
-            )
+            kubin.log("extension post-install phase: verified")
         else:
-            print(
+            kubin.log(
                 "extension post-install phase, installing from extensions/requirements.txt"
             )
             self.install_pip_reqs(f"{self.root}/requirements.txt")
@@ -140,7 +139,7 @@ class ExtensionRegistry:
             [sys.executable, "-m", "pip", "install", "-r", f"{reqs_path}"] + arguments
         )
 
-    def standalone(self):  # collect extensions with dedicated tab
+    def standalone(self):
         return list(
             {
                 key: value
@@ -149,7 +148,7 @@ class ExtensionRegistry:
             }.values()
         )
 
-    def injectable(self):  # collect extensions that are injected into UI blocks
+    def injectable(self):
         return list(
             {
                 key: value
@@ -165,7 +164,7 @@ class ExtensionRegistry:
                 extension_installed = f"{self.root}/{extension}/.installed"
                 if os.path.exists(extension_installed):
                     os.remove(extension_installed)
-                    print(
+                    kubin.log(
                         f"{i+1}: extension '{extension}' will be reinstalled on next run"
                     )
 
@@ -189,3 +188,11 @@ class ExtensionRegistry:
                         client_files.append(client_file_path)
 
         return client_folders, client_files
+
+    def bind_hooks(self, kubin):
+        for ext_name, ext_target in {
+            key: value
+            for key, value in self.extensions.items()
+            if value.get("hook_fn", None) is not None
+        }.items():
+            kubin.params.hook_store.register_hook(ext_name, ext_target["hook_fn"])

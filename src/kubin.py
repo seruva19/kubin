@@ -1,7 +1,7 @@
 from arguments import parse_arguments
 from env import Kubin
 from utils.platform import is_windows
-from webui import gradio_ui
+from web_gui import gradio_ui
 from pathlib import Path
 
 kubin = Kubin()
@@ -10,9 +10,10 @@ args = parse_arguments()
 
 def init_kubin(kubin: Kubin):
     kubin.with_args(args)
-    kubin.with_pipeline()
     kubin.with_utils()
     kubin.with_extensions()
+    kubin.with_hooks()
+    kubin.with_pipeline()
 
 
 def reload_app(ui):
@@ -46,7 +47,7 @@ def start(kubin, ui):
         concurrency_count=kubin.params("gradio", "concurrency_count"), api_open=True
     ).launch(
         prevent_thread_lock=True,
-        show_api=True,
+        show_api=False,
         debug=kubin.params("gradio", "debug"),
         show_error=True,
         share=kubin.params("general", "share") == "gradio",

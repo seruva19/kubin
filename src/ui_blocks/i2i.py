@@ -7,11 +7,13 @@ import os
 from PIL import Image
 
 
-def i2i_ui(generate_fn, shared: SharedUI, tabs):
+def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
     augmentations = shared.create_ext_augment_blocks("i2i")
 
     with gr.Row() as i2i_block:
         with gr.Column(scale=2) as i2i_params:
+            augmentations["ui_before_prompt"]()
+
             with gr.Tabs():
                 with gr.TabItem("Single image"):
                     with gr.Row():
@@ -21,6 +23,19 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                             prompt = gr.TextArea(
                                 "", placeholder="", label="Prompt", lines=2
                             )
+                            strength = gr.Slider(
+                                0,
+                                1,
+                                0.3,
+                                step=0.05,
+                                label="Transformation strength",
+                                info=shared.info(
+                                    "Reference image transformation strength"
+                                ),
+                            )
+
+                    augmentations["ui_before_cnet"]()
+
                     with gr.Accordion("ControlNet", open=False) as i2i_cnet:
                         cnet_enable = gr.Checkbox(
                             False, label="Enable", elem_classes=["cnet-enable"]
@@ -82,13 +97,22 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                     batch_prompt = gr.TextArea(
                         "", placeholder="", label="Prompt", lines=2
                     )
-                    img_extension = gr.Textbox(
-                        ".jpg;.jpeg;.png;.bmp",
-                        label="File extension filter",
-                        info=shared.info(
-                            "Only use images with the following extensions"
-                        ),
-                    )
+                    with gr.Row():
+                        img_extension = gr.Textbox(
+                            ".jpg;.jpeg;.png;.bmp",
+                            label="File extension filter",
+                            info=shared.info(
+                                "Only use images with the following extensions"
+                            ),
+                        )
+                        batch_strength = gr.Slider(
+                            0,
+                            1,
+                            0.3,
+                            step=0.05,
+                            label="Input image strength",
+                            info=shared.info("Reference image transformation strength"),
+                        )
                     with gr.Row():
                         generate_batch_i2i = gr.Button(
                             "🖼️ Execute batch processing", variant="secondary"
@@ -97,6 +121,8 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                             "🔍 Show images from output folder", variant="secondary"
                         )
                     batch_progress = gr.HTML(label="Batch progress")
+
+            augmentations["ui_before_params"]()
 
             with gr.Accordion(
                 "Advanced params", open=not shared.ui_params("collapse_advanced_params")
@@ -113,24 +139,19 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                     guidance_scale = gr.Slider(
                         1,
                         30,
-                        7,
+                        4,
                         step=1,
                         label="Guidance scale",
                         elem_classes=["inline-flex"],
                     )
-
-                    strength = gr.Slider(
-                        0,
+                    batch_count = gr.Slider(
                         1,
-                        0.3,
-                        step=0.05,
-                        label="Strength",
-                        info=shared.info("Reference image transformation strength"),
+                        shared.ui_params("max_batch_count"),
+                        4,
+                        step=1,
+                        label="Batch count",
                     )
 
-                with gr.Row():
-                    batch_count = gr.Slider(1, 16, 4, step=1, label="Batch count")
-                    batch_size = gr.Slider(1, 16, 1, step=1, label="Batch size")
                 with gr.Row():
                     width = gr.Slider(
                         shared.ui_params("image_width_min"),
@@ -139,6 +160,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                         step=shared.ui_params("image_width_step"),
                         label="Width",
                     )
+                    width.elem_classes = ["inline-flex"]
                     height = gr.Slider(
                         shared.ui_params("image_height_min"),
                         shared.ui_params("image_height_max"),
@@ -146,14 +168,24 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                         step=shared.ui_params("image_height_step"),
                         label="Height",
                     )
-                with gr.Row():
+                    height.elem_classes = ["inline-flex"]
+                    aspect_ratio = gr.Dropdown(
+                        choices=["none", "1:1", "16:9", "9:16", "3:2", "2:3"],
+                        value="none",
+                        label="Aspect ratio",
+                        elem_id="i2i-aspect",
+                    )
+
+                with gr.Row(equal_height=True):
                     (
                         sampler_20,
                         sampler_21_native,
                         sampler_diffusers,
                     ) = samplers_controls()
-
                     seed = gr.Number(-1, label="Seed", precision=0)
+                    batch_size = gr.Slider(1, 16, 1, step=1, label="Batch size")
+                    batch_size.elem_classes = ["unsupported_20", "inline-flex"]
+
                 with gr.Row() as prior_block:
                     prior_scale = gr.Slider(
                         1,
@@ -177,6 +209,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                         elem_classes=["inline-flex"],
                         lines=2,
                     )
+                prior_block.elem_classes = ["unsupported_20"]
 
             augmentations["ui"]()
 
@@ -200,6 +233,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
             shared.create_ext_send_targets(i2i_output, "i2i-output", tabs)
 
             def generate(
+                session,
                 image,
                 prompt,
                 negative_prior_prompt,
@@ -239,6 +273,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                         cnet_target_image = cnet_image
 
                 params = {
+                    ".session": session,
                     "init_image": image,
                     "prompt": prompt,
                     "negative_prior_prompt": negative_prior_prompt,
@@ -269,6 +304,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                 element=generate_i2i,
                 fn=generate,
                 inputs=[
+                    session,
                     shared.input_i2i_image,
                     prompt,
                     negative_prior_prompt,
@@ -295,14 +331,19 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                 ]
                 + augmentations["injections"],
                 outputs=i2i_output,
+                js=[
+                    "args => kubin.UI.taskStarted('Image To Image')",
+                    "args => kubin.UI.taskFinished('Image To Image')",
+                ],
             )
 
             def generate_batch(
+                session,
                 input_folder,
                 output_folder,
                 extensions,
                 batch_prompt,
-                strength,
+                batch_strength,
                 steps,
                 batch_count,
                 batch_size,
@@ -332,16 +373,17 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                     if filename.endswith(tuple(extensions.split(";"))):
                         i2i_source.append(filename)
 
-                print(f"found {len(i2i_source)} images for i2i processing")
+                k_log(f"found {len(i2i_source)} images for i2i processing")
 
                 for index, imagename in enumerate(i2i_source):
                     imagepath = f"{input_folder}/{imagename}"
                     image = Image.open(imagepath)
 
                     params = {
+                        ".session": session,
                         "init_image": image,
                         "prompt": batch_prompt,
-                        "strength": strength,
+                        "strength": batch_strength,
                         "num_steps": steps,
                         "batch_count": batch_count,
                         "batch_size": batch_size,
@@ -358,7 +400,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                     if output_folder != "":
                         params[".output_dir"] = output_folder
 
-                    print(f"{index+1}/{len(i2i_source)}: processing {imagepath}")
+                    k_log(f"{index+1}/{len(i2i_source)}: processing {imagepath}")
                     _ = generate_fn(params)
                 return f"{len(i2i_source)} images successfully processed"
 
@@ -366,11 +408,12 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                 generate_batch_i2i,
                 generate_batch,
                 [
+                    session,
                     input_folder,
                     output_folder,
                     img_extension,
                     batch_prompt,
-                    strength,
+                    batch_strength,
                     steps,
                     batch_count,
                     batch_size,
@@ -408,8 +451,6 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs):
                 inputs=[output_folder, img_extension],
                 outputs=[i2i_output, batch_progress],
             )
-
-        batch_size.elem_classes = prior_block.elem_classes = ["unsupported_20"]
 
         i2i_params.elem_classes = ["block-params i2i_params"]
         i2i_advanced_params.elem_classes = ["block-advanced-params i2i_advanced_params"]

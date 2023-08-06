@@ -44,7 +44,7 @@
   kubin.notify = {
     lib: undefined,
     success: message => kubin.notify.lib.success(message),
-    warning: message => kubin.notify.lib.warning(message),
+    warning: message => kubin.notify.lib.open({ type: 'warning', message }),
     error: message => kubin.notify.lib.error(message)
   }
 

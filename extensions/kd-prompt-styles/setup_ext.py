@@ -24,6 +24,26 @@ def write_styles(styles):
         )
 
 
+def append_style(target, params, current_style, default_style):
+    style_not_chosen = current_style["name"] == default_style["name"]
+    style_prompt = current_style["prompt"]
+    style_negative_prompt = current_style["negative"]
+
+    if "prompt" in params:
+        params["prompt"] += (
+            "" if style_not_chosen or style_prompt is None else f", {style_prompt}"
+        )
+
+    if "negative_prompt" in params:
+        params["negative_prompt"] += (
+            ""
+            if style_not_chosen or style_negative_prompt is None
+            else f", {style_negative_prompt}"
+        )
+
+    return params
+
+
 def setup(kubin):
     targets = ["t2i", "i2i", "mix", "inpaint", "outpaint"]
 
@@ -229,23 +249,3 @@ def setup(kubin):
         ),
         "targets": targets,
     }
-
-
-def append_style(target, params, current_style, default_style):
-    style_not_chosen = current_style["name"] == default_style["name"]
-    style_prompt = current_style["prompt"]
-    style_negative_prompt = current_style["negative"]
-
-    if "prompt" in params:
-        params["prompt"] += (
-            "" if style_not_chosen or style_prompt is None else f", {style_prompt}"
-        )
-
-    if "negative_prompt" in params:
-        params["negative_prompt"] += (
-            ""
-            if style_not_chosen or style_negative_prompt is None
-            else f", {style_negative_prompt}"
-        )
-
-    return params

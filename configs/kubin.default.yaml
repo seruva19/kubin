@@ -5,10 +5,11 @@ general:
   output_dir: output
   pipeline: diffusers
   mock: false
+  profiler: none
   extensions_path: extensions
   enabled_extensions: null
   disabled_extensions: null
-  extensions_order: kd-upscaler,kd-image-editor;kd-image-browser,kd-training
+  extensions_order: kd-upscaler;kd-image-browser,kd-networks,kd-training
   skip_install: false
   safe_mode: false
   share: none
@@ -31,6 +32,7 @@ ui:
   image_height_step: 64
   image_height_default: 768
   decoder_steps_default: 50
+  max_batch_count: 64
   allow_params_panel_resize: true
   enable_vertical_alignment: false
   collapse_advanced_params: false

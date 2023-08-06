@@ -6,24 +6,30 @@ from PIL import Image, ImageOps
 import numpy as np
 import torch
 import torch.backends
-
 from params import KubinParams
-from model_utils.kandinsky_utils import get_checkpoint
-from kandinsky2 import Kandinsky2_1
+from kandinsky2 import CONFIG_2_1
+from utils.yaml import flatten_yaml
 from utils.file_system import save_output
+from utils.logging import k_log
 from utils.image import create_inpaint_targets, create_outpaint_targets
 
 
 class Model_KD21:
     def __init__(self, params: KubinParams):
-        print("activating pipeline: native (2.1)")
+        from kandinsky2 import Kandinsky2_1
+
+        k_log("activating pipeline: native (2.1)")
         self.params = params
 
         self.kd21: Kandinsky2_1 | None = None
         self.kd21_inpaint: Kandinsky2_1 | None = None
 
+        self.system_config = flatten_yaml(CONFIG_2_1)
+
     def prepareModel(self, task):
-        print(f"task queued: {task}")
+        from model_utils.kd21_utils import get_checkpoint
+
+        k_log(f"task queued: {task}")
         assert task in ["text2img", "img2img", "mix", "inpainting", "outpainting"]
 
         clear_vram_on_switch = True
@@ -69,7 +75,7 @@ class Model_KD21:
         return self
 
     def flush(self, target=None):
-        print(f"clearing memory")
+        k_log(f"clearing memory")
 
         if target is None or target in ["text2img", "img2img", "mix"]:
             if self.kd21 is not None:
@@ -97,7 +103,7 @@ class Model_KD21:
         torch.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)
 
-        print(f"seed generated: {seed}")
+        k_log(f"seed generated: {seed}")
         params["input_seed"] = seed
         params["model_name"] = "kd2.1"
         return params

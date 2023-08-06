@@ -5,17 +5,19 @@ from ui_blocks.shared.ui_shared import SharedUI
 from utils.gradio_ui import click_and_disable
 
 
-def outpaint_ui(generate_fn, shared: SharedUI, tabs):
+def outpaint_ui(generate_fn, shared: SharedUI, tabs, session):
     augmentations = shared.create_ext_augment_blocks("outpaint")
 
     with gr.Row() as outpaint_block:
         with gr.Column(scale=2) as outpaint_params:
+            augmentations["ui_before_prompt"]()
+
             with gr.Row():
                 with gr.Column(scale=1):
                     shared.input_outpaint_image.render()
 
                 with gr.Column(scale=1):
-                    manual_control = gr.Checkbox(True, label="Expansion offset")
+                    manual_control = gr.Checkbox(True, label="Outpaint area offset")
                     offset_top = gr.Slider(
                         1,
                         1024,
@@ -67,6 +69,9 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs):
                     "", placeholder="", label="Negative prompt", lines=2
                 )
 
+            augmentations["ui_before_cnet"]()
+            augmentations["ui_before_params"]()
+
             with gr.Accordion(
                 "Advanced params", open=not shared.ui_params("collapse_advanced_params")
             ) as outpaint_advanced_params:
@@ -78,11 +83,15 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs):
                         step=1,
                         label="Steps",
                     )
-                    guidance_scale = gr.Slider(
-                        1, 30, 10, step=1, label="Guidance scale"
-                    )
+                    guidance_scale = gr.Slider(1, 30, 4, step=1, label="Guidance scale")
                 with gr.Row():
-                    batch_count = gr.Slider(1, 16, 4, step=1, label="Batch count")
+                    batch_count = gr.Slider(
+                        1,
+                        shared.ui_params("max_batch_count"),
+                        4,
+                        step=1,
+                        label="Batch count",
+                    )
                     batch_size = gr.Slider(1, 16, 1, step=1, label="Batch size")
                 with gr.Row():
                     infer_size = gr.Checkbox(
@@ -166,6 +175,7 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs):
             shared.create_ext_send_targets(outpaint_output, "outpaint-output", tabs)
 
             def generate(
+                session,
                 image,
                 prompt,
                 negative_prompt,
@@ -195,6 +205,7 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs):
                 )
 
                 params = {
+                    ".session": session,
                     "image": image,
                     "prompt": prompt,
                     "negative_prompt": negative_prompt,
@@ -222,6 +233,7 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs):
             element=generate_outpaint,
             fn=generate,
             inputs=[
+                session,
                 shared.input_outpaint_image,
                 prompt,
                 negative_prompt,
@@ -247,6 +259,10 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs):
             ]
             + augmentations["injections"],
             outputs=outpaint_output,
+            js=[
+                "args => kubin.UI.taskStarted('Outpainting')",
+                "args => kubin.UI.taskFinished('Outpainting')",
+            ],
         )
 
         outpaint_params.elem_classes = ["block-params outpaint_params"]

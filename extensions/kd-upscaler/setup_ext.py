@@ -6,6 +6,9 @@ from RealESRGAN import RealESRGAN
 import os
 
 
+title = "Upscaler"
+
+
 def setup(kubin):
     source_image = gr.Image(
         type="pil", label="Image to upscale", elem_classes=["full-height"]
@@ -17,16 +20,16 @@ def setup(kubin):
                 with gr.Row():
                     source_image.render()
 
-                    with gr.Column() as upscale_selector:
-                        upscaler = gr.Radio(
-                            ["Real-ESRGAN"], value="Real-ESRGAN", label="Upscaler"
-                        )
-                        scale = gr.Radio(
-                            ["2", "4", "8"],
-                            value="2",
-                            label="Upscale by",
-                            interactive=True,
-                        )
+                with gr.Column() as upscale_selector:
+                    upscaler = gr.Radio(
+                        ["Real-ESRGAN"], value="Real-ESRGAN", label="Upscaler"
+                    )
+                    scale = gr.Radio(
+                        ["2", "4", "8"],
+                        value="2",
+                        label="Upscale by",
+                        interactive=True,
+                    )
 
                 with gr.Row():
                     clear_memory = gr.Checkbox(False, label="Clear VRAM before upscale")
@@ -35,7 +38,7 @@ def setup(kubin):
                 upscale_btn = gr.Button("Upscale", variant="primary")
                 upscale_output = gr.Gallery(label="Upscaled Image", preview=True)
 
-                ui_shared.create_base_send_targets(upscale_output, gr.State(0), ui_tabs)  # type: ignore
+                ui_shared.create_base_send_targets(upscale_output, gr.State(0), ui_tabs)
 
             kubin.ui_utils.click_and_disable(
                 upscale_btn,
@@ -54,14 +57,18 @@ def setup(kubin):
                     clear_memory,
                 ],
                 outputs=upscale_output,
+                js=[
+                    f"args => kubin.UI.taskStarted('{title}')",
+                    f"args => kubin.UI.taskFinished('{title}')",
+                ],
             )
 
             upscaler_params_block.elem_classes = ["block-params"]
         return upscaler_block
 
     return {
-        "send_to": "📐 Send to Upscaler",
-        "title": "Upscaler",
+        "send_to": f"📐 Send to {title}",
+        "title": title,
         "tab_ui": lambda ui_s, ts: upscaler_ui(ui_s, ts),
         "send_target": source_image,
     }
@@ -89,7 +96,7 @@ def upscale_with(
         return upscaled_image_path
 
     else:
-        print(f"upscale method {upscaler} not implemented")
+        kubin.log(f"upscale method {upscaler} not implemented")
         return []
 
 

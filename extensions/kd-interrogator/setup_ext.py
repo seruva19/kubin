@@ -5,6 +5,7 @@ import pandas as pd
 import torch
 import os
 
+title = "Interrogator"
 use_monkey_patch = False
 
 
@@ -60,9 +61,7 @@ def cancel_patch(patch):
 def setup(kubin):
     ci = None
     ci_config = None
-    source_image = gr.Image(
-        type="pil", label="Input image", elem_classes=["full-height"]
-    )
+    source_image = gr.Image(type="pil", label="Input image", elem_classes=[])
 
     def get_interrogator(clip_model, blip_type, cache_path, chunk_size):
         nonlocal ci
@@ -223,6 +222,10 @@ def setup(kubin):
                                     chunk_size,
                                 ],
                                 outputs=[target_text],
+                                js=[
+                                    f"args => kubin.UI.taskStarted('{title}')",
+                                    f"args => kubin.UI.taskFinished('{title}')",
+                                ],
                             )
                     with gr.TabItem("Batch"):
                         image_dir = gr.Textbox(label="Directory with images")
@@ -285,14 +288,18 @@ def setup(kubin):
                                 chunk_size,
                             ],
                             outputs=[progress],
+                            js=[
+                                f"args => kubin.UI.taskStarted('{title}')",
+                                f"args => kubin.UI.taskFinished('{title}')",
+                            ],
                         )
 
             interrogator_params_block.elem_classes = ["block-params"]
         return interrogator_block
 
     return {
-        "title": "Interrogator",
-        "send_to": "📄 Send to Interrogator",
+        "title": title,
+        "send_to": f"📄 Send to{title}",
         "tab_ui": lambda ui_s, ts: interrogator_ui(ui_s, ts),
         "send_target": source_image,
         "api": {

@@ -6,6 +6,8 @@
 /flagged
 /configs/*.yaml
 !/configs/kubin.default.yaml
+/extensions/*/config.yaml
+!/extensions/*/config.default.yaml
 /models
 /output
 /train

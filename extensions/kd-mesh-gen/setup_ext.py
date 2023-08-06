@@ -17,6 +17,8 @@ from shap_e.models.transmitter.base import Transmitter, VectorDecoder
 from shap_e.rendering.torch_mesh import TorchMesh
 from shap_e.util.collections import AttrDict
 
+title = "Mesh Generator"
+
 
 def setup(kubin):
     source_image = gr.Image(
@@ -24,8 +26,6 @@ def setup(kubin):
     )
 
     def model_3d_ui(ui_shared, ui_tabs):
-        selected_model_index = gr.State(None)
-
         with gr.Row() as model_3d_block:
             with gr.Column(scale=1) as model_3d_params_block:
                 with gr.Row():
@@ -48,6 +48,10 @@ def setup(kubin):
                     gr.State(kubin.params("general", "device")),
                 ],
                 outputs=model_output,
+                js=[
+                    f"args => kubin.UI.taskStarted('{title}')",
+                    f"args => kubin.UI.taskFinished('{title}')",
+                ],
             )
 
             model_3d_params_block.elem_classes = ["block-params"]
@@ -55,8 +59,8 @@ def setup(kubin):
         return model_3d_block
 
     return {
-        "send_to": "🗿 Send to Mesh Generator",
-        "title": "Mesh Generator",
+        "send_to": f"🗿 Send to {title}",
+        "title": title,
         "tab_ui": lambda ui_s, ts: model_3d_ui(ui_s, ts),
         "send_target": source_image,
     }
@@ -104,12 +108,12 @@ def create_model(kubin, source_image, output_dir, device):
         os.makedirs(save_path)
 
     for _, latent in enumerate(latents):
-        t = decode_latent_mesh(xm, latent).tri_mesh()  # type: ignore
+        t = decode_latent_mesh(xm, latent).tri_mesh()
         uid = uuid.uuid4()
 
         obj_path = f"{save_path}/{uid}.obj"
         with open(obj_path, "w") as f:
-            t.write_obj(f)  # type: ignore
+            t.write_obj(f)
             objects.append(obj_path)
 
     unpatch(p)
@@ -122,15 +126,13 @@ def decode_latent_mesh(
     latent: torch.Tensor,
 ) -> TorchMesh:
     decoded = xm.renderer.render_views(
-        AttrDict(
-            cameras=create_pan_cameras(2, latent.device)
-        ),  # lowest resolution possible
+        AttrDict(cameras=create_pan_cameras(2, latent.device)),
         params=(xm.encoder if isinstance(xm, Transmitter) else xm).bottleneck_to_params(
             latent[None]
-        ),  # type: ignore
+        ),
         options=AttrDict(rendering_mode="stf", render_with_direction=False),
     )
-    return decoded.raw_meshes[0]  # type: ignore
+    return decoded.raw_meshes[0]
 
 
 def create_pan_cameras(size: int, device: torch.device) -> DifferentiableCameraBatch:
@@ -150,7 +152,7 @@ def create_pan_cameras(size: int, device: torch.device) -> DifferentiableCameraB
         zs.append(z)
 
     return DifferentiableCameraBatch(
-        shape=(1, len(xs)),  # type: ignore
+        shape=(1, len(xs)),
         flat_camera=DifferentiableProjectiveCamera(
             origin=torch.from_numpy(np.stack(origins, axis=0)).float().to(device),
             x=torch.from_numpy(np.stack(xs, axis=0)).float().to(device),

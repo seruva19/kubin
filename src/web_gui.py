@@ -5,6 +5,7 @@ from ui_blocks.inpaint import inpaint_ui
 from ui_blocks.mix import mix_ui
 from ui_blocks.outpaint import outpaint_ui
 from ui_blocks.settings import settings_ui
+from ui_blocks.settings_system import system_ui
 from ui_blocks.extensions import extensions_ui
 from ui_blocks.shared.ui_shared import SharedUI
 from ui_blocks.t2i import t2i_ui
@@ -26,7 +27,14 @@ def gradio_ui(kubin: Kubin, start_fn):
         theme=ui_shared.select_theme(kubin.params("gradio", "theme")),
         css=css_styles,
     ) as ui:
-        ui.load(fn=None, _js=js_loader(ext_client_resources, kubin.params.to_json()))
+        session = gr.Textbox("-1", visible=False)
+
+        ui.load(
+            fn=None,
+            _js=js_loader(ext_client_resources, kubin.params.to_json()),
+            inputs=[session],
+            outputs=[session],
+        )
 
         with gr.Tabs() as ui_tabs:
             with gr.TabItem("Text To Image", id=0) as t2i_tabitem:
@@ -34,6 +42,7 @@ def gradio_ui(kubin: Kubin, start_fn):
                     generate_fn=lambda params: kubin.model.t2i(params),
                     shared=ui_shared,
                     tabs=ui_tabs,
+                    session=session,
                 )
 
             with gr.TabItem("Image To Image", id=1) as i2i_tabitem:
@@ -41,6 +50,7 @@ def gradio_ui(kubin: Kubin, start_fn):
                     generate_fn=lambda params: kubin.model.i2i(params),
                     shared=ui_shared,
                     tabs=ui_tabs,
+                    session=session,
                 )
 
             with gr.TabItem("Mix Images", id=2) as mix_tabitem:
@@ -48,6 +58,7 @@ def gradio_ui(kubin: Kubin, start_fn):
                     generate_fn=lambda params: kubin.model.mix(params),
                     shared=ui_shared,
                     tabs=ui_tabs,
+                    session=session,
                 )
 
             with gr.TabItem("Inpainting", id=3) as inpaint_tabitem:
@@ -55,6 +66,7 @@ def gradio_ui(kubin: Kubin, start_fn):
                     generate_fn=lambda params: kubin.model.inpaint(params),
                     shared=ui_shared,
                     tabs=ui_tabs,
+                    session=session,
                 )
 
             with gr.TabItem("Outpainting", id=4) as outpaint_tabitem:
@@ -62,6 +74,7 @@ def gradio_ui(kubin: Kubin, start_fn):
                     generate_fn=lambda params: kubin.model.outpaint(params),
                     shared=ui_shared,
                     tabs=ui_tabs,
+                    session=session,
                 )
 
             create_ext_tabs(ext_standalone, ext_start_tab_index, ui_shared, ui_tabs)
@@ -72,6 +85,9 @@ def gradio_ui(kubin: Kubin, start_fn):
 
             with gr.TabItem("Settings", id=next_id + 3) as settings_tabitem:
                 settings_ui(kubin, start_fn, ui)
+
+            with gr.TabItem("System/Debug", id=next_id + 4) as system_tabitem:
+                system_ui(kubin)
 
         ui_tabs.elem_classes = [
             "ui-tabs",

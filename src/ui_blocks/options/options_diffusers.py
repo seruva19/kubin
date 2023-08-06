@@ -10,47 +10,47 @@ def options_tab_diffusers(kubin: Kubin):
         elem_classes=["options-block", "options-diffusers"]
     ) as diffusers_options:
         half_precision_weights = gr.Checkbox(
-            value=kubin.params("diffusers", "half_precision_weights"),
+            value=lambda: kubin.params("diffusers", "half_precision_weights"),
             label="Enable half precision weights",
         )
         enable_xformers = gr.Checkbox(
-            value=kubin.params("diffusers", "enable_xformers"),
+            value=lambda: kubin.params("diffusers", "enable_xformers"),
             label="Enable xformers memory efficient attention",
         )
         enable_sliced_attention = gr.Checkbox(
-            value=kubin.params("diffusers", "enable_sliced_attention"),
+            value=lambda: kubin.params("diffusers", "enable_sliced_attention"),
             label="Enable attention slicing",
         )
         sequential_cpu_offload = gr.Checkbox(
-            value=kubin.params("diffusers", "sequential_cpu_offload"),
+            value=lambda: kubin.params("diffusers", "sequential_cpu_offload"),
             label="Enable sequential CPU offload",
         )
         full_model_offload = gr.Checkbox(
-            value=kubin.params("diffusers", "full_model_offload"),
+            value=lambda: kubin.params("diffusers", "full_model_offload"),
             label="Enable full-model offloading",
         )
         channels_last_memory = gr.Checkbox(
-            value=kubin.params("diffusers", "channels_last_memory"),
+            value=lambda: kubin.params("diffusers", "channels_last_memory"),
             label="Enable channels last memory format",
         )
         torch_code_compilation = gr.Checkbox(
-            value=kubin.params("diffusers", "torch_code_compilation"),
+            value=lambda: kubin.params("diffusers", "torch_code_compilation"),
             label="Enable torch code compilation",
         )
         use_deterministic_algorithms = gr.Checkbox(
-            value=kubin.params("diffusers", "use_deterministic_algorithms"),
+            value=lambda: kubin.params("diffusers", "use_deterministic_algorithms"),
             label="Enable torch deterministic algorithms",
         )
         enable_sdp_attention = gr.Checkbox(
-            value=kubin.params("diffusers", "enable_sdp_attention"),
+            value=lambda: kubin.params("diffusers", "enable_sdp_attention"),
             label="Enable forced SDP attention",
         )
         use_tf32_mode = gr.Checkbox(
-            value=kubin.params("diffusers", "use_tf32_mode"),
+            value=lambda: kubin.params("diffusers", "use_tf32_mode"),
             label="Enable TensorFloat32 mode",
         )
         run_prior_on_cpu = gr.Checkbox(
-            value=kubin.params("diffusers", "run_prior_on_cpu"),
+            value=lambda: kubin.params("diffusers", "run_prior_on_cpu"),
             label="Enable prior generation on CPU",
         )
 

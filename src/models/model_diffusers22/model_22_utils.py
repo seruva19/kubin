@@ -27,6 +27,9 @@ def prepare_weights_for_task(model, task):
             "kandinsky-community/kandinsky-2-2-prior",
             subfolder="image_encoder",
             cache_dir=cache_dir,
+            resume_download=True,
+            # local_files_only=True,
+            # device_map="auto",
         )
 
         if not run_prior_on_cpu and half_weights:
@@ -42,6 +45,7 @@ def prepare_weights_for_task(model, task):
             if run_prior_on_cpu
             else type_of_weights(model.params),
             cache_dir=cache_dir,
+            resume_download=True,
         )
     current_prior = model.pipe_prior
 
@@ -54,6 +58,7 @@ def prepare_weights_for_task(model, task):
                     "kandinsky-community/kandinsky-2-2-decoder",
                     subfolder="unet",
                     cache_dir=cache_dir,
+                    resume_download=True,
                 )
                 .half()
                 .to(device)
@@ -64,6 +69,7 @@ def prepare_weights_for_task(model, task):
                 unet=model.unet_2d,
                 torch_dtype=type_of_weights(model.params),
                 cache_dir=cache_dir,
+                resume_download=True,
             )
 
         current_decoder = model.t2i_pipe
@@ -80,6 +86,7 @@ def prepare_weights_for_task(model, task):
                     "kandinsky-community/kandinsky-2-2-controlnet-depth",
                     subfolder="unet",
                     cache_dir=cache_dir,
+                    resume_download=True,
                 )
                 .half()
                 .to(device)
@@ -90,6 +97,7 @@ def prepare_weights_for_task(model, task):
                 unet=model.unet_2d,
                 torch_dtype=type_of_weights(model.params),
                 cache_dir=cache_dir,
+                resume_download=True,
             )
 
         current_decoder = model.cnet_t2i_pipe
@@ -120,6 +128,7 @@ def prepare_weights_for_task(model, task):
                     "kandinsky-community/kandinsky-2-2-decoder-inpaint",
                     subfolder="unet",
                     cache_dir=cache_dir,
+                    resume_download=True,
                 )
                 .half()
                 .to(device)
@@ -130,6 +139,7 @@ def prepare_weights_for_task(model, task):
                 torch_dtype=type_of_weights(model.params),
                 unet=model.unet_2d,
                 cache_dir=cache_dir,
+                resume_download=True,
             )
 
         current_decoder = model.inpaint_pipe
@@ -160,20 +170,20 @@ def flush_if_required(model, target):
         ]
 
     if clear_memory_targets is not None:
-        print(
+        k_log(
             f"following pipelines, if active, will be released for {target + ' task' if target is not None else 'another model'}: {clear_memory_targets}"
         )
         offload_enabled = model.params("diffusers", "sequential_cpu_offload")
 
         if "prior" in clear_memory_targets:
             if model.pipe_prior is not None:
-                print("releasing prior pipeline")
+                k_log("releasing prior pipeline")
                 if not offload_enabled:
                     model.pipe_prior.to("cpu")
                 model.pipe_prior = None
 
             if model.pipe_prior_e2e is not None:
-                print("releasing prior_e2e pipeline")
+                k_log("releasing prior_e2e pipeline")
                 if not offload_enabled:
                     model.pipe_prior_e2e.to("cpu")
                 model.pipe_prior_e2e = None
@@ -182,13 +192,13 @@ def flush_if_required(model, target):
             value in clear_memory_targets for value in ["text2img", "img2img", "mix"]
         ):
             if model.t2i_pipe is not None:
-                print("releasing t2i pipeline")
+                k_log("releasing t2i pipeline")
                 if not offload_enabled:
                     model.t2i_pipe.to("cpu")
                 model.t2i_pipe = None
 
             if model.i2i_pipe is not None:
-                print("releasing i2i pipeline")
+                k_log("releasing i2i pipeline")
                 if not offload_enabled:
                     model.i2i_pipe.to("cpu")
                 model.i2i_pipe = None
@@ -197,7 +207,7 @@ def flush_if_required(model, target):
             value in clear_memory_targets for value in ["inpainting", "outpainting"]
         ):
             if model.inpaint_pipe is not None:
-                print("releasing inpaint pipeline")
+                k_log("releasing inpaint pipeline")
                 if not offload_enabled:
                     model.inpaint_pipe.to("cpu")
                 model.inpaint_pipe = None
@@ -206,13 +216,13 @@ def flush_if_required(model, target):
             value in clear_memory_targets for value in ["text2img_cnet", "img2img_cnet"]
         ):
             if model.cnet_t2i_pipe is not None:
-                print("releasing t2i_cnet pipeline")
+                k_log("releasing t2i_cnet pipeline")
                 if not offload_enabled:
                     model.cnet_t2i_pipe.to("cpu")
                 model.cnet_t2i_pipe = None
 
             if model.cnet_i2i_pipe is not None:
-                print("releasing i2i_cnet pipeline")
+                k_log("releasing i2i_cnet pipeline")
                 if not offload_enabled:
                     model.cnet_i2i_pipe.to("cpu")
                 model.cnet_i2i_pipe = None
@@ -224,6 +234,8 @@ def flush_if_required(model, target):
                 with torch.cuda.device(device):
                     torch.cuda.empty_cache()
                     torch.cuda.ipc_collect()
+
+        model.config = {}
 
 
 def type_of_weights(k_params):
@@ -254,12 +266,18 @@ def to_device(k_params, prior, decoder):
     if k_params("diffusers", "enable_xformers"):
         if xformers_available:
             if prior_device != "cpu":
-                from xformers.ops import MemoryEfficientAttentionFlashAttentionOp
-
-                prior.enable_xformers_memory_efficient_attention(
-                    attention_op=MemoryEfficientAttentionFlashAttentionOp
+                from xformers.ops import (
+                    MemoryEfficientAttentionFlashAttentionOp,
+                    MemoryEfficientAttentionOp,
                 )
-                applied_optimizations.append("xformers for prior")
+
+                try:
+                    prior.enable_xformers_memory_efficient_attention(
+                        # attention_op=MemoryEfficientAttentionOp
+                    )
+                    applied_optimizations.append("xformers for prior")
+                except:
+                    k_log("cannot apply xformers for prior")
         else:
             k_log("xformers use for prior requested, but no xformers installed")
     else:
@@ -291,10 +309,13 @@ def to_device(k_params, prior, decoder):
 
     if k_params("diffusers", "enable_xformers"):
         if xformers_available:
-            from xformers.ops import MemoryEfficientAttentionFlashAttentionOp
+            from xformers.ops import (
+                MemoryEfficientAttentionFlashAttentionOp,
+                MemoryEfficientAttentionOp,
+            )
 
             decoder.unet.enable_xformers_memory_efficient_attention(
-                attention_op=MemoryEfficientAttentionFlashAttentionOp
+                # attention_op=MemoryEfficientAttentionOp
             )
             applied_optimizations.append("xformers for decoder")
         else:
@@ -323,10 +344,6 @@ def to_device(k_params, prior, decoder):
         f"optimizations: {'none' if len(applied_optimizations) == 0 else ';'.join(applied_optimizations)}"
     )
     decoder.safety_checker = None
-
-
-def finalize(model):
-    None
 
 
 def images_or_texts(images, texts):

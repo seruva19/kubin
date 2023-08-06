@@ -7,11 +7,13 @@ from env import Kubin
 class ExtensionInfo:
     name: str
     title: str
-    info: str
+    role: str
     path: str
     enabled: bool
     description: str = ""
     url: str = ""
+    has_settings: bool = False
+    settings_ui: any = None
 
 
 def create_extensions_info(kubin: Kubin):
@@ -21,14 +23,31 @@ def create_extensions_info(kubin: Kubin):
     extensions_info = []
     if len(extensions) > 0:
         for extension in extensions:
+            ext_id = extension[0]
+            ext_props = extension[1]
             extensions_info.append(
                 ExtensionInfo(
-                    name=extension[0],
-                    title=extension[1]["title"],
-                    info=f'is {"not" if not extension[1].get("tab_ui", None) else ""} standalone, is {"not" if not extension[1].get("inject_ui", None) else ""} injectable',
-                    path=get_path(extension[0]),
+                    name=ext_id,
+                    title=ext_props["title"],
+                    role=";".join(
+                        filter(
+                            lambda a: a is not None,
+                            [
+                                "tab_ui"
+                                if ext_props.get("tab_ui", None) is not None
+                                else None,
+                                "injectable_ui"
+                                if ext_props.get("inject_ui", None) is not None
+                                else None,
+                            ],
+                        )
+                    ),
+                    path=get_path(ext_id),
                     url="",
                     enabled=True,
+                    description=ext_props.get("description", ""),
+                    settings_ui=ext_props.get("settings_ui", lambda: None),
+                    has_settings=ext_props.get("settings_ui", None) is not None,
                 )
             )
 
@@ -39,15 +58,18 @@ def create_extensions_info(kubin: Kubin):
             extensions_info.append(
                 ExtensionInfo(
                     name=extension_name,
-                    title="unknown (not loaded)",
-                    info="unknown (not loaded)",
+                    title="",
+                    role="",
                     path=get_path(extension_name),
                     url="",
                     enabled=False,
+                    description="",
+                    settings_ui=lambda: None,
+                    has_settings=False,
                 )
             )
 
-    return extensions_info
+    return sorted(extensions_info, key=lambda extension: extension.name)
 
 
 def extensions_ui(kubin: Kubin):
@@ -55,45 +77,100 @@ def extensions_ui(kubin: Kubin):
 
     with gr.Column() as extensions_block:
         gr.HTML(
-            f"Local extensions found: {len(extensions_data)}<br>Activated extensions: {len(list(filter(lambda x: x.enabled, extensions_data)))}"
+            f"Local extensions found: {len(extensions_data)}<br>Enabled extensions: {len(list(filter(lambda x: x.enabled, extensions_data)))}"
         )
 
         for index, extension_info in enumerate(extensions_data):
             extension_info: ExtensionInfo = extension_info
+            disabled_info = (
+                "<h3 style='color: red; display: inline'> - disabled</h3>"
+                if not extension_info.enabled
+                else ""
+            )
 
-            with gr.Accordion(
-                f"{str(index+1)}. {extension_info.name} {'- disabled' if not extension_info.enabled else ''}",
-                open=False,
-            ):
-                with gr.Box():
-                    gr.HTML(f"title: {extension_info.title}")
-                    gr.HTML(f"url: {extension_info.url}")
-                    gr.HTML(f"description: {extension_info.description}")
-                    gr.HTML(f"info: {extension_info.info}")
-                    gr.HTML(f"path: {extension_info.path}")
-                    gr.HTML("")
+            with gr.Box() as extension_box:
+                extension_box.elem_classes = ["kd-extension-container"]
 
-                    with gr.Row():
-                        clear_ext_install_btn = gr.Button(
-                            value="🔧 Force reinstall",
+                gr.HTML(
+                    f"<h3 style='display: inline'>{str(index+1)}. {extension_info.name}{disabled_info}</h3>"
+                )
+                gr.HTML(f"<hr />")
+                gr.HTML(f"<br />")
+
+                gr.HTML(f"title: {extension_info.title}")
+                gr.HTML(f"description: {extension_info.description}")
+                gr.HTML(f"url: {extension_info.url}")
+                gr.HTML(f"role: {extension_info.role}")
+                gr.HTML(f"path: {extension_info.path}")
+
+                gr.HTML(f"<br />")
+
+                with gr.Row():
+                    if extension_info.has_settings:
+                        open_settings_btn = gr.Button(
+                            value="🛠️ Settings",
                             interactive=True,
                             size="sm",
                             scale=0,
                         )
-                        clear_ext_install_btn.click(
-                            lambda name=extension_info.name: kubin.ext_registry.force_reinstall(
-                                name
-                            ),
-                            queue=False,
-                        ).then(
+                        open_settings_btn.click(
                             fn=None,
-                            _js=f'_ => kubin.notify.success("Extension {extension_info.name} will be reinstalled on next launch")',
+                            _js=f'_ => (document.querySelector(".kd-extension-settings-container-{extension_info.name}").classList.toggle("hidden"), void 0)',
                         )
+
+                    if extension_info.enabled:
+                        disable_ext_btn = gr.Button(
+                            value="🛑 Disable",
+                            interactive=False,
+                            size="sm",
+                            scale=0,
+                        )
+                    else:
+                        enable_ext_btn = gr.Button(
+                            value="🟢 Enable",
+                            interactive=False,
+                            size="sm",
+                            scale=0,
+                        )
+
+                    clear_ext_install_btn = gr.Button(
+                        value="🔧 Force reinstall",
+                        interactive=True,
+                        size="sm",
+                        scale=0,
+                    )
+
+                    clear_ext_install_btn = gr.Button(
+                        value="🗑️ Remove",
+                        interactive=False,
+                        size="sm",
+                        scale=0,
+                    )
+
+                    clear_ext_install_btn.click(
+                        lambda name=extension_info.name: kubin.ext_registry.force_reinstall(
+                            name
+                        ),
+                        queue=False,
+                    ).then(
+                        fn=None,
+                        _js=f'_ => kubin.notify.success("Extension {extension_info.name} will be reinstalled on next launch")',
+                    )
+
+                with gr.Column() as settings_column:
+                    settings_column.elem_classes = [
+                        f"kd-extension-settings-container-{extension_info.name}",
+                        f"kd-extension-settings-container",
+                        "hidden",
+                    ]
+                    extension_info.settings_ui()
 
         clear_ext_install_all_btn = gr.Button(
             value="🔧 Force reinstall of all extensions on next launch",
             label="Force reinstall",
             interactive=True,
+            scale=0,
+            size="sm",
         )
         clear_ext_install_all_btn.click(
             lambda: kubin.ext_registry.force_reinstall(),

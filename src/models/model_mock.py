@@ -4,47 +4,172 @@ from PIL import Image, ImageOps
 from io import BytesIO
 import numpy as np
 
+from hooks.hooks import HOOK
 from params import KubinParams
+from utils.image import create_inpaint_targets
+from utils.logging import k_log
+
+# used for testing
 
 
-# intended for testing purposes only
 class Model_Mock:
     def __init__(self, params: KubinParams):
-        print("activating pipeline: mock")
+        self.params = params
+        k_log("activating pipeline: mock")
+
+        self.prior = type("obj", (object,), {"model": "prior"})
+        self.decoder = type("obj", (object,), {"model": "decoder"})
+
+        self.config = {}
+
+        self.params.hook_store.register_hook(
+            ".mock",
+            lambda t, **k: k_log(f"mock model received hook event: {t}"),
+        )
 
     def prepareModel(self, task):
-        print(f"preparing mock for {task}")
-        return self
+        assert task in [
+            "text2img",
+            "text2img_cnet",
+            "img2img",
+            "img2img_cnet",
+            "mix",
+            "mix_cnet",
+            "inpainting",
+            "outpainting",
+        ]
 
-    def flush(self):
-        print(f"mock memory freed")
+        k_log(f"preparing mock for {task}")
+        return self.prior, self.decoder
 
-    def prepareParams(self, seed):
-        print("mock seed generated")
+    def flush(self, target=None):
+        self.params.hook_store.call(
+            HOOK.BEFORE_FLUSH_MODEL,
+            **{"model": self, "target": target},
+        )
+        k_log(f"mock memory freed")
+        self.params.hook_store.call(
+            HOOK.AFTER_FLUSH_MODEL,
+            **{"model": self, "target": target},
+        )
+
+        self.config = {}
+
+    def prepareParams(self, params):
+        k_log(params)
+        k_log("mock seed generated")
 
     def t2i(self, params):
-        print("mock t2i executed")
-        print(params)
+        task = "text2img"
+        params[".ui-task"] = task
+
+        self.params.hook_store.call(
+            HOOK.BEFORE_PREPARE_MODEL,
+            **{"model": self, "params": params, "task": task},
+        )
+
+        prior, decoder = self.prepareModel(task)
+
+        self.params.hook_store.call(
+            HOOK.BEFORE_PREPARE_PARAMS,
+            **{
+                "model": self,
+                "params": params,
+                "task": task,
+                "prior": prior,
+                "decoder": decoder,
+            },
+        )
+
+        self.prepareParams(params)
+        k_log("mock t2i executed")
         return self.dummyImages()
 
     def i2i(self, params):
-        print("mock i2i executed")
-        print(params)
+        task = "img2img"
+        params[".ui-task"] = task
+
+        self.params.hook_store.call(
+            HOOK.BEFORE_PREPARE_MODEL,
+            **{"model": self, "params": params, "task": task},
+        )
+
+        prior, decoder = self.prepareModel(task)
+
+        self.params.hook_store.call(
+            HOOK.BEFORE_PREPARE_PARAMS,
+            **{
+                "model": self,
+                "params": params,
+                "task": task,
+                "prior": prior,
+                "decoder": decoder,
+            },
+        )
+
+        self.prepareParams(params)
+        k_log("mock i2i executed")
         return self.dummyImages()
 
     def mix(self, params):
-        print("mock mix executed")
-        print(params)
+        task = "mix"
+        params[".ui-task"] = task
+
+        self.params.hook_store.call(
+            HOOK.BEFORE_PREPARE_MODEL,
+            **{"model": self, "params": params, "task": task},
+        )
+
+        prior, decoder = self.prepareModel(task)
+
+        self.params.hook_store.call(
+            HOOK.BEFORE_PREPARE_PARAMS,
+            **{
+                "model": self,
+                "params": params,
+                "task": task,
+                "prior": prior,
+                "decoder": decoder,
+            },
+        )
+
+        self.prepareParams(params)
+        k_log("mock mix executed")
         return self.dummyImages()
 
     def inpaint(self, params):
-        print(params)
-        print("mock inpaint executed")
+        task = "inpainting"
+        params[".ui-task"] = task
 
-        output_size = (params["w"], params["h"])
+        self.params.hook_store.call(
+            HOOK.BEFORE_PREPARE_MODEL,
+            **{"model": self, "params": params, "task": task},
+        )
+
+        prior, decoder = self.prepareModel(task)
+
+        self.params.hook_store.call(
+            HOOK.BEFORE_PREPARE_PARAMS,
+            **{
+                "model": self,
+                "params": params,
+                "task": task,
+                "prior": prior,
+                "decoder": decoder,
+            },
+        )
+
+        self.prepareParams(params)
+
         image_with_mask = params["image_mask"]
-
         image = image_with_mask["image"]
+        width, height = (
+            image.width if params["infer_size"] else params["w"],
+            image.height if params["infer_size"] else params["h"],
+        )
+
+        output_size = (width, height)
+
         image = image.resize(output_size, resample=Image.LANCZOS)
         image = image.convert("RGB")
 
@@ -52,11 +177,32 @@ class Model_Mock:
         mask = mask.resize(output_size, resample=Image.LANCZOS)
         mask = mask.convert("L")
 
+        k_log("mock inpaint executed")
         return [image, mask]
 
     def outpaint(self, params):
-        print("mock outpaint executed")
-        print(params)
+        task = "outpainting"
+        params[".ui-task"] = task
+
+        self.params.hook_store.call(
+            HOOK.BEFORE_PREPARE_MODEL,
+            **{"model": self, "params": params, "task": task},
+        )
+
+        prior, decoder = self.prepareModel(task)
+
+        self.params.hook_store.call(
+            HOOK.BEFORE_PREPARE_PARAMS,
+            **{
+                "model": self,
+                "params": params,
+                "task": task,
+                "prior": prior,
+                "decoder": decoder,
+            },
+        )
+
+        self.prepareParams(params)
 
         image = params["image"]
         image_w, image_h = image.size
@@ -92,6 +238,7 @@ class Model_Mock:
         )
         image = image.resize(mask_img.size, resample=Image.LANCZOS)
 
+        k_log("mock outpaint executed")
         return [image, mask_img]
 
     def dummyImages(self):

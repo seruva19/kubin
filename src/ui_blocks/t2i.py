@@ -4,11 +4,13 @@ from ui_blocks.shared.ui_shared import SharedUI
 from utils.gradio_ui import click_and_disable
 
 
-def t2i_ui(generate_fn, shared: SharedUI, tabs):
+def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
     augmentations = shared.create_ext_augment_blocks("t2i")
 
     with gr.Row() as t2i_block:
         with gr.Column(scale=2) as t2i_params:
+            augmentations["ui_before_prompt"]()
+
             prompt = gr.TextArea("", label="Prompt", placeholder="", lines=2)
             negative_prompt = gr.TextArea(
                 "",
@@ -17,6 +19,8 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                 lines=2,
             )
             negative_prompt.elem_classes = ["unsupported_20"]
+
+            augmentations["ui_before_cnet"]()
 
             with gr.Accordion("ControlNet", open=False) as t2i_cnet:
                 cnet_enable = gr.Checkbox(
@@ -28,7 +32,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                     with gr.Column():
                         cnet_pipeline = gr.Dropdown(
                             choices=["ControlNetPipeline", "ControlNetImg2ImgPipeline"],
-                            value="ControlNetPipeline",
+                            value="ControlNetImg2ImgPipeline",
                             type="value",
                             label="Processing pipeline",
                             allow_custom_value=False,
@@ -39,36 +43,35 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                             label="Condition",
                         )
 
-                with gr.Column(visible=False) as cnet_i2i_params:
-                    with gr.Row():
-                        cnet_emb_transform_strength = gr.Slider(
-                            0,
-                            1,
-                            0.85,
-                            step=0.05,
-                            label="Embedding strength",
-                            info=shared.info("Strength of reference embedding"),
-                        )
+                        with gr.Column(visible=True) as cnet_i2i_params:
+                            cnet_emb_transform_strength = gr.Slider(
+                                0,
+                                1,
+                                0.85,
+                                step=0.05,
+                                label="Embedding strength",
+                                info=shared.info("Strength of reference embedding"),
+                            )
 
-                        cnet_neg_emb_transform_strength = gr.Slider(
-                            0,
-                            1,
-                            1,
-                            step=0.05,
-                            label="Negative embedding strength",
-                            info=shared.info(
-                                "Strength of reference negative embedding"
-                            ),
-                        )
+                            cnet_neg_emb_transform_strength = gr.Slider(
+                                0,
+                                1,
+                                1,
+                                step=0.05,
+                                label="Negative embedding strength",
+                                info=shared.info(
+                                    "Strength of reference negative embedding"
+                                ),
+                            )
 
-                        cnet_img_strength = gr.Slider(
-                            0,
-                            1,
-                            0.5,
-                            step=0.05,
-                            label="Image strength",
-                            info=shared.info("Strength of reference image"),
-                        )
+                            cnet_img_strength = gr.Slider(
+                                0,
+                                1,
+                                0.5,
+                                step=0.05,
+                                label="Image strength",
+                                info=shared.info("Strength of reference image"),
+                            )
 
             def pipeline_changed(pipeline):
                 return gr.update(
@@ -83,6 +86,8 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
 
             t2i_cnet.elem_classes = ["control-net"]
 
+            augmentations["ui_before_params"]()
+
             with gr.Accordion(
                 "Advanced params", open=not shared.ui_params("collapse_advanced_params")
             ) as t2i_advanced_params:
@@ -95,7 +100,13 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                         label="Steps",
                     )
                     guidance_scale = gr.Slider(1, 30, 4, step=1, label="Guidance scale")
-                    batch_count = gr.Slider(1, 16, 4, step=1, label="Batch count")
+                    batch_count = gr.Slider(
+                        1,
+                        shared.ui_params("max_batch_count"),
+                        4,
+                        step=1,
+                        label="Batch count",
+                    )
                 with gr.Row():
                     width = gr.Slider(
                         shared.ui_params("image_width_min"),
@@ -184,6 +195,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
             shared.create_ext_send_targets(t2i_output, "t2i-output", tabs)
 
             def generate(
+                session,
                 prompt,
                 negative_prompt,
                 num_steps,
@@ -213,6 +225,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                 )
 
                 params = {
+                    ".session": session,
                     "prompt": prompt,
                     "negative_prompt": negative_prompt,
                     "num_steps": num_steps,
@@ -243,6 +256,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                 element=generate_t2i,
                 fn=generate,
                 inputs=[
+                    session,
                     prompt,
                     negative_prompt,
                     steps,
@@ -268,6 +282,10 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs):
                 ]
                 + augmentations["injections"],
                 outputs=t2i_output,
+                js=[
+                    "args => kubin.UI.taskStarted('Text To Image')",
+                    "args => kubin.UI.taskFinished('Text To Image')",
+                ],
             )
 
     return t2i_block

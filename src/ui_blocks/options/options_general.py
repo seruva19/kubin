@@ -9,7 +9,7 @@ def options_tab_general(kubin: Kubin):
         elem_classes=["options-block", "options-general", "active"]
     ) as general_options:
         model_name = gr.Radio(
-            value=kubin.params("general", "model_name"),
+            value=lambda: kubin.params("general", "model_name"),
             choices=["kd20", "kd21", "kd22"],
             info=kubin.ui.info(
                 "kd20: Kandinsky 2.0, kd21: Kandinsky 2.1, kd22: Kandinsky 2.2"
@@ -17,11 +17,16 @@ def options_tab_general(kubin: Kubin):
             label="Base model",
         )
         pipeline = gr.Radio(
-            value=kubin.params("general", "pipeline"),
+            value=lambda: kubin.params("general", "pipeline"),
             choices=["native", "diffusers"],
             label="Pipeline",
         )
-        device = gr.Textbox(value=kubin.params("general", "device"), label="Device")
+
+        device = gr.Textbox(
+            value=lambda: kubin.params("general", "device"),
+            label="Device",
+            elem_classes=["options-small"],
+        )
 
         pipeline.change(
             fn=None,

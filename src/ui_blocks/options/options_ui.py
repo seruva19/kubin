@@ -8,32 +8,32 @@ def options_tab_ui(kubin: Kubin):
 
     with gr.Column(elem_classes=["options-block", "options-ui"]) as ui_options:
         allow_params_panel_resize = gr.Checkbox(
-            value=kubin.params("ui", "allow_params_panel_resize"),
+            value=lambda: kubin.params("ui", "allow_params_panel_resize"),
             label="Allow resize of parameters panel",
         )
 
         enable_vertical_alignment = gr.Checkbox(
-            value=kubin.params("ui", "enable_vertical_alignment"),
+            value=lambda: kubin.params("ui", "enable_vertical_alignment"),
             label="Enable panels vertical alignment",
         )
 
         collapse_advanced_params = gr.Checkbox(
-            value=kubin.params("ui", "collapse_advanced_params"),
+            value=lambda: kubin.params("ui", "collapse_advanced_params"),
             label="Collapse parameters panel on launch",
         )
 
         full_screen_panel = gr.Checkbox(
-            value=kubin.params("ui", "full_screen_panel"),
+            value=lambda: kubin.params("ui", "full_screen_panel"),
             label="Allow UI stretch to the screen edges",
         )
 
         side_tabs = gr.Checkbox(
-            value=kubin.params("ui", "side_tabs"),
+            value=lambda: kubin.params("ui", "side_tabs"),
             label="Put tabs to left side of the screen",
         )
 
         show_help_text = gr.Checkbox(
-            value=kubin.params("ui", "show_help_text"),
+            value=lambda: kubin.params("ui", "show_help_text"),
             label="Show help text if present",
         )
 

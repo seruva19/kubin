@@ -1,11 +1,14 @@
 import gradio as gr
 import os
 from metadata_extractor import metadata_to_html
+from pathlib import Path
 
 
-# TODO: add paging
 def setup(kubin):
     image_root = kubin.params("general", "output_dir")
+
+    yaml_config = kubin.yaml_utils.YamlConfig(Path(__file__).parent.absolute())
+    config = yaml_config.read()
 
     def get_folders():
         return (
@@ -140,10 +143,36 @@ def setup(kubin):
                     outputs=[folder_contents, metadata_info],
                 )
 
+        image_browser_block.elem_classes = [
+            "kd-image-browser",
+            "combined" if config["show_combined_preview"] else "",
+        ]
         folder_block.elem_classes = ["block-params"]
+
         return image_browser_block
+
+    def settings_ui():
+        def save_changes(combined_preview):
+            config["show_combined_preview"] = combined_preview
+            yaml_config.write(config)
+
+        with gr.Column() as settings_block:
+            combined_preview = gr.Checkbox(
+                lambda: config["show_combined_preview"],
+                label="Show combined image preview",
+                scale=0,
+            )
+
+            save_btn = gr.Button("Save settings", size="sm", scale=0)
+            save_btn.click(
+                save_changes, inputs=[combined_preview], outputs=[], queue=False
+            ).then(fn=None, _js=("(x) => kubin.notify.success('Settings saved')"))
+
+        settings_block.elem_classes = ["k-form"]
+        return settings_block
 
     return {
         "title": "Image Browser",
         "tab_ui": lambda ui_s, ts: image_browser_ui(ui_s, ts),
+        "settings_ui": settings_ui,
     }

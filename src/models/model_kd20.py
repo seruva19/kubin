@@ -8,12 +8,13 @@ import torch
 import torch.backends
 
 from params import KubinParams
-from kandinsky2 import Kandinsky2, get_kandinsky2_0
 from utils.file_system import save_output
 
 
 class Model_KD20:
     def __init__(self, params: KubinParams):
+        from kandinsky2 import Kandinsky2
+
         print("activating pipeline: native (2.0)")
         self.params = params
 
@@ -21,6 +22,8 @@ class Model_KD20:
         self.kd20_inpaint: Kandinsky2 | None = None
 
     def prepareModel(self, task):
+        from kandinsky2 import get_kandinsky2_0
+
         print(f"task queued: {task}")
         assert task in ["text2img", "img2img", "inpainting"]
 

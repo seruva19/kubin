@@ -24,14 +24,12 @@
 ✔ Interrogation <br>
 ✔ Segmentation <br>
 ✔ ControlNet <br>
+✔ LoRA training and inference <br>
 🕒 Multiple samplers <br>
 🕒 Dynamic prompts <br>
 🕒 Prompt weighting <br>
 🕒 Checkpoint conversion <br>
 🕒 Animation <br>
-🕒 LoRA <br>
-🕒 Easy-to-use installer <br>
-🕒 Documentation <br>
 
 ## Screenshots
 <details> 

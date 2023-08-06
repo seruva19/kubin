@@ -1,8 +1,17 @@
-.kd-image-browser .preview {
+.kd-image-browser.combined .preview {
     flex-direction: row-reverse;
 }
 
-.kd-image-browser .thumbnails.scroll-hide {
+.kd-image-browser.combined .preview>img {
+    max-width: 50%;
+}
+
+.kd-image-browser.combined .thumbnails {
+    padding: 5px;
+    width: 50%;
+}
+
+.kd-image-browser.combined .thumbnails.scroll-hide {
     display: inline-block;
     height: 100%;
     position: relative;
