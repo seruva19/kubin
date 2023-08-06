@@ -139,7 +139,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
                     guidance_scale = gr.Slider(
                         1,
                         30,
-                        7,
+                        4,
                         step=1,
                         label="Guidance scale",
                         elem_classes=["inline-flex"],
@@ -331,6 +331,10 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
                 ]
                 + augmentations["injections"],
                 outputs=i2i_output,
+                js=[
+                    "args => kubin.UI.taskStarted('Image To Image')",
+                    "args => kubin.UI.taskFinished('Image To Image')",
+                ],
             )
 
             def generate_batch(

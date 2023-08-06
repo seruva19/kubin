@@ -83,9 +83,7 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs, session):
                         step=1,
                         label="Steps",
                     )
-                    guidance_scale = gr.Slider(
-                        1, 30, 10, step=1, label="Guidance scale"
-                    )
+                    guidance_scale = gr.Slider(1, 30, 4, step=1, label="Guidance scale")
                 with gr.Row():
                     batch_count = gr.Slider(
                         1,
@@ -261,6 +259,10 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs, session):
             ]
             + augmentations["injections"],
             outputs=outpaint_output,
+            js=[
+                "args => kubin.UI.taskStarted('Outpainting')",
+                "args => kubin.UI.taskFinished('Outpainting')",
+            ],
         )
 
         outpaint_params.elem_classes = ["block-params outpaint_params"]

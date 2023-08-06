@@ -6,6 +6,8 @@ import numpy as np
 import urllib.request
 from segment_anything import SamPredictor, SamAutomaticMaskGenerator, sam_model_registry
 
+title = "Segmentation"
+
 
 def setup(kubin):
     source_image = gr.Image(
@@ -68,14 +70,18 @@ def setup(kubin):
                     gr.State(kubin.params("general", "device")),
                 ],
                 outputs=segment_output,
+                js=[
+                    f"args => kubin.UI.taskStarted('{title}')",
+                    f"args => kubin.UI.taskFinished('{title}')",
+                ],
             )
             segment_params_block.elem_classes = ["block-params"]
 
         return segment_block
 
     return {
-        "title": "Segmentation",
-        "send_to": "🎭 Send to Segmentation",
+        "title": title,
+        "send_to": f"🎭 Send to {title}",
         "tab_ui": lambda ui_s, ts: segment_anything_ui(ui_s, ts),
         "send_target": source_image,
     }

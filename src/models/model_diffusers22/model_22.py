@@ -120,6 +120,9 @@ class Model_Diffusers22:
         return saved_batch
 
     def t2i(self, params):
+        task = "text2img"
+        params[".ui-task"] = task
+
         if params["cnet_enable"]:
             if params["cnet_pipeline"] == "ControlNetPipeline":
                 return self.t2i_cnet(params)
@@ -127,7 +130,6 @@ class Model_Diffusers22:
                 return self.i2i_cnet(params)
 
         hooks = self.params.hook_store
-        task = "text2img"
         hooks.call(
             HOOK.BEFORE_PREPARE_MODEL,
             **{"model": self, "params": params, "task": task},
@@ -261,11 +263,13 @@ class Model_Diffusers22:
         return images
 
     def i2i(self, params):
+        task = "img2img"
+        params[".ui-task"] = task
+
         if params["cnet_enable"]:
             return self.i2i_cnet(params)
 
         hooks = self.params.hook_store
-        task = "img2img"
         hooks.call(
             HOOK.BEFORE_PREPARE_MODEL,
             **{"model": self, "params": params, "task": task},
@@ -383,11 +387,13 @@ class Model_Diffusers22:
         return images
 
     def mix(self, params):
+        task = "mix"
+        params[".ui-task"] = task
+
         if params["cnet_enable"]:
             return self.mix_cnet(params)
 
         hooks = self.params.hook_store
-        task = "mix"
         hooks.call(
             HOOK.BEFORE_PREPARE_MODEL,
             **{"model": self, "params": params, "task": task},
@@ -517,8 +523,10 @@ class Model_Diffusers22:
         return images
 
     def inpaint(self, params):
-        hooks = self.params.hook_store
         task = "inpainting"
+        params[".ui-task"] = task
+
+        hooks = self.params.hook_store
         hooks.call(
             HOOK.BEFORE_PREPARE_MODEL,
             **{"model": self, "params": params, "task": task},
@@ -674,8 +682,10 @@ class Model_Diffusers22:
         return images
 
     def outpaint(self, params):
-        hooks = self.params.hook_store
         task = "outpainting"
+        params[".ui-task"] = task
+
+        hooks = self.params.hook_store
         hooks.call(
             HOOK.BEFORE_PREPARE_MODEL,
             **{"model": self, "params": params, "task": task},

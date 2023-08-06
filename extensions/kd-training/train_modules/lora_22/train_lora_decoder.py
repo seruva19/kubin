@@ -468,7 +468,7 @@ def launch_lora_decoder_training(kubin, config, progress):
                             pt_path = os.path.join(save_path, "pytorch_model.bin")
                             sf_path = os.path.join(
                                 save_path,
-                                f"{config['decoder']['output_name']}.safetensors",
+                                f"{config['decoder']['output_name']}-{global_step}.safetensors",
                             )
                             kubin.nn_utils.convert_pt_to_safetensors(pt_path, sf_path)
 

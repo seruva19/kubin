@@ -19,6 +19,9 @@ from train_modules.dreambooth_22.train_22_dreambooth_decoder_ui import (
 )
 
 
+extension_title = "Training"
+
+
 def clear_models(loaded_models):
     for model in loaded_models:
         model.to("cpu")
@@ -92,6 +95,6 @@ def setup(kubin):
         return training_block
 
     return {
-        "title": "Training",
+        "title": extension_title,
         "tab_ui": lambda ui_s, ts: training_ui(ui_s, ts, utils["clear_models"]),
     }

@@ -60,19 +60,22 @@ class Model_Mock:
         k_log("mock seed generated")
 
     def t2i(self, params):
+        task = "text2img"
+        params[".ui-task"] = task
+
         self.params.hook_store.call(
             HOOK.BEFORE_PREPARE_MODEL,
-            **{"model": self, "params": params, "task": "text2img"},
+            **{"model": self, "params": params, "task": task},
         )
 
-        prior, decoder = self.prepareModel("text2img")
+        prior, decoder = self.prepareModel(task)
 
         self.params.hook_store.call(
             HOOK.BEFORE_PREPARE_PARAMS,
             **{
                 "model": self,
                 "params": params,
-                "task": "text2img",
+                "task": task,
                 "prior": prior,
                 "decoder": decoder,
             },
@@ -83,19 +86,22 @@ class Model_Mock:
         return self.dummyImages()
 
     def i2i(self, params):
+        task = "img2img"
+        params[".ui-task"] = task
+
         self.params.hook_store.call(
             HOOK.BEFORE_PREPARE_MODEL,
-            **{"model": self, "params": params, "task": "img2img"},
+            **{"model": self, "params": params, "task": task},
         )
 
-        prior, decoder = self.prepareModel("img2img")
+        prior, decoder = self.prepareModel(task)
 
         self.params.hook_store.call(
             HOOK.BEFORE_PREPARE_PARAMS,
             **{
                 "model": self,
                 "params": params,
-                "task": "img2img",
+                "task": task,
                 "prior": prior,
                 "decoder": decoder,
             },
@@ -106,14 +112,53 @@ class Model_Mock:
         return self.dummyImages()
 
     def mix(self, params):
-        self.prepareModel("mix")
+        task = "mix"
+        params[".ui-task"] = task
+
+        self.params.hook_store.call(
+            HOOK.BEFORE_PREPARE_MODEL,
+            **{"model": self, "params": params, "task": task},
+        )
+
+        prior, decoder = self.prepareModel(task)
+
+        self.params.hook_store.call(
+            HOOK.BEFORE_PREPARE_PARAMS,
+            **{
+                "model": self,
+                "params": params,
+                "task": task,
+                "prior": prior,
+                "decoder": decoder,
+            },
+        )
+
         self.prepareParams(params)
         k_log("mock mix executed")
-
         return self.dummyImages()
 
     def inpaint(self, params):
-        self.prepareModel("inpaint")
+        task = "inpainting"
+        params[".ui-task"] = task
+
+        self.params.hook_store.call(
+            HOOK.BEFORE_PREPARE_MODEL,
+            **{"model": self, "params": params, "task": task},
+        )
+
+        prior, decoder = self.prepareModel(task)
+
+        self.params.hook_store.call(
+            HOOK.BEFORE_PREPARE_PARAMS,
+            **{
+                "model": self,
+                "params": params,
+                "task": task,
+                "prior": prior,
+                "decoder": decoder,
+            },
+        )
+
         self.prepareParams(params)
 
         image_with_mask = params["image_mask"]
@@ -136,7 +181,27 @@ class Model_Mock:
         return [image, mask]
 
     def outpaint(self, params):
-        self.prepareModel("outpaint")
+        task = "outpainting"
+        params[".ui-task"] = task
+
+        self.params.hook_store.call(
+            HOOK.BEFORE_PREPARE_MODEL,
+            **{"model": self, "params": params, "task": task},
+        )
+
+        prior, decoder = self.prepareModel(task)
+
+        self.params.hook_store.call(
+            HOOK.BEFORE_PREPARE_PARAMS,
+            **{
+                "model": self,
+                "params": params,
+                "task": task,
+                "prior": prior,
+                "decoder": decoder,
+            },
+        )
+
         self.prepareParams(params)
 
         image = params["image"]

@@ -6,6 +6,9 @@ from RealESRGAN import RealESRGAN
 import os
 
 
+title = "Upscaler"
+
+
 def setup(kubin):
     source_image = gr.Image(
         type="pil", label="Image to upscale", elem_classes=["full-height"]
@@ -54,14 +57,18 @@ def setup(kubin):
                     clear_memory,
                 ],
                 outputs=upscale_output,
+                js=[
+                    f"args => kubin.UI.taskStarted('{title}')",
+                    f"args => kubin.UI.taskFinished('{title}')",
+                ],
             )
 
             upscaler_params_block.elem_classes = ["block-params"]
         return upscaler_block
 
     return {
-        "send_to": "📐 Send to Upscaler",
-        "title": "Upscaler",
+        "send_to": f"📐 Send to {title}",
+        "title": title,
         "tab_ui": lambda ui_s, ts: upscaler_ui(ui_s, ts),
         "send_target": source_image,
     }

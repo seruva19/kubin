@@ -90,6 +90,10 @@ body.unselectable * {
 .kd-extension-settings-container.hidden {
   display: none;
 }
+
+.system-info textarea {
+  resize: none;
+}
 body[class*="pipeline-native"] .diffusers-control {
   display: none;
 }

@@ -46,9 +46,7 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs, session):
                         step=1,
                         label="Steps",
                     )
-                    guidance_scale = gr.Slider(
-                        1, 30, 10, step=1, label="Guidance scale"
-                    )
+                    guidance_scale = gr.Slider(1, 30, 4, step=1, label="Guidance scale")
                 with gr.Row():
                     batch_count = gr.Slider(
                         1,
@@ -220,6 +218,10 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs, session):
             ]
             + augmentations["injections"],
             outputs=inpaint_output,
+            js=[
+                "args => kubin.UI.taskStarted('Inpainting')",
+                "args => kubin.UI.taskFinished('Inpainting')",
+            ],
         )
 
         batch_size.elem_classes = (

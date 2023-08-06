@@ -17,6 +17,8 @@ from shap_e.models.transmitter.base import Transmitter, VectorDecoder
 from shap_e.rendering.torch_mesh import TorchMesh
 from shap_e.util.collections import AttrDict
 
+title = "Mesh Generator"
+
 
 def setup(kubin):
     source_image = gr.Image(
@@ -46,6 +48,10 @@ def setup(kubin):
                     gr.State(kubin.params("general", "device")),
                 ],
                 outputs=model_output,
+                js=[
+                    f"args => kubin.UI.taskStarted('{title}')",
+                    f"args => kubin.UI.taskFinished('{title}')",
+                ],
             )
 
             model_3d_params_block.elem_classes = ["block-params"]
@@ -53,8 +59,8 @@ def setup(kubin):
         return model_3d_block
 
     return {
-        "send_to": "🗿 Send to Mesh Generator",
-        "title": "Mesh Generator",
+        "send_to": f"🗿 Send to {title}",
+        "title": title,
         "tab_ui": lambda ui_s, ts: model_3d_ui(ui_s, ts),
         "send_target": source_image,
     }

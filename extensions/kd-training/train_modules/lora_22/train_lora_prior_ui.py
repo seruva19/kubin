@@ -567,6 +567,7 @@ def train_lora_prior_ui(kubin, tabs):
 
             start_lora_prior_training.click(
                 fn=lambda: gr.update(interactive=False),
+                _js=f"args => kubin.UI.taskStarted('Training')",
                 queue=False,
                 outputs=start_lora_prior_training,
             ).then(
@@ -588,6 +589,7 @@ def train_lora_prior_ui(kubin, tabs):
             ).then(
                 fn=lambda: gr.update(interactive=True),
                 queue=False,
+                _js=f"args => kubin.UI.taskFinished('Training')",
                 outputs=start_lora_prior_training,
             )
 

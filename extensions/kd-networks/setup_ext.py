@@ -64,7 +64,6 @@ def setup(kubin):
                     kwargs["prior"],
                     kwargs["decoder"],
                     kwargs["params"],
-                    kwargs["task"],
                     networks_info,
                 )
             else:

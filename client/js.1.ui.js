@@ -183,6 +183,31 @@
     return [o, parseInt(imageIndices[source])]
   }
 
+  kubin.UI.taskStarted = task => {
+    let index = -1
+    document.querySelectorAll(`.ui-tabs.left>.tab-nav button`).forEach((button, i) => button.textContent.includes(task) && (index = i + 1))
+    index != -1 && (() => {
+      const style = document.createElement("style")
+      style.id = `working-indicator-${index}`
+      style.textContent = `
+        .ui-tabs.left>.tab-nav button:nth-child(${index})::after {
+          content: " "; position: absolute; margin: auto; border: 10px solid #EAF0F6; border-radius: 50%; border-top: 10px solid #2a73fb;
+          width: 20px; height: 20px; animation: loader 2s linear infinite; margin-left: 7px; }
+    `;
+
+      document.head.appendChild(style)
+    })()
+  }
+
+  kubin.UI.taskFinished = task => {
+    let index = -1
+    document.querySelectorAll(`.ui-tabs.left>.tab-nav button`).forEach((button, i) => button.textContent.includes(task) && (index = i + 1))
+    index != -1 && (() => {
+      const style = document.querySelector(`style#working-indicator-${index}`)
+      style && style.parentNode.removeChild(style)
+    })()
+  }
+
   kubin.UI.wakeAll = () => {
     document.querySelectorAll('[disabled]').forEach(disabled => {
       disabled.removeAttribute("disabled")

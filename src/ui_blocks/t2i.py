@@ -43,7 +43,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
                             label="Condition",
                         )
 
-                        with gr.Column(visible=False) as cnet_i2i_params:
+                        with gr.Column(visible=True) as cnet_i2i_params:
                             cnet_emb_transform_strength = gr.Slider(
                                 0,
                                 1,
@@ -282,6 +282,10 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
                 ]
                 + augmentations["injections"],
                 outputs=t2i_output,
+                js=[
+                    "args => kubin.UI.taskStarted('Text To Image')",
+                    "args => kubin.UI.taskFinished('Text To Image')",
+                ],
             )
 
     return t2i_block

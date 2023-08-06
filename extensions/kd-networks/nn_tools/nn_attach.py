@@ -12,7 +12,8 @@ from diffusers.models.attention_processor import (
 )
 
 
-def bind_networks(kubin, model_config, prior, decoder, params, task, networks_info):
+def bind_networks(kubin, model_config, prior, decoder, params, networks_info):
+    task = params.get(".ui-task", "none")
     bind_lora(kubin, model_config, prior, decoder, params, task, networks_info["lora"])
 
 
@@ -32,6 +33,11 @@ def bind_lora(kubin, model_config, prior, decoder, params, task, loras):
         lora_decoder_path = current_lora["decoder"]
 
         if lora_enabled:
+            if lora_prior_path is None:
+                kubin.elog(f"no prior LoRA path declared")
+            if lora_decoder_path is None:
+                kubin.elog(f"no decoder LoRA path declared")
+
             same_lora_prior_already_applied = False
             same_lora_decoder_already_applied = False
 
@@ -46,22 +52,17 @@ def bind_lora(kubin, model_config, prior, decoder, params, task, loras):
                 else:
                     same_lora_decoder_already_applied = True
 
-            if not same_lora_prior_already_applied and lora_prior_path is not None:
+            if not same_lora_prior_already_applied:
                 apply_lora_to_prior(kubin, lora_prior_path, prior)
                 params[
                     "lora_prior"
                 ] = f"{os.path.basename(lora_prior_path)} [{calculate_file_hash(lora_prior_path)}]"
-            else:
-                kubin.log(f"no prior LoRA path declared")
 
-            if not same_lora_decoder_already_applied and lora_decoder_path is not None:
+            if not same_lora_decoder_already_applied:
                 apply_lora_to_decoder(kubin, lora_decoder_path, decoder)
                 params[
                     "lora_decoder"
                 ] = f"{os.path.basename(lora_decoder_path)} [{calculate_file_hash(lora_decoder_path)}]"
-
-            else:
-                kubin.log(f"no decoder LoRA path declared")
 
             model_config[".lora"] = lora_prior_path, lora_decoder_path
 

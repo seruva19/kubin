@@ -245,6 +245,10 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
             ]
             + augmentations["injections"],
             outputs=mix_output,
+            js=[
+                "args => kubin.UI.taskStarted('Mix Images')",
+                "args => kubin.UI.taskFinished('Mix Images')",
+            ],
         )
 
         mix_params.elem_classes = ["block-params mix_params"]
