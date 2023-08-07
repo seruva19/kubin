@@ -281,7 +281,7 @@
       style.id = `working-indicator-${index}`
       style.textContent = `
         .ui-tabs.left>.tab-nav button:nth-child(${index})::after {
-          content: " "; position: absolute; margin: auto; border: 10px solid #EAF0F6; border-radius: 50%; border-top: 10px solid #2a73fb;
+          content: " "; position: absolute; margin: auto; border: 10px solid #EAF0F6; border-radius: 50%; border-top: 10px solid var(--loader-color);
           width: 20px; height: 20px; animation: loader 2s linear infinite; margin-left: 7px; }
     `;
 
