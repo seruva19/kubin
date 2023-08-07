@@ -12,24 +12,25 @@
 ✔ Img2img <br>
 ✔ Mixing <br>
 ✔ Inpainting  <br>
-✔ Upscaling <br>
 ✔ Outpainting <br>
-✔ Support for extensions <br>
-✔ Diffusers pipeline  <br>
-✔ Image browser <br>
-✔ Fine-tuning <br>
-✔ Style library <br>
-✔ Low-VRAM options <br>
-✔ Img2mesh <br>
-✔ Interrogation <br>
-✔ Segmentation <br>
 ✔ ControlNet <br>
-✔ LoRA training and inference <br>
+✔ Diffusers pipeline <br>
+✔ Low-VRAM options <br>
+✔ Support for extensions <br>
+✔ ext. Image browser<br>
+✔ ext. Fine-tuning <br>
+✔ ext. LoRA training and inference <br>
+✔ ext. Style library <br>
+✔ ext. Upscaling <br>
+✔ ext. Img2mesh <br>
+✔ ext. Interrogation <br>
+✔ ext. Segmentation <br>
 🕒 Multiple samplers <br>
-🕒 Dynamic prompts <br>
+🕒 Advanced prompt syntax <br>
 🕒 Prompt weighting <br>
+🕒 ext. Animation <br>
 🕒 Checkpoint conversion <br>
-🕒 Animation <br>
+
 
 ## Screenshots
 <details> 
