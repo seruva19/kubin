@@ -133,7 +133,7 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs, session):
                         elem_classes=["inline-flex"],
                     )
                     prior_steps = gr.Slider(
-                        1,
+                        2,
                         100,
                         5,
                         step=1,
