@@ -1,9 +1,9 @@
 git+https://github.com/ai-forever/Kandinsky-2.git@33c3176
 git+https://github.com/openai/CLIP.git@a1d0717
-git+https://github.com/ai-forever/diffusers.git@e7924e6
-transformers==4.30.2
+diffusers==0.19.3
+transformers==4.31.0
 accelerate==0.21.0
 opencv-python==4.8.0.74
-gradio==3.36.1
+gradio==3.39.0
 psutil==5.9.5
 deepdiff==6.3.1
