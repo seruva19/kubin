@@ -18,7 +18,6 @@ from train_modules.dreambooth_22.train_22_dreambooth_decoder_ui import (
     train_22_dreambooth_decoder_ui,
 )
 
-
 extension_title = "Training"
 
 
@@ -41,7 +40,9 @@ def setup(kubin):
     def training_ui(ui_shared, ui_tabs, clear_models):
         with gr.Column() as training_block:
             with gr.Tabs() as training_tabs:
-                with gr.TabItem("2.2 LoRA") as training_kd22_lora:
+                with gr.TabItem(
+                    "2.2 LoRA", id="training-kd22-lora"
+                ) as training_kd22_lora:
                     training_kd22_lora.elem_classes = ["training-selector-kd22-lora"]
                     with gr.TabItem("Prior", id="training-lora-prior"):
                         lora_prior_ui = train_lora_prior_ui(kubin, training_tabs)
@@ -71,14 +72,14 @@ def setup(kubin):
                 #         train_22_dreambooth_decoder_ui(kubin, training_tabs)
                 #     )
 
-                with gr.TabItem("2.1 Fine-tuning") as training_kd21:
+                with gr.TabItem("2.1 Fine-tuning", id="training-kd21") as training_kd21:
                     training_kd21.elem_classes = ["training-selector-kd21"]
 
                     with gr.TabItem("Prior", id="training-prior"):
-                        prior_ui = train_prior_ui(kubin, training_tabs)
+                        training_kd21_prior_ui = train_prior_ui(kubin, training_tabs)
 
                     with gr.TabItem("UnCLIP", id="training-unclip"):
-                        unclip_ui = train_unclip_ui(kubin, training_tabs)
+                        training_kd21_unclip_ui = train_unclip_ui(kubin, training_tabs)
 
                 # with gr.TabItem("2.1 Textual Inversion") as training_kd21_ti:
                 #     training_kd21_ti.elem_classes = ["training_kd21_ti"]
@@ -92,6 +93,7 @@ def setup(kubin):
                 with gr.TabItem("Tools", id="training-tools"):
                     tools_ui = train_tools_ui(kubin, training_tabs)
 
+        training_block.elem_classes = ["kd-training-block"]
         return training_block
 
     return {
