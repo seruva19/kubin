@@ -28,13 +28,38 @@ def prepare_weights_for_task(model, task):
 
     torch.backends.cuda.matmul.allow_tf32 = model.params("diffusers", "use_tf32_mode")
 
+    applied_optimizations = []
+
     cache_dir = model.params("general", "cache_dir")
-    device = model.params("general", "device")
     half_weights = model.params("diffusers", "half_precision_weights")
     run_prior_on_cpu = model.params("diffusers", "run_prior_on_cpu")
+    device = model.params("general", "device")
+    enable_xformers = model.params("diffusers", "enable_xformers")
+
+    sequential_prior_offload = sequential_decoder_offload = model.params(
+        "diffusers", "sequential_cpu_offload"
+    )
+
+    full_prior_offload = full_decoder_offload = model.params(
+        "diffusers", "full_model_offload"
+    )
+
+    enable_sdp_attention = model.params("diffusers", "enable_sdp_attention")
+    channels_last_memory = model.params("diffusers", "channels_last_memory")
+    torch_code_compilation = model.params("diffusers", "torch_code_compilation")
+    enable_sliced_attention = model.params("diffusers", "enable_sliced_attention")
+    slice_size = model.params("diffusers", "attention_slice_size")
+
+    xformers_available = False
+    try:
+        import xformers
+
+        xformers_available = True
+    except:
+        None
 
     if model.pipe_prior is None:
-        model.image_encoder = CLIPVisionModelWithProjection.from_pretrained(
+        image_encoder = CLIPVisionModelWithProjection.from_pretrained(
             "kandinsky-community/kandinsky-2-2-prior",
             subfolder="image_encoder",
             cache_dir=cache_dir,
@@ -43,38 +68,59 @@ def prepare_weights_for_task(model, task):
             # device_map="auto",
         )
 
-        if not run_prior_on_cpu and half_weights:
-            model.image_encoder = model.image_encoder.half()
+        if half_weights and not run_prior_on_cpu:
+            image_encoder = image_encoder.half()
+
+        if (
+            not run_prior_on_cpu
+            and not sequential_prior_offload
+            and not full_prior_offload
+        ):
+            image_encoder = image_encoder.to(device)
 
         model.pipe_prior = KandinskyV22PriorPipeline.from_pretrained(
             "kandinsky-community/kandinsky-2-2-prior",
-            image_encoder=model.image_encoder,
+            image_encoder=image_encoder,
             torch_dtype=torch.float32
             if run_prior_on_cpu
             else type_of_weights(model.params),
             cache_dir=cache_dir,
             resume_download=True,
         )
+
+        if (
+            not run_prior_on_cpu
+            and not sequential_prior_offload
+            and not full_prior_offload
+        ):
+            model.pipe_prior = model.pipe_prior.to(device)
+
     current_prior = model.pipe_prior
 
     if task == "text2img" or task == "mix" or task == "img2img":
         if model.t2i_pipe is None:
             flush_if_required(model, task)
 
-            model.unet_2d = UNet2DConditionModel.from_pretrained(
+            unet_2d = UNet2DConditionModel.from_pretrained(
                 "kandinsky-community/kandinsky-2-2-decoder",
                 subfolder="unet",
                 cache_dir=cache_dir,
                 resume_download=True,
             ).half()
 
+            if not sequential_decoder_offload and not full_decoder_offload:
+                unet_2d = unet_2d.to(device)
+
             model.t2i_pipe = KandinskyV22Pipeline.from_pretrained(
                 "kandinsky-community/kandinsky-2-2-decoder",
-                unet=model.unet_2d,
+                unet=unet_2d,
                 torch_dtype=type_of_weights(model.params),
                 cache_dir=cache_dir,
                 resume_download=True,
             )
+
+            if not sequential_decoder_offload and not full_decoder_offload:
+                model.t2i_pipe = model.t2i_pipe.to(device)
 
         current_decoder = model.t2i_pipe
         if task == "img2img":
@@ -85,20 +131,26 @@ def prepare_weights_for_task(model, task):
         if model.cnet_t2i_pipe is None:
             flush_if_required(model, task)
 
-            model.unet_2d = UNet2DConditionModel.from_pretrained(
+            unet_2d = UNet2DConditionModel.from_pretrained(
                 "kandinsky-community/kandinsky-2-2-controlnet-depth",
                 subfolder="unet",
                 cache_dir=cache_dir,
                 resume_download=True,
             ).half()
 
+            if not sequential_decoder_offload and not full_decoder_offload:
+                unet_2d = unet_2d.to(device)
+
             model.cnet_t2i_pipe = KandinskyV22ControlnetPipeline.from_pretrained(
                 "kandinsky-community/kandinsky-2-2-controlnet-depth",
-                unet=model.unet_2d,
+                unet=unet_2d,
                 torch_dtype=type_of_weights(model.params),
                 cache_dir=cache_dir,
                 resume_download=True,
             )
+
+            if not sequential_decoder_offload and not full_decoder_offload:
+                model.cnet_t2i_pipe = model.cnet_t2i_pipe.to(device)
 
         current_decoder = model.cnet_t2i_pipe
 
@@ -123,66 +175,28 @@ def prepare_weights_for_task(model, task):
         if model.inpaint_pipe is None:
             flush_if_required(model, task)
 
-            model.unet_2d = UNet2DConditionModel.from_pretrained(
+            unet_2d = UNet2DConditionModel.from_pretrained(
                 "kandinsky-community/kandinsky-2-2-decoder-inpaint",
                 subfolder="unet",
                 cache_dir=cache_dir,
                 resume_download=True,
             ).half()
 
+            if not sequential_decoder_offload and not full_decoder_offload:
+                unet_2d = unet_2d.to(device)
+
             model.inpaint_pipe = KandinskyV22InpaintPipeline.from_pretrained(
                 "kandinsky-community/kandinsky-2-2-decoder-inpaint",
                 torch_dtype=type_of_weights(model.params),
-                unet=model.unet_2d,
+                unet=unet_2d,
                 cache_dir=cache_dir,
                 resume_download=True,
             )
 
+            if not sequential_decoder_offload and not full_decoder_offload:
+                model.inpaint_pipe = model.inpaint_pipe.to(device)
+
         current_decoder = model.inpaint_pipe
-
-    apply_on_device(
-        model.params,
-        model.image_encoder,
-        model.unet_2d,
-        current_prior,
-        current_decoder,
-        model.pipe_info,
-    )
-    return current_prior, current_decoder
-
-
-def apply_on_device(
-    k_params,
-    image_encoder: CLIPVisionModelWithProjection,
-    unet_2d: UNet2DConditionModel,
-    prior,
-    decoder,
-    pipe_info,
-):
-    applied_optimizations = []
-    device = k_params("general", "device")
-
-    run_prior_on_cpu = k_params("diffusers", "run_prior_on_cpu")
-    enable_xformers = k_params("diffusers", "enable_xformers")
-
-    sequential_prior_offload = sequential_decoder_offload = k_params(
-        "diffusers", "sequential_cpu_offload"
-    )
-
-    full_model_offload = k_params("diffusers", "full_model_offload")
-    enable_sdp_attention = k_params("diffusers", "enable_sdp_attention")
-    channels_last_memory = k_params("diffusers", "channels_last_memory")
-    torch_code_compilation = k_params("diffusers", "torch_code_compilation")
-    enable_sliced_attention = k_params("diffusers", "enable_sliced_attention")
-    slice_size = k_params("diffusers", "attention_slice_size")
-
-    xformers_available = False
-    try:
-        import xformers
-
-        xformers_available = True
-    except:
-        None
 
     prior_device = device
     if run_prior_on_cpu:
@@ -198,7 +212,7 @@ def apply_on_device(
 
             try:
                 if prior_device != "cpu":
-                    prior.enable_xformers_memory_efficient_attention(
+                    current_prior.enable_xformers_memory_efficient_attention(
                         attention_op=MemoryEfficientAttentionOp
                     )
                     applied_optimizations.append("xformers for prior")
@@ -206,7 +220,7 @@ def apply_on_device(
                 k_log("failed to apply xformers for prior")
 
             try:
-                decoder.enable_xformers_memory_efficient_attention(
+                current_decoder.enable_xformers_memory_efficient_attention(
                     attention_op=MemoryEfficientAttentionOp
                 )
                 applied_optimizations.append("xformers for decoder")
@@ -215,20 +229,20 @@ def apply_on_device(
         else:
             k_log("xformers use requested, but no xformers installed")
     else:
-        prior.disable_xformers_memory_efficient_attention()
-        decoder.disable_xformers_memory_efficient_attention()
+        current_prior.disable_xformers_memory_efficient_attention()
+        current_decoder.disable_xformers_memory_efficient_attention()
 
     if enable_sdp_attention:
-        decoder.unet.set_attn_processor(AttnAddedKVProcessor2_0())
+        current_decoder.unet.set_attn_processor(AttnAddedKVProcessor2_0())
         applied_optimizations.append("forced sdp attention for decoder unet")
 
     if channels_last_memory:
-        decoder.unet.to(memory_format=torch.channels_last)
+        current_decoder.unet.to(memory_format=torch.channels_last)
         applied_optimizations.append("channels last memory for decoder unet")
 
     if torch_code_compilation:
-        decoder.unet = torch.compile(
-            decoder.unet, mode="reduce-overhead", fullgraph=True
+        current_decoder.unet = torch.compile(
+            current_decoder.unet, mode="reduce-overhead", fullgraph=True
         )
         applied_optimizations.append("torch compile for decoder unet")
 
@@ -238,49 +252,66 @@ def apply_on_device(
                 "sequential offload for prior won't be applied, because prior generation on CPU is enabled"
             )
         else:
-            if not pipe_info["sequential_prior_offload"]:
-                prior.enable_sequential_cpu_offload()
-                pipe_info["sequential_prior_offload"] = True
+            if not model.pipe_info["sequential_prior_offload"]:
+                current_prior.enable_sequential_cpu_offload()
+                model.pipe_info["sequential_prior_offload"] = True
             applied_optimizations.append("sequential CPU offloading for prior")
+    elif full_prior_offload:
+        if run_prior_on_cpu:
+            k_log(
+                "full offload for prior won't be applied, because prior generation on CPU is enabled"
+            )
+        else:
+            if not model.pipe_info["full_prior_offload"]:
+                current_prior.enable_model_cpu_offload()
+                model.pipe_info["full_prior_offload"] = True
+            applied_optimizations.append("full model offloading for prior")
     else:
-        image_encoder.to(prior_device)
-        prior.to(prior_device)
-        pipe_info["sequential_prior_offload"] = False
+        # image_encoder.to(prior_device)
+        # current_prior.to(prior_device)
+        model.pipe_info["sequential_prior_offload"] = False
+        model.pipe_info["full_prior_offload"] = False
 
     if sequential_decoder_offload:
-        if not pipe_info["sequential_decoder_offload"]:
-            decoder.enable_sequential_cpu_offload()
-            pipe_info["sequential_decoder_offload"] = True
+        if not model.pipe_info["sequential_decoder_offload"]:
+            current_decoder.enable_sequential_cpu_offload()
+            model.pipe_info["sequential_decoder_offload"] = True
         applied_optimizations.append("sequential CPU offloading for decoder")
-    else:
-        unet_2d.to(device)
-        decoder.to(device)
-        pipe_info["sequential_decoder_offload"] = False
-
-    if full_model_offload:
-        decoder.enable_model_cpu_offload()
+    elif full_decoder_offload:
+        if not model.pipe_info["full_decoder_offload"]:
+            current_decoder.enable_model_cpu_offload()
+            model.pipe_info["full_decoder_offload"] = True
         applied_optimizations.append("full model offloading for decoder")
+    else:
+        # unet_2d.to(device)
+        # current_decoder.to(device)
+        model.pipe_info["sequential_decoder_offload"] = False
+        model.pipe_info["full_decoder_offload"] = False
 
     if enable_sliced_attention:
-        decoder.enable_attention_slicing(slice_size)
+        current_decoder.enable_attention_slicing(slice_size)
         applied_optimizations.append(
             f"attention slicing for decoder (slice_size={slice_size})"
         )
     else:
-        decoder.disable_attention_slicing()
+        current_decoder.disable_attention_slicing()
 
     k_log(
         f"optimizations: {'none' if len(applied_optimizations) == 0 else '; '.join(applied_optimizations)}"
     )
 
-    prior.safety_checker = None
-    decoder.safety_checker = None
+    current_prior.safety_checker = None
+    current_decoder.safety_checker = None
+
+    return current_prior, current_decoder
 
 
 def clear_pipe_info(model):
     model.pipe_info = {
         "sequential_prior_offload": False,
         "sequential_decoder_offload": False,
+        "full_prior_offload": False,
+        "full_decoder_offload": False,
     }
 
 

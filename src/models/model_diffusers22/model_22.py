@@ -37,8 +37,8 @@ class Model_Diffusers22:
         k_log("activating pipeline: diffusers (2.2)")
         self.params = params
 
-        self.image_encoder: CLIPVisionModelWithProjection | None = None
-        self.unet_2d: UNet2DConditionModel | None = None
+        # self.image_encoder: CLIPVisionModelWithProjection | None = None
+        # self.unet_2d: UNet2DConditionModel | None = None
 
         self.pipe_prior: KandinskyV22PriorPipeline | None = None
         self.pipe_prior_e2e: KandinskyV22PriorEmb2EmbPipeline | None = None

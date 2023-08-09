@@ -1,3 +1,7 @@
+body:not([class*="pipeline-native-kd21"]) .kd-training-block>.tabs>.tab-nav>button:nth-child(1) {}
+
+body:not([class*="pipeline-diffusers-kd22"]) .kd-training-block>.tabs>.tab-nav>button:nth-child(2) {}
+
 #training-dataset-df {
   height: 1000px;
   overflow-y: scroll !important;

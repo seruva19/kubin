@@ -59,6 +59,9 @@ class KubinParams:
         self.merge_with_cli()
         self._updated = self.conf.copy()
 
+    def register_change_callback(self, cb):
+        self.cb = cb
+
     def apply_config_changes(self):
         reload_model = False
         if (
@@ -75,6 +78,9 @@ class KubinParams:
             reload_model = True
 
         self.conf = self._updated.copy()
+        if self.cb:
+            self.cb(self.conf)
+
         return reload_model
 
     def save_user_config(self):
