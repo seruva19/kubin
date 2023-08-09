@@ -5,6 +5,8 @@ import importlib.util
 import sys
 import yaml
 
+from utils.logging import k_log
+
 
 class ExtensionRegistry:
     def __init__(self, ext_path, enabled_exts, disabled_exts, ext_order, skip_install):
@@ -164,7 +166,7 @@ class ExtensionRegistry:
                 extension_installed = f"{self.root}/{extension}/.installed"
                 if os.path.exists(extension_installed):
                     os.remove(extension_installed)
-                    kubin.log(
+                    k_log(
                         f"{i+1}: extension '{extension}' will be reinstalled on next run"
                     )
 
@@ -196,3 +198,11 @@ class ExtensionRegistry:
             if value.get("hook_fn", None) is not None
         }.items():
             kubin.params.hook_store.register_hook(ext_name, ext_target["hook_fn"])
+
+    def propagate_params_changes(self, k_params):
+        for ext_name, ext_target in {
+            key: value
+            for key, value in self.extensions.items()
+            if value.get("params_changed", None) is not None
+        }.items():
+            ext_target["params_changed"](k_params)

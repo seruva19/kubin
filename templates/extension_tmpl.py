@@ -36,6 +36,7 @@ def setup(kubin):
         "inject_fn": lambda target, params, augmentations: extension_injection_fn(
             params, augmentations[0]
         ),
+        "params_changed": lambda p: None,
         "inject_position": "before_cnet",
         "targets": ["t2i", "i2i", "mix", "inpaint", "outpaint"],
         "hook_fn": lambda hook, params: extension_hook_fn(params),

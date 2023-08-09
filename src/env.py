@@ -30,6 +30,8 @@ class Kubin:
             self.params("general", "skip_install"),
         )
 
+        self.params.register_change_callback(self.ext_registry.propagate_params_changes)
+
     def with_pipeline(self):
         use_mock = self.params("general", "mock")
         model_name = self.params("general", "model_name")
