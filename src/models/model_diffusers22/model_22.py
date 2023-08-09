@@ -14,6 +14,8 @@ from models.model_diffusers22.model_22_utils import (
     flush_if_required,
     prepare_weights_for_task,
     images_or_texts,
+    clear_pipe_info,
+    execute_forced_hooks,
 )
 from transformers import CLIPVisionModelWithProjection
 from diffusers.models import UNet2DConditionModel
@@ -47,7 +49,9 @@ class Model_Diffusers22:
         self.cnet_i2i_pipe: KandinskyV22ControlnetImg2ImgPipeline | None = None
 
         self.config = {}
+
         self.cublas_config = os.environ.get("CUBLAS_WORKSPACE_CONFIG", None)
+        clear_pipe_info(self)
 
     def prepareModel(self, task):
         k_log(f"task queued: {task}")
@@ -62,30 +66,19 @@ class Model_Diffusers22:
             "outpainting",
         ]
 
-        if self.params("diffusers", "use_deterministic_algorithms"):
-            os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
-            torch.use_deterministic_algorithms(True)
-        else:
-            if self.cublas_config is not None:
-                os.environ["CUBLAS_WORKSPACE_CONFIG"] = self.cublas_config
-            torch.use_deterministic_algorithms(False)
-
-        torch.backends.cuda.matmul.allow_tf32 = self.params(
-            "diffusers", "use_tf32_mode"
-        )
-
         prior, decoder = prepare_weights_for_task(self, task)
         return (prior, decoder)
 
     def flush(self, target=None):
+        hook_params = {"model": self, "target": target}
         self.params.hook_store.call(
             HOOK.BEFORE_FLUSH_MODEL,
-            **{"model": self, "target": target},
+            **hook_params,
         )
         flush_if_required(self, target)
         self.params.hook_store.call(
             HOOK.AFTER_FLUSH_MODEL,
-            **{"model": self, "target": target},
+            **hook_params,
         )
 
     def prepareParams(self, params):
@@ -130,39 +123,33 @@ class Model_Diffusers22:
                 return self.i2i_cnet(params)
 
         hooks = self.params.hook_store
+        hook_params = {"model": self, "params": params, "task": task}
+        execute_forced_hooks(HOOK.BEFORE_PREPARE_MODEL, params, hook_params)
         hooks.call(
             HOOK.BEFORE_PREPARE_MODEL,
-            **{"model": self, "params": params, "task": task},
+            **hook_params,
         )
 
         prior, decoder = self.prepareModel(task)
         assert isinstance(prior, KandinskyV22PriorPipeline)
         assert isinstance(decoder, KandinskyV22Pipeline)
 
+        hook_params["prior"] = prior
+        hook_params["decoder"] = decoder
+        execute_forced_hooks(HOOK.BEFORE_PREPARE_PARAMS, params, hook_params)
         hooks.call(
             HOOK.BEFORE_PREPARE_PARAMS,
-            **{
-                "model": self,
-                "params": params,
-                "task": task,
-                "prior": prior,
-                "decoder": decoder,
-            },
+            **hook_params,
         )
 
         params, prior_generator, decoder_generator = self.prepareParams(params)
 
+        hook_params["prior_generator"] = prior_generator
+        hook_params["decoder_generator"] = decoder_generator
+        execute_forced_hooks(HOOK.BEFORE_PREPARE_EMBEDS, params, hook_params)
         self.params.hook_store.call(
             HOOK.BEFORE_PREPARE_EMBEDS,
-            **{
-                "model": self,
-                "params": params,
-                "task": task,
-                "prior": prior,
-                "decoder": decoder,
-                "prior_generator": prior_generator,
-                "decoder_generator": decoder_generator,
-            },
+            **hook_params,
         )
 
         image_embeds, zero_embeds = prior(
@@ -202,20 +189,13 @@ class Model_Diffusers22:
         images = []
         prior_on_cpu = self.params("diffusers", "run_prior_on_cpu")
 
+        hook_params["image_embeds"] = image_embeds
+        hook_params["negative_image_embeds"] = negative_image_embeds
+        hook_params["scheduler"] = decoder.scheduler
+        execute_forced_hooks(HOOK.BEFORE_PREPARE_DECODER, params, hook_params)
         self.params.hook_store.call(
             HOOK.BEFORE_PREPARE_DECODER,
-            **{
-                "model": self,
-                "params": params,
-                "task": task,
-                "prior": prior,
-                "decoder": decoder,
-                "prior_generator": prior_generator,
-                "decoder_generator": decoder_generator,
-                "image_embeds": image_embeds,
-                "negative_image_embeds": negative_image_embeds,
-                "scheduler": decoder.scheduler,
-            },
+            **hook_params,
         )
 
         for _ in itertools.repeat(None, params["batch_count"]):
@@ -235,29 +215,20 @@ class Model_Diffusers22:
                 return_dict=True,
             ).images
 
+            hook_params["batch"] = current_batch
+            execute_forced_hooks(HOOK.BEFORE_BATCH_SAVE, params, hook_params)
             self.params.hook_store.call(
                 HOOK.BEFORE_BATCH_SAVE,
-                **{
-                    "model": self,
-                    "params": params,
-                    "task": task,
-                    "prior": prior,
-                    "decoder": decoder,
-                    "prior_generator": prior_generator,
-                    "decoder_generator": decoder_generator,
-                    "image_embeds": image_embeds,
-                    "negative_image_embeds": negative_image_embeds,
-                    "scheduler": decoder.scheduler,
-                    "batch": current_batch,
-                },
+                **hook_params,
             )
 
             images += self.create_batch_images(params, "text2img", current_batch)
         k_log("decoder images: done")
 
+        execute_forced_hooks(HOOK.BEFORE_TASK_QUIT, params, hook_params)
         self.params.hook_store.call(
             HOOK.BEFORE_TASK_QUIT,
-            **{"model": self, "task": task},
+            **hook_params,
         )
 
         return images
@@ -270,39 +241,33 @@ class Model_Diffusers22:
             return self.i2i_cnet(params)
 
         hooks = self.params.hook_store
+        hook_params = {"model": self, "params": params, "task": task}
+        execute_forced_hooks(HOOK.BEFORE_PREPARE_MODEL, params, hook_params)
         hooks.call(
             HOOK.BEFORE_PREPARE_MODEL,
-            **{"model": self, "params": params, "task": task},
+            **hook_params,
         )
 
         prior, decoder = self.prepareModel(task)
         assert isinstance(prior, KandinskyV22PriorPipeline)
         assert isinstance(decoder, KandinskyV22Img2ImgPipeline)
 
+        hook_params["prior"] = prior
+        hook_params["decoder"] = decoder
+        execute_forced_hooks(HOOK.BEFORE_PREPARE_PARAMS, params, hook_params)
         hooks.call(
             HOOK.BEFORE_PREPARE_PARAMS,
-            **{
-                "model": self,
-                "params": params,
-                "task": task,
-                "prior": prior,
-                "decoder": decoder,
-            },
+            **hook_params,
         )
 
         params, prior_generator, decoder_generator = self.prepareParams(params)
 
+        hook_params["prior_generator"] = prior_generator
+        hook_params["decoder_generator"] = decoder_generator
+        execute_forced_hooks(HOOK.BEFORE_PREPARE_EMBEDS, params, hook_params)
         self.params.hook_store.call(
             HOOK.BEFORE_PREPARE_EMBEDS,
-            **{
-                "model": self,
-                "params": params,
-                "task": task,
-                "prior": prior,
-                "decoder": decoder,
-                "prior_generator": prior_generator,
-                "decoder_generator": decoder_generator,
-            },
+            **hook_params,
         )
 
         image_embeds, negative_image_embeds = prior(
@@ -325,20 +290,13 @@ class Model_Diffusers22:
         images = []
         prior_on_cpu = self.params("diffusers", "run_prior_on_cpu")
 
+        hook_params["image_embeds"] = image_embeds
+        hook_params["negative_image_embeds"] = negative_image_embeds
+        hook_params["scheduler"] = decoder.scheduler
+        execute_forced_hooks(HOOK.BEFORE_PREPARE_DECODER, params, hook_params)
         self.params.hook_store.call(
             HOOK.BEFORE_PREPARE_DECODER,
-            **{
-                "model": self,
-                "params": params,
-                "task": task,
-                "prior": prior,
-                "decoder": decoder,
-                "prior_generator": prior_generator,
-                "decoder_generator": decoder_generator,
-                "scheduler": decoder.scheduler,
-                "image_embeds": image_embeds,
-                "negative_image_embeds": negative_image_embeds,
-            },
+            **hook_params,
         )
 
         for _ in itertools.repeat(None, params["batch_count"]):
@@ -359,29 +317,20 @@ class Model_Diffusers22:
                 return_dict=True,
             ).images
 
+            hook_params["batch"] = current_batch
+            execute_forced_hooks(HOOK.BEFORE_BATCH_SAVE, params, hook_params)
             self.params.hook_store.call(
                 HOOK.BEFORE_BATCH_SAVE,
-                **{
-                    "model": self,
-                    "params": params,
-                    "task": task,
-                    "prior": prior,
-                    "decoder": decoder,
-                    "prior_generator": prior_generator,
-                    "decoder_generator": decoder_generator,
-                    "scheduler": decoder.scheduler,
-                    "image_embeds": image_embeds,
-                    "negative_image_embeds": negative_image_embeds,
-                    "batch": current_batch,
-                },
+                **hook_params,
             )
 
             images += self.create_batch_images(params, task, current_batch)
         k_log("decoder images: done")
 
+        execute_forced_hooks(HOOK.BEFORE_TASK_QUIT, params, hook_params)
         self.params.hook_store.call(
             HOOK.BEFORE_TASK_QUIT,
-            **{"model": self, "task": task},
+            **hook_params,
         )
 
         return images
@@ -394,24 +343,23 @@ class Model_Diffusers22:
             return self.mix_cnet(params)
 
         hooks = self.params.hook_store
+        hook_params = {"model": self, "params": params, "task": task}
+        execute_forced_hooks(HOOK.BEFORE_PREPARE_MODEL, params, hook_params)
         hooks.call(
             HOOK.BEFORE_PREPARE_MODEL,
-            **{"model": self, "params": params, "task": task},
+            **hook_params,
         )
 
         prior, decoder = self.prepareModel(task)
         assert isinstance(prior, KandinskyV22PriorPipeline)
         assert isinstance(decoder, KandinskyV22Pipeline)
 
+        hook_params["prior"] = prior
+        hook_params["decoder"] = decoder
+        execute_forced_hooks(HOOK.BEFORE_PREPARE_PARAMS, params, hook_params)
         hooks.call(
             HOOK.BEFORE_PREPARE_PARAMS,
-            **{
-                "model": self,
-                "params": params,
-                "task": task,
-                "prior": prior,
-                "decoder": decoder,
-            },
+            **hook_params,
         )
 
         params, prior_generator, decoder_generator = self.prepareParams(params)
@@ -422,19 +370,14 @@ class Model_Diffusers22:
         )
         weights = [params["weight_1"], params["weight_2"]]
 
+        hook_params["prior_generator"] = prior_generator
+        hook_params["decoder_generator"] = decoder_generator
+        hook_params["images_texts"] = images_texts
+        hook_params["weights"] = weights
+        execute_forced_hooks(HOOK.BEFORE_PREPARE_EMBEDS, params, hook_params)
         self.params.hook_store.call(
             HOOK.BEFORE_PREPARE_EMBEDS,
-            **{
-                "model": self,
-                "params": params,
-                "task": task,
-                "prior": prior,
-                "decoder": decoder,
-                "prior_generator": prior_generator,
-                "decoder_generator": decoder_generator,
-                "images_texts": images_texts,
-                "weights": weights,
-            },
+            **hook_params,
         )
 
         embeds = prior.interpolate(
@@ -455,22 +398,13 @@ class Model_Diffusers22:
         images = []
         prior_on_cpu = self.params("diffusers", "run_prior_on_cpu")
 
+        hook_params["image_embeds"] = embeds.image_embeds
+        hook_params["negative_image_embeds"] = embeds.negative_image_embeds
+        hook_params["scheduler"] = decoder.scheduler
+        execute_forced_hooks(HOOK.BEFORE_PREPARE_DECODER, params, hook_params)
         self.params.hook_store.call(
             HOOK.BEFORE_PREPARE_DECODER,
-            **{
-                "model": self,
-                "params": params,
-                "task": task,
-                "prior": prior,
-                "decoder": decoder,
-                "prior_generator": prior_generator,
-                "decoder_generator": decoder_generator,
-                "images_texts": images_texts,
-                "weights": weights,
-                "image_embeds": embeds.image_embeds,
-                "negative_image_embeds": embeds.negative_image_embeds,
-                "scheduler": decoder.scheduler,
-            },
+            **hook_params,
         )
 
         for _ in itertools.repeat(None, params["batch_count"]):
@@ -492,32 +426,20 @@ class Model_Diffusers22:
                 return_dict=True,
             ).images
 
+            hook_params["batch"] = current_batch
+            execute_forced_hooks(HOOK.BEFORE_BATCH_SAVE, params, hook_params)
             self.params.hook_store.call(
                 HOOK.BEFORE_BATCH_SAVE,
-                **{
-                    "model": self,
-                    "params": params,
-                    "task": task,
-                    "prior": prior,
-                    "decoder": decoder,
-                    "prior_generator": prior_generator,
-                    "decoder_generator": decoder_generator,
-                    "scheduler": decoder.scheduler,
-                    "images_texts": images_texts,
-                    "weights": weights,
-                    "image_embeds": embeds.image_embeds,
-                    "negative_image_embeds": embeds.negative_image_embeds,
-                    "scheduler": decoder.scheduler,
-                    "batch": current_batch,
-                },
+                **hook_params,
             )
 
             images += self.create_batch_images(params, task, current_batch)
         k_log("decoder images: done")
 
+        execute_forced_hooks(HOOK.BEFORE_TASK_QUIT, params, hook_params)
         self.params.hook_store.call(
             HOOK.BEFORE_TASK_QUIT,
-            **{"model": self, "task": task},
+            **hook_params,
         )
 
         return images
@@ -527,39 +449,33 @@ class Model_Diffusers22:
         params[".ui-task"] = task
 
         hooks = self.params.hook_store
+        hook_params = {"model": self, "params": params, "task": task}
+        execute_forced_hooks(HOOK.BEFORE_PREPARE_MODEL, params, hook_params)
         hooks.call(
             HOOK.BEFORE_PREPARE_MODEL,
-            **{"model": self, "params": params, "task": task},
+            **hook_params,
         )
 
         prior, decoder = self.prepareModel(task)
         assert isinstance(prior, KandinskyV22PriorPipeline)
         assert isinstance(decoder, KandinskyV22InpaintPipeline)
 
+        hook_params["prior"] = prior
+        hook_params["decoder"] = decoder
+        execute_forced_hooks(HOOK.BEFORE_PREPARE_PARAMS, params, hook_params)
         hooks.call(
             HOOK.BEFORE_PREPARE_PARAMS,
-            **{
-                "model": self,
-                "params": params,
-                "task": task,
-                "prior": prior,
-                "decoder": decoder,
-            },
+            **hook_params,
         )
 
         params, prior_generator, decoder_generator = self.prepareParams(params)
 
+        hook_params["prior_generator"] = prior_generator
+        hook_params["decoder_generator"] = decoder_generator
+        execute_forced_hooks(HOOK.BEFORE_PREPARE_EMBEDS, params, hook_params)
         self.params.hook_store.call(
             HOOK.BEFORE_PREPARE_EMBEDS,
-            **{
-                "model": self,
-                "params": params,
-                "task": task,
-                "prior": prior,
-                "decoder": decoder,
-                "prior_generator": prior_generator,
-                "decoder_generator": decoder_generator,
-            },
+            **hook_params,
         )
 
         image_embeds, zero_embeds = prior(
@@ -603,6 +519,7 @@ class Model_Diffusers22:
         )
         output_size = (width, height)
         mask = image_mask["mask"]
+
         inpaint_region = params["region"]
         inpaint_target = params["target"]
 
@@ -615,22 +532,15 @@ class Model_Diffusers22:
         images = []
         prior_on_cpu = self.params("diffusers", "run_prior_on_cpu")
 
+        hook_params["image_embeds"] = image_embeds
+        hook_params["negative_image_embeds"] = negative_image_embeds
+        hook_params["scheduler"] = decoder.scheduler
+        hook_params["inpaint_image"] = image
+        hook_params["inpaint_mask"] = mask
+        execute_forced_hooks(HOOK.BEFORE_PREPARE_DECODER, params, hook_params)
         self.params.hook_store.call(
             HOOK.BEFORE_PREPARE_DECODER,
-            **{
-                "model": self,
-                "params": params,
-                "task": task,
-                "prior": prior,
-                "decoder": decoder,
-                "prior_generator": prior_generator,
-                "decoder_generator": decoder_generator,
-                "scheduler": decoder.scheduler,
-                "image_embeds": image_embeds,
-                "negative_image_embeds": negative_image_embeds,
-                "image": image,
-                "mask": mask,
-            },
+            **hook_params,
         )
 
         for _ in itertools.repeat(None, params["batch_count"]):
@@ -652,31 +562,20 @@ class Model_Diffusers22:
                 return_dict=True,
             ).images
 
+            hook_params["batch"] = current_batch
+            execute_forced_hooks(HOOK.BEFORE_BATCH_SAVE, params, hook_params)
             self.params.hook_store.call(
                 HOOK.BEFORE_BATCH_SAVE,
-                **{
-                    "model": self,
-                    "params": params,
-                    "task": task,
-                    "prior": prior,
-                    "decoder": decoder,
-                    "prior_generator": prior_generator,
-                    "decoder_generator": decoder_generator,
-                    "scheduler": decoder.scheduler,
-                    "image_embeds": image_embeds,
-                    "negative_image_embeds": negative_image_embeds,
-                    "image": image,
-                    "mask": mask,
-                    "batch": current_batch,
-                },
+                **hook_params,
             )
 
             images += self.create_batch_images(params, task, current_batch)
         k_log("decoder images: done")
 
+        execute_forced_hooks(HOOK.BEFORE_TASK_QUIT, params, hook_params)
         self.params.hook_store.call(
             HOOK.BEFORE_TASK_QUIT,
-            **{"model": self, "task": task},
+            **hook_params,
         )
 
         return images
@@ -686,39 +585,33 @@ class Model_Diffusers22:
         params[".ui-task"] = task
 
         hooks = self.params.hook_store
+        hook_params = {"model": self, "params": params, "task": task}
+        execute_forced_hooks(HOOK.BEFORE_PREPARE_MODEL, params, hook_params)
         hooks.call(
             HOOK.BEFORE_PREPARE_MODEL,
-            **{"model": self, "params": params, "task": task},
+            **hook_params,
         )
 
         prior, decoder = self.prepareModel(task)
         assert isinstance(prior, KandinskyV22PriorPipeline)
         assert isinstance(decoder, KandinskyV22InpaintPipeline)
 
+        hook_params["prior"] = prior
+        hook_params["decoder"] = decoder
+        execute_forced_hooks(HOOK.BEFORE_PREPARE_PARAMS, params, hook_params)
         hooks.call(
             HOOK.BEFORE_PREPARE_PARAMS,
-            **{
-                "model": self,
-                "params": params,
-                "task": task,
-                "prior": prior,
-                "decoder": decoder,
-            },
+            **hook_params,
         )
 
         params, prior_generator, decoder_generator = self.prepareParams(params)
 
+        hook_params["prior_generator"] = prior_generator
+        hook_params["decoder_generator"] = decoder_generator
+        execute_forced_hooks(HOOK.BEFORE_PREPARE_EMBEDS, params, hook_params)
         self.params.hook_store.call(
             HOOK.BEFORE_PREPARE_EMBEDS,
-            **{
-                "model": self,
-                "params": params,
-                "task": task,
-                "prior": prior,
-                "decoder": decoder,
-                "prior_generator": prior_generator,
-                "decoder_generator": decoder_generator,
-            },
+            **hook_params,
         )
 
         image_embeds, zero_embeds = prior(
@@ -768,24 +661,17 @@ class Model_Diffusers22:
         images = []
         prior_on_cpu = self.params("diffusers", "run_prior_on_cpu")
 
+        hook_params["image_embeds"] = image_embeds
+        hook_params["negative_image_embeds"] = negative_image_embeds
+        hook_params["scheduler"] = decoder.scheduler
+        hook_params["outpaint_image"] = image
+        hook_params["outpaint_mask"] = mask
+        hook_params["outpaint_width"] = width
+        hook_params["outpaint_height"] = height
+        execute_forced_hooks(HOOK.BEFORE_PREPARE_DECODER, params, hook_params)
         self.params.hook_store.call(
             HOOK.BEFORE_PREPARE_DECODER,
-            **{
-                "model": self,
-                "params": params,
-                "task": task,
-                "prior": prior,
-                "decoder": decoder,
-                "prior_generator": prior_generator,
-                "decoder_generator": decoder_generator,
-                "scheduler": decoder.scheduler,
-                "image_embeds": image_embeds,
-                "negative_image_embeds": negative_image_embeds,
-                "image": image,
-                "mask": mask,
-                "width": width,
-                "height": height,
-            },
+            **hook_params,
         )
 
         for _ in itertools.repeat(None, params["batch_count"]):
@@ -807,73 +693,55 @@ class Model_Diffusers22:
                 return_dict=True,
             ).images
 
+            hook_params["batch"] = current_batch
+            execute_forced_hooks(HOOK.BEFORE_BATCH_SAVE, params, hook_params)
             self.params.hook_store.call(
                 HOOK.BEFORE_BATCH_SAVE,
-                **{
-                    "model": self,
-                    "params": params,
-                    "task": task,
-                    "prior": prior,
-                    "decoder": decoder,
-                    "prior_generator": prior_generator,
-                    "decoder_generator": decoder_generator,
-                    "scheduler": decoder.scheduler,
-                    "image_embeds": image_embeds,
-                    "negative_image_embeds": negative_image_embeds,
-                    "image": image,
-                    "mask": mask,
-                    "width": width,
-                    "height": height,
-                    "batch": current_batch,
-                },
+                **hook_params,
             )
 
             images += self.create_batch_images(params, task, current_batch)
         k_log("decoder images: done")
 
+        execute_forced_hooks(HOOK.BEFORE_TASK_QUIT, params, hook_params)
         self.params.hook_store.call(
             HOOK.BEFORE_TASK_QUIT,
-            **{"model": self, "task": task},
+            **hook_params,
         )
 
         return images
 
     def t2i_cnet(self, params):
-        hooks = self.params.hook_store
         task = "text2img_cnet"
+
+        hooks = self.params.hook_store
+        hook_params = {"model": self, "params": params, "task": task}
+        execute_forced_hooks(HOOK.BEFORE_PREPARE_MODEL, params, hook_params)
         hooks.call(
             HOOK.BEFORE_PREPARE_MODEL,
-            **{"model": self, "params": params, "task": task},
+            **hook_params,
         )
 
         prior, decoder = self.prepareModel(task)
         assert isinstance(prior, KandinskyV22PriorPipeline)
         assert isinstance(decoder, KandinskyV22ControlnetPipeline)
 
+        hook_params["prior"] = prior
+        hook_params["decoder"] = decoder
+        execute_forced_hooks(HOOK.BEFORE_PREPARE_PARAMS, params, hook_params)
         hooks.call(
             HOOK.BEFORE_PREPARE_PARAMS,
-            **{
-                "model": self,
-                "params": params,
-                "task": task,
-                "prior": prior,
-                "decoder": decoder,
-            },
+            **hook_params,
         )
 
         params, prior_generator, decoder_generator = self.prepareParams(params)
 
+        hook_params["prior_generator"] = prior_generator
+        hook_params["decoder_generator"] = decoder_generator
+        execute_forced_hooks(HOOK.BEFORE_PREPARE_EMBEDS, params, hook_params)
         self.params.hook_store.call(
             HOOK.BEFORE_PREPARE_EMBEDS,
-            **{
-                "model": self,
-                "params": params,
-                "task": task,
-                "prior": prior,
-                "decoder": decoder,
-                "prior_generator": prior_generator,
-                "decoder_generator": decoder_generator,
-            },
+            **hook_params,
         )
 
         cnet_image = params["cnet_image"]
@@ -919,21 +787,14 @@ class Model_Diffusers22:
         images = []
         prior_on_cpu = self.params("diffusers", "run_prior_on_cpu")
 
+        hook_params["image_embeds"] = image_embeds
+        hook_params["negative_image_embeds"] = negative_image_embeds
+        hook_params["scheduler"] = decoder.scheduler
+        hook_params["cnet_hint"] = hint
+        execute_forced_hooks(HOOK.BEFORE_PREPARE_DECODER, params, hook_params)
         self.params.hook_store.call(
             HOOK.BEFORE_PREPARE_DECODER,
-            **{
-                "model": self,
-                "params": params,
-                "task": task,
-                "prior": prior,
-                "decoder": decoder,
-                "prior_generator": prior_generator,
-                "decoder_generator": decoder_generator,
-                "scheduler": decoder.scheduler,
-                "image_embeds": image_embeds,
-                "negative_image_embeds": negative_image_embeds,
-                "hint": hint,
-            },
+            **hook_params,
         )
 
         for _ in itertools.repeat(None, params["batch_count"]):
@@ -954,70 +815,55 @@ class Model_Diffusers22:
                 return_dict=True,
             ).images
 
+            hook_params["batch"] = current_batch
+            execute_forced_hooks(HOOK.BEFORE_BATCH_SAVE, params, hook_params)
             self.params.hook_store.call(
                 HOOK.BEFORE_BATCH_SAVE,
-                **{
-                    "model": self,
-                    "params": params,
-                    "task": task,
-                    "prior": prior,
-                    "decoder": decoder,
-                    "prior_generator": prior_generator,
-                    "decoder_generator": decoder_generator,
-                    "scheduler": decoder.scheduler,
-                    "image_embeds": image_embeds,
-                    "negative_image_embeds": negative_image_embeds,
-                    "hint": hint,
-                    "batch": current_batch,
-                },
+                **hook_params,
             )
 
             images += self.create_batch_images(params, "text2img_cnet", current_batch)
         k_log("decoder images: done")
 
+        execute_forced_hooks(HOOK.BEFORE_TASK_QUIT, params, hook_params)
         self.params.hook_store.call(
             HOOK.BEFORE_TASK_QUIT,
-            **{"model": self, "task": task},
+            **hook_params,
         )
 
         return images
 
     def i2i_cnet(self, params):
-        hooks = self.params.hook_store
         task = "img2img_cnet"
+
+        hooks = self.params.hook_store
+        hook_params = {"model": self, "params": params, "task": task}
+        execute_forced_hooks(HOOK.BEFORE_PREPARE_MODEL, params, hook_params)
         hooks.call(
             HOOK.BEFORE_PREPARE_MODEL,
-            **{"model": self, "params": params, "task": task},
+            **hook_params,
         )
 
         prior, decoder = self.prepareModel(task)
         assert isinstance(prior, KandinskyV22PriorEmb2EmbPipeline)
         assert isinstance(decoder, KandinskyV22ControlnetImg2ImgPipeline)
 
+        hook_params["prior"] = prior
+        hook_params["decoder"] = decoder
+        execute_forced_hooks(HOOK.BEFORE_PREPARE_PARAMS, params, hook_params)
         hooks.call(
             HOOK.BEFORE_PREPARE_PARAMS,
-            **{
-                "model": self,
-                "params": params,
-                "task": task,
-                "prior": prior,
-                "decoder": decoder,
-            },
+            **hook_params,
         )
 
         params, prior_generator, decoder_generator = self.prepareParams(params)
 
+        hook_params["prior_generator"] = prior_generator
+        hook_params["decoder_generator"] = decoder_generator
+        execute_forced_hooks(HOOK.BEFORE_PREPARE_EMBEDS, params, hook_params)
         self.params.hook_store.call(
             HOOK.BEFORE_PREPARE_EMBEDS,
-            **{
-                "model": self,
-                "params": params,
-                "task": task,
-                "prior": prior,
-                "decoder": decoder,
-                "prior_generator": prior_generator,
-                "decoder_generator": decoder_generator,
-            },
+            **hook_params,
         )
 
         init_image = params["init_image"]
@@ -1071,21 +917,14 @@ class Model_Diffusers22:
         images = []
         prior_on_cpu = self.params("diffusers", "run_prior_on_cpu")
 
+        hook_params["image_embeds"] = image_embeds
+        hook_params["negative_image_embeds"] = negative_image_embeds
+        hook_params["scheduler"] = decoder.scheduler
+        hook_params["cnet_hint"] = hint
+        execute_forced_hooks(HOOK.BEFORE_PREPARE_DECODER, params, hook_params)
         self.params.hook_store.call(
             HOOK.BEFORE_PREPARE_DECODER,
-            **{
-                "model": self,
-                "params": params,
-                "task": task,
-                "prior": prior,
-                "decoder": decoder,
-                "prior_generator": prior_generator,
-                "decoder_generator": decoder_generator,
-                "scheduler": decoder.scheduler,
-                "image_embeds": image_embeds,
-                "negative_image_embeds": negative_image_embeds,
-                "hint": hint,
-            },
+            **hook_params,
         )
 
         for _ in itertools.repeat(None, params["batch_count"]):
@@ -1107,55 +946,45 @@ class Model_Diffusers22:
                 return_dict=True,
             ).images
 
+            hook_params["batch"] = current_batch
+            execute_forced_hooks(HOOK.BEFORE_BATCH_SAVE, params, hook_params)
             self.params.hook_store.call(
                 HOOK.BEFORE_BATCH_SAVE,
-                **{
-                    "model": self,
-                    "params": params,
-                    "task": task,
-                    "prior": prior,
-                    "decoder": decoder,
-                    "prior_generator": prior_generator,
-                    "decoder_generator": decoder_generator,
-                    "scheduler": decoder.scheduler,
-                    "image_embeds": image_embeds,
-                    "negative_image_embeds": negative_image_embeds,
-                    "hint": hint,
-                    "batch": current_batch,
-                },
+                **hook_params,
             )
 
             images += self.create_batch_images(params, task, current_batch)
         k_log("decoder images: done")
 
+        execute_forced_hooks(HOOK.BEFORE_TASK_QUIT, params, hook_params)
         self.params.hook_store.call(
             HOOK.BEFORE_TASK_QUIT,
-            **{"model": self, "task": task},
+            **hook_params,
         )
 
         return images
 
     def mix_cnet(self, params):
-        hooks = self.params.hook_store
         task = "mix_cnet"
+
+        hooks = self.params.hook_store
+        hook_params = {"model": self, "params": params, "task": task}
+        execute_forced_hooks(HOOK.BEFORE_PREPARE_MODEL, params, hook_params)
         hooks.call(
             HOOK.BEFORE_PREPARE_MODEL,
-            **{"model": self, "params": params, "task": task},
+            **hook_params,
         )
 
         prior, decoder = self.prepareModel(task)
         assert isinstance(prior, KandinskyV22PriorPipeline)
         assert isinstance(decoder, KandinskyV22ControlnetImg2ImgPipeline)
 
+        hook_params["prior"] = prior
+        hook_params["decoder"] = decoder
+        execute_forced_hooks(HOOK.BEFORE_PREPARE_PARAMS, params, hook_params)
         hooks.call(
             HOOK.BEFORE_PREPARE_PARAMS,
-            **{
-                "model": self,
-                "params": params,
-                "task": task,
-                "prior": prior,
-                "decoder": decoder,
-            },
+            **hook_params,
         )
 
         params, prior_generator, decoder_generator = self.prepareParams(params)
@@ -1170,19 +999,14 @@ class Model_Diffusers22:
         )
         weights = [params["weight_1"], params["weight_2"]]
 
+        hook_params["prior_generator"] = prior_generator
+        hook_params["decoder_generator"] = decoder_generator
+        hook_params["images_texts"] = images_texts
+        hook_params["weights"] = weights
+        execute_forced_hooks(HOOK.BEFORE_PREPARE_EMBEDS, params, hook_params)
         self.params.hook_store.call(
             HOOK.BEFORE_PREPARE_EMBEDS,
-            **{
-                "model": self,
-                "params": params,
-                "task": task,
-                "prior": prior,
-                "decoder": decoder,
-                "prior_generator": prior_generator,
-                "decoder_generator": decoder_generator,
-                "images_texts": images_texts,
-                "weights": weights,
-            },
+            **hook_params,
         )
 
         embeds = prior.interpolate(
@@ -1206,23 +1030,14 @@ class Model_Diffusers22:
         images = []
         prior_on_cpu = self.params("diffusers", "run_prior_on_cpu")
 
+        hook_params["image_embeds"] = embeds.image_embeds
+        hook_params["negative_image_embeds"] = embeds.negative_image_embeds
+        hook_params["scheduler"] = decoder.scheduler
+        hook_params["cnet_hint"] = hint
+        execute_forced_hooks(HOOK.BEFORE_PREPARE_DECODER, params, hook_params)
         self.params.hook_store.call(
             HOOK.BEFORE_PREPARE_DECODER,
-            **{
-                "model": self,
-                "params": params,
-                "task": task,
-                "prior": prior,
-                "decoder": decoder,
-                "prior_generator": prior_generator,
-                "decoder_generator": decoder_generator,
-                "images_texts": images_texts,
-                "weights": weights,
-                "scheduler": decoder.scheduler,
-                "image_embeds": embeds.image_embeds,
-                "negative_image_embeds": embeds.negative_image_embeds,
-                "hint": hint,
-            },
+            **hook_params,
         )
 
         for _ in itertools.repeat(None, params["batch_count"]):
@@ -1244,31 +1059,20 @@ class Model_Diffusers22:
                 return_dict=True,
             ).images
 
+            hook_params["batch"] = current_batch
+            execute_forced_hooks(HOOK.BEFORE_BATCH_SAVE, params, hook_params)
             self.params.hook_store.call(
                 HOOK.BEFORE_BATCH_SAVE,
-                **{
-                    "model": self,
-                    "params": params,
-                    "task": task,
-                    "prior": prior,
-                    "prior_generator": prior_generator,
-                    "decoder_generator": decoder_generator,
-                    "images_texts": images_texts,
-                    "weights": weights,
-                    "scheduler": decoder.scheduler,
-                    "image_embeds": embeds.image_embeds,
-                    "negative_image_embeds": embeds.negative_image_embeds,
-                    "hint": hint,
-                    "batch": current_batch,
-                },
+                **hook_params,
             )
 
             images += self.create_batch_images(params, task, current_batch)
         k_log("decoder images: done")
 
+        execute_forced_hooks(HOOK.BEFORE_TASK_QUIT, params, hook_params)
         self.params.hook_store.call(
             HOOK.BEFORE_TASK_QUIT,
-            **{"model": self, "task": task},
+            **hook_params,
         )
 
         return images

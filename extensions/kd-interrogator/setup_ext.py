@@ -299,7 +299,7 @@ def setup(kubin):
 
     return {
         "title": title,
-        "send_to": f"📄 Send to{title}",
+        "send_to": f"📄 Send to {title}",
         "tab_ui": lambda ui_s, ts: interrogator_ui(ui_s, ts),
         "send_target": source_image,
         "api": {
