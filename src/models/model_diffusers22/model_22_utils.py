@@ -29,12 +29,11 @@ def prepare_weights_for_task(model, task):
     torch.backends.cuda.matmul.allow_tf32 = model.params("diffusers", "use_tf32_mode")
 
     cache_dir = model.params("general", "cache_dir")
-    device = model.params("general", "device")
     half_weights = model.params("diffusers", "half_precision_weights")
     run_prior_on_cpu = model.params("diffusers", "run_prior_on_cpu")
 
     if model.pipe_prior is None:
-        model.image_encoder = CLIPVisionModelWithProjection.from_pretrained(
+        image_encoder = CLIPVisionModelWithProjection.from_pretrained(
             "kandinsky-community/kandinsky-2-2-prior",
             subfolder="image_encoder",
             cache_dir=cache_dir,
@@ -44,11 +43,11 @@ def prepare_weights_for_task(model, task):
         )
 
         if not run_prior_on_cpu and half_weights:
-            model.image_encoder = model.image_encoder.half()
+            image_encoder = image_encoder.half()
 
         model.pipe_prior = KandinskyV22PriorPipeline.from_pretrained(
             "kandinsky-community/kandinsky-2-2-prior",
-            image_encoder=model.image_encoder,
+            image_encoder=image_encoder,
             torch_dtype=torch.float32
             if run_prior_on_cpu
             else type_of_weights(model.params),
@@ -61,7 +60,7 @@ def prepare_weights_for_task(model, task):
         if model.t2i_pipe is None:
             flush_if_required(model, task)
 
-            model.unet_2d = UNet2DConditionModel.from_pretrained(
+            unet_2d = UNet2DConditionModel.from_pretrained(
                 "kandinsky-community/kandinsky-2-2-decoder",
                 subfolder="unet",
                 cache_dir=cache_dir,
@@ -70,7 +69,7 @@ def prepare_weights_for_task(model, task):
 
             model.t2i_pipe = KandinskyV22Pipeline.from_pretrained(
                 "kandinsky-community/kandinsky-2-2-decoder",
-                unet=model.unet_2d,
+                unet=unet_2d,
                 torch_dtype=type_of_weights(model.params),
                 cache_dir=cache_dir,
                 resume_download=True,
@@ -85,7 +84,7 @@ def prepare_weights_for_task(model, task):
         if model.cnet_t2i_pipe is None:
             flush_if_required(model, task)
 
-            model.unet_2d = UNet2DConditionModel.from_pretrained(
+            unet_2d = UNet2DConditionModel.from_pretrained(
                 "kandinsky-community/kandinsky-2-2-controlnet-depth",
                 subfolder="unet",
                 cache_dir=cache_dir,
@@ -94,7 +93,7 @@ def prepare_weights_for_task(model, task):
 
             model.cnet_t2i_pipe = KandinskyV22ControlnetPipeline.from_pretrained(
                 "kandinsky-community/kandinsky-2-2-controlnet-depth",
-                unet=model.unet_2d,
+                unet=unet_2d,
                 torch_dtype=type_of_weights(model.params),
                 cache_dir=cache_dir,
                 resume_download=True,
@@ -123,7 +122,7 @@ def prepare_weights_for_task(model, task):
         if model.inpaint_pipe is None:
             flush_if_required(model, task)
 
-            model.unet_2d = UNet2DConditionModel.from_pretrained(
+            unet_2d = UNet2DConditionModel.from_pretrained(
                 "kandinsky-community/kandinsky-2-2-decoder-inpaint",
                 subfolder="unet",
                 cache_dir=cache_dir,
@@ -133,7 +132,7 @@ def prepare_weights_for_task(model, task):
             model.inpaint_pipe = KandinskyV22InpaintPipeline.from_pretrained(
                 "kandinsky-community/kandinsky-2-2-decoder-inpaint",
                 torch_dtype=type_of_weights(model.params),
-                unet=model.unet_2d,
+                unet=unet_2d,
                 cache_dir=cache_dir,
                 resume_download=True,
             )
@@ -142,8 +141,8 @@ def prepare_weights_for_task(model, task):
 
     apply_on_device(
         model.params,
-        model.image_encoder,
-        model.unet_2d,
+        # image_encoder,
+        # model.unet_2d,
         current_prior,
         current_decoder,
         model.pipe_info,
@@ -153,8 +152,8 @@ def prepare_weights_for_task(model, task):
 
 def apply_on_device(
     k_params,
-    image_encoder: CLIPVisionModelWithProjection,
-    unet_2d: UNet2DConditionModel,
+    # image_encoder: CLIPVisionModelWithProjection,
+    # unet_2d: UNet2DConditionModel,
     prior,
     decoder,
     pipe_info,
@@ -255,7 +254,7 @@ def apply_on_device(
                 pipe_info["full_prior_offload"] = True
             applied_optimizations.append("full model offloading for prior")
     else:
-        image_encoder.to(prior_device)
+        # image_encoder.to(prior_device)
         prior.to(prior_device)
         pipe_info["sequential_prior_offload"] = False
         pipe_info["full_prior_offload"] = False
@@ -271,7 +270,7 @@ def apply_on_device(
             pipe_info["full_decoder_offload"] = True
         applied_optimizations.append("full model offloading for decoder")
     else:
-        unet_2d.to(device)
+        # unet_2d.to(device)
         decoder.to(device)
         pipe_info["sequential_decoder_offload"] = False
         pipe_info["full_decoder_offload"] = False
