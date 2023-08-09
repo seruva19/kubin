@@ -20,6 +20,8 @@ def create_inpaint_targets(
     pil_img = pil_img.resize(output_size, resample=Image.LANCZOS)
     pil_img = pil_img.convert("RGB")
 
+    image_mask = ImageOps.invert(image_mask)
+
     image_mask = image_mask.resize(output_size)
     image_mask = image_mask.convert("L")
 
