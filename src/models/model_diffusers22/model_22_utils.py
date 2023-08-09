@@ -169,7 +169,9 @@ def apply_on_device(
         "diffusers", "sequential_cpu_offload"
     )
 
-    full_model_offload = k_params("diffusers", "full_model_offload")
+    full_prior_offload = full_decoder_offload = k_params(
+        "diffusers", "full_model_offload"
+    )
     enable_sdp_attention = k_params("diffusers", "enable_sdp_attention")
     channels_last_memory = k_params("diffusers", "channels_last_memory")
     torch_code_compilation = k_params("diffusers", "torch_code_compilation")
@@ -242,24 +244,37 @@ def apply_on_device(
                 prior.enable_sequential_cpu_offload()
                 pipe_info["sequential_prior_offload"] = True
             applied_optimizations.append("sequential CPU offloading for prior")
+    elif full_prior_offload:
+        if run_prior_on_cpu:
+            k_log(
+                "full offload for prior won't be applied, because prior generation on CPU is enabled"
+            )
+        else:
+            if not pipe_info["full_prior_offload"]:
+                prior.enable_model_cpu_offload()
+                pipe_info["full_prior_offload"] = True
+            applied_optimizations.append("full model offloading for prior")
     else:
         image_encoder.to(prior_device)
         prior.to(prior_device)
         pipe_info["sequential_prior_offload"] = False
+        pipe_info["full_prior_offload"] = False
 
     if sequential_decoder_offload:
         if not pipe_info["sequential_decoder_offload"]:
             decoder.enable_sequential_cpu_offload()
             pipe_info["sequential_decoder_offload"] = True
         applied_optimizations.append("sequential CPU offloading for decoder")
+    elif full_decoder_offload:
+        if not pipe_info["full_decoder_offload"]:
+            decoder.enable_model_cpu_offload()
+            pipe_info["full_decoder_offload"] = True
+        applied_optimizations.append("full model offloading for decoder")
     else:
         unet_2d.to(device)
         decoder.to(device)
         pipe_info["sequential_decoder_offload"] = False
-
-    if full_model_offload:
-        decoder.enable_model_cpu_offload()
-        applied_optimizations.append("full model offloading for decoder")
+        pipe_info["full_decoder_offload"] = False
 
     if enable_sliced_attention:
         decoder.enable_attention_slicing(slice_size)
@@ -281,6 +296,8 @@ def clear_pipe_info(model):
     model.pipe_info = {
         "sequential_prior_offload": False,
         "sequential_decoder_offload": False,
+        "full_prior_offload": False,
+        "full_decoder_offload": False,
     }
 
 
