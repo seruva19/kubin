@@ -21,6 +21,7 @@ gradio:
   concurrency_count: 2
   debug: true
   theme: default
+  analytics: true
 
 ui:
   image_width_min: 64
