@@ -28,8 +28,9 @@
 🕒 Multiple samplers <br>
 🕒 Advanced prompt syntax <br>
 🕒 Prompt weighting <br>
-🕒 ext. Animation <br>
 🕒 Checkpoint conversion <br>
+🕒 ext. Area composition <br>
+🕒 ext. Animation <br>
 
 
 ## Screenshots

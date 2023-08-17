@@ -183,7 +183,7 @@ def setup(kubin):
         with gr.Column() as style_selector_block:
             style_search = gr.Textbox(
                 "",
-                info="Style filter",
+                label="Style filter",
                 visible=config["use_radiobutton_list"],
                 interactive=True,
                 elem_classes=["kd-styles-search-box"],
