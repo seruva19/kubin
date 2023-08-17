@@ -1,0 +1,17 @@
+.kd-prompt-styles-selector .kd-styles-radiobutton-list {
+    max-height: 395px;
+    overflow-y: scroll !important;
+}
+
+.kd-prompt-styles-selector .kd-styles-radiobutton-list label {
+    flex-grow: 1;
+    margin-top: 5px;
+
+    box-shadow: initial !important;
+    border: initial !important;
+    background: var(--button-secondary-background-fill) !important;
+}
+
+.kd-prompt-styles-selector .kd-styles-radiobutton-list label.selected {
+    background: var(--slider-color) !important;
+}
