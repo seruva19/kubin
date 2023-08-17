@@ -37,12 +37,17 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
                             label="Processing pipeline",
                             allow_custom_value=False,
                         )
-                        cnet_condition = gr.Radio(
-                            choices=["depth-map"],
-                            value="depth-map",
-                            label="Condition",
-                        )
-
+                        with gr.Row():
+                            cnet_condition = gr.Radio(
+                                choices=["depth-map"],
+                                value="depth-map",
+                                label="Condition",
+                            )
+                            cnet_depth_estimator = gr.Dropdown(
+                                choices=["Intel/dpt-hybrid-midas", "Intel/dpt-large"],
+                                value="Intel/dpt-large",
+                                label="Depth estimator",
+                            )
                         with gr.Column(visible=True) as cnet_i2i_params:
                             cnet_emb_transform_strength = gr.Slider(
                                 0,
@@ -127,10 +132,12 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
                     )
                     height.elem_classes = ["inline-flex"]
                     aspect_ratio = gr.Dropdown(
-                        choices=["none", "1:1", "16:9", "9:16", "3:2", "2:3"],
+                        choices=["none"]
+                        + shared.ui_params("aspect_ratio_list").split(";"),
                         value="none",
+                        allow_custom_value=True,
                         label="Aspect ratio",
-                        elem_id="t2i-aspect",
+                        elem_classes=["t2i-aspect"],
                     )
 
                 with gr.Row(equal_height=True):
@@ -215,6 +222,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
                 cnet_image,
                 cnet_pipeline,
                 cnet_condition,
+                cnet_depth_estimator,
                 cnet_emb_transform_strength,
                 cnet_neg_emb_transform_strength,
                 cnet_img_strength,
@@ -243,6 +251,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
                     "cnet_image": cnet_image,
                     "cnet_pipeline": cnet_pipeline,
                     "cnet_condition": cnet_condition,
+                    "cnet_depth_estimator": cnet_depth_estimator,
                     "cnet_emb_transform_strength": cnet_emb_transform_strength,
                     "cnet_neg_emb_transform_strength": cnet_neg_emb_transform_strength,
                     "cnet_img_strength": cnet_img_strength,
@@ -276,6 +285,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
                     shared.input_cnet_t2i_image,
                     cnet_pipeline,
                     cnet_condition,
+                    cnet_depth_estimator,
                     cnet_emb_transform_strength,
                     cnet_neg_emb_transform_strength,
                     cnet_img_strength,

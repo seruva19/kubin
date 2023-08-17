@@ -50,11 +50,17 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
                 with gr.Row():
                     shared.input_cnet_mix_image.render()
                     with gr.Column():
-                        cnet_condition = gr.Radio(
-                            choices=["depth-map"],
-                            value="depth-map",
-                            label="Condition",
-                        )
+                        with gr.Row():
+                            cnet_condition = gr.Radio(
+                                choices=["depth-map"],
+                                value="depth-map",
+                                label="Condition",
+                            )
+                            cnet_depth_estimator = gr.Dropdown(
+                                choices=["Intel/dpt-hybrid-midas", "Intel/dpt-large"],
+                                value="Intel/dpt-large",
+                                label="Depth estimator",
+                            )
 
                         cnet_img_strength = gr.Slider(
                             0, 1, 1, step=0.05, label="Image strength"
@@ -76,7 +82,6 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
                         label="Steps",
                     )
                     guidance_scale = gr.Slider(1, 30, 4, step=1, label="Guidance scale")
-                with gr.Row():
                     batch_count = gr.Slider(
                         1,
                         shared.ui_params("max_batch_count"),
@@ -84,7 +89,6 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
                         step=1,
                         label="Batch count",
                     )
-                    batch_size = gr.Slider(1, 16, 1, step=1, label="Batch size")
                 with gr.Row():
                     width = gr.Slider(
                         shared.ui_params("image_width_min"),
@@ -93,6 +97,7 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
                         step=shared.ui_params("image_width_step"),
                         label="Width",
                     )
+                    width.elem_classes = ["inline-flex"]
                     height = gr.Slider(
                         shared.ui_params("image_height_min"),
                         shared.ui_params("image_height_max"),
@@ -100,18 +105,29 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
                         step=shared.ui_params("image_height_step"),
                         label="Height",
                     )
-                with gr.Row():
+                    height.elem_classes = ["inline-flex"]
+                    aspect_ratio = gr.Dropdown(
+                        choices=["none", "1:1", "16:9", "9:16", "3:2", "2:3"],
+                        value="none",
+                        label="Aspect ratio",
+                        elem_id="mix-aspect",
+                    )
+
+                with gr.Row(equal_height=True):
                     (
                         sampler_20,
                         sampler_21_native,
                         sampler_diffusers,
                     ) = samplers_controls()
-
                     seed = gr.Number(-1, label="Seed", precision=0)
+
+                    batch_size = gr.Slider(1, 16, 1, step=1, label="Batch size")
+                    batch_size.elem_classes = ["unsupported_20", "inline-flex"]
+
                 with gr.Row():
                     prior_scale = gr.Slider(
                         1,
-                        100,
+                        30,
                         4,
                         step=1,
                         label="Prior scale",
@@ -177,6 +193,7 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
                 cnet_enable,
                 cnet_image,
                 cnet_condition,
+                cnet_depth_estimator,
                 cnet_img_strength,
                 *injections,
             ):
@@ -207,6 +224,7 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
                     "cnet_enable": cnet_enable,
                     "cnet_image": cnet_image,
                     "cnet_condition": cnet_condition,
+                    "cnet_depth_estimator": cnet_depth_estimator,
                     "cnet_img_strength": cnet_img_strength,
                 }
 
@@ -241,6 +259,7 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
                 cnet_enable,
                 shared.input_cnet_mix_image,
                 cnet_condition,
+                cnet_depth_estimator,
                 cnet_img_strength,
             ]
             + augmentations["injections"],

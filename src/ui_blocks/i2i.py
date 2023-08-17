@@ -48,11 +48,21 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
                                     label="Reuse input image for ControlNet condition",
                                 )
                                 shared.input_cnet_i2i_image.render()
-                                cnet_condition = gr.Radio(
-                                    choices=["depth-map"],
-                                    value="depth-map",
-                                    label="Condition",
-                                )
+                                with gr.Row():
+                                    cnet_condition = gr.Radio(
+                                        choices=["depth-map"],
+                                        value="depth-map",
+                                        label="Condition",
+                                    )
+                                    cnet_depth_estimator = gr.Dropdown(
+                                        choices=[
+                                            "Intel/dpt-hybrid-midas",
+                                            "Intel/dpt-large",
+                                        ],
+                                        value="Intel/dpt-large",
+                                        label="Depth estimator",
+                                    )
+
                             cnet_img_reuse.change(
                                 lambda x: gr.update(visible=not x),
                                 inputs=[cnet_img_reuse],
@@ -254,6 +264,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
                 cnet_img_reuse,
                 cnet_image,
                 cnet_condition,
+                cnet_depth_estimator,
                 cnet_emb_transform_strength,
                 cnet_neg_emb_transform_strength,
                 cnet_img_strength,
@@ -291,6 +302,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
                     "cnet_enable": cnet_enable,
                     "cnet_image": cnet_target_image,
                     "cnet_condition": cnet_condition,
+                    "cnet_depth_estimator": cnet_depth_estimator,
                     "cnet_emb_transform_strength": cnet_emb_transform_strength,
                     "cnet_neg_emb_transform_strength": cnet_neg_emb_transform_strength,
                     "cnet_img_strength": cnet_img_strength,
@@ -325,6 +337,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
                     cnet_img_reuse,
                     shared.input_cnet_i2i_image,
                     cnet_condition,
+                    cnet_depth_estimator,
                     cnet_emb_transform_strength,
                     cnet_neg_emb_transform_strength,
                     cnet_img_strength,

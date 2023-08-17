@@ -312,6 +312,8 @@ def clear_pipe_info(model):
         "sequential_decoder_offload": False,
         "full_prior_offload": False,
         "full_decoder_offload": False,
+        "cnet_depth_estimator": None,
+        "cnet_dmap_type": None,
     }
 
 
@@ -393,6 +395,9 @@ def flush_if_required(model, target):
                 if not offload_enabled:
                     model.cnet_i2i_pipe.to("cpu")
                 model.cnet_i2i_pipe = None
+
+            if model.pipe_info["cnet_depth_estimator"] is not None:
+                model.pipe_info["cnet_depth_estimator"] = None
 
         gc.collect()
         device = model.params("general", "device")
