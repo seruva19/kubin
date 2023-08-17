@@ -246,6 +246,10 @@ class SharedUI:
         ext_exec = {}
         ext_injections = []
 
+        def augment(t, p, a, fn):
+            fn(t, p, a)
+            return p
+
         def create_block(position):
             for ext_augment in self.extensions_augment:
                 name = ext_augment["_name"]
@@ -253,7 +257,7 @@ class SharedUI:
                 if position == ext_position:
                     if target in ext_augment["targets"]:
                         current_ext = ext_exec[name] = {
-                            "fn": ext_augment.get("inject_fn", lambda t, p, a: p)
+                            "fn": ext_augment.get("inject_fn", lambda t, p, a: None)
                         }
 
                         with gr.Row() as row:
@@ -290,7 +294,7 @@ class SharedUI:
             for _, data in ext_exec.items():
                 ext_fn = data["fn"]
                 size = data["input_size"]
-                params = ext_fn(target, params, injections[size[0] : size[1]])
+                params = augment(target, params, injections[size[0] : size[1]], ext_fn)
             return params
 
         return {
