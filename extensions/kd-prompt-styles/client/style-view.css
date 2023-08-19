@@ -5,8 +5,6 @@
 
 .kd-prompt-styles-selector .kd-styles-radiobutton-list label {
     flex-grow: 1;
-    margin-top: 5px;
-
     box-shadow: initial !important;
     border: initial !important;
     background: var(--button-secondary-background-fill) !important;

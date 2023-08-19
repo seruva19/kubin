@@ -1,5 +1,6 @@
 import torch
 import torch.backends
+from models.model_diffusers22.model_22_patch import patch_pipelines
 from utils.image import create_inpaint_targets, create_outpaint_targets
 import itertools
 import os
@@ -10,7 +11,7 @@ from utils.logging import k_log
 
 from model_utils.diffusers_utils import use_scheduler
 from models.model_diffusers22.model_22_cnet import generate_hint
-from models.model_diffusers22.model_22_utils import (
+from models.model_diffusers22.model_22_init import (
     flush_if_required,
     prepare_weights_for_task,
     images_or_texts,
@@ -39,6 +40,8 @@ class Model_Diffusers22:
 
         # self.image_encoder: CLIPVisionModelWithProjection | None = None
         # self.unet_2d: UNet2DConditionModel | None = None
+
+        patch_pipelines()
 
         self.pipe_prior: KandinskyV22PriorPipeline | None = None
         self.pipe_prior_e2e: KandinskyV22PriorEmb2EmbPipeline | None = None

@@ -62,8 +62,9 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs, session):
                         shared.ui_params("image_width_default"),
                         step=shared.ui_params("image_width_step"),
                         label="Width",
+                        elem_id="inpaint-width",
                         interactive=False,
-                        elem_classes=["inline-flex"],
+                        elem_classes=["prompt-size", "inline-flex"],
                     )
                     height = gr.Slider(
                         shared.ui_params("image_height_min"),
@@ -71,8 +72,9 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs, session):
                         shared.ui_params("image_height_default"),
                         step=shared.ui_params("image_height_step"),
                         label="Height",
+                        elem_id="inpaint-height",
                         interactive=False,
-                        elem_classes=["inline-flex"],
+                        elem_classes=["prompt-size", "inline-flex"],
                     )
                     with gr.Column():
                         infer_size = gr.Checkbox(
@@ -81,12 +83,35 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs, session):
                             elem_classes=["inline-flex"],
                         )
                         aspect_ratio = gr.Dropdown(
-                            choices=["none", "1:1", "16:9", "9:16", "3:2", "2:3"],
+                            choices=["none"]
+                            + shared.ui_params("aspect_ratio_list").split(";"),
                             value="none",
                             allow_custom_value=True,
+                            interactive=False,
                             label="Aspect ratio",
                             elem_id="inpaint-aspect",
                         )
+                    width.change(
+                        fn=None,
+                        _js=f"(width, aspect_ratio) => kubin.UI.aspectRatio.sizeChanged('inpaint-width', 'inpaint-height', 'width', width, aspect_ratio, {shared.ui_params('image_width_step')})",
+                        show_progress=False,
+                        inputs=[width, aspect_ratio],
+                        outputs=gr.State(None),
+                    )
+                    height.change(
+                        fn=None,
+                        _js=f"(height, aspect_ratio) => kubin.UI.aspectRatio.sizeChanged('inpaint-width', 'inpaint-height', 'height', height, aspect_ratio, {shared.ui_params('image_height_step')})",
+                        show_progress=False,
+                        inputs=[height, aspect_ratio],
+                        outputs=gr.State(None),
+                    )
+                    aspect_ratio.change(
+                        fn=None,
+                        _js=f"(width, aspect_ratio) => kubin.UI.aspectRatio.sizeChanged('inpaint-width', 'inpaint-height', 'width', width, aspect_ratio, {shared.ui_params('image_width_step')})",
+                        show_progress=False,
+                        inputs=[width, aspect_ratio],
+                        outputs=gr.State(None),
+                    )
 
                 with gr.Row(equal_height=True):
                     (

@@ -1,0 +1,13 @@
+.prompt-size input[type='range'] {
+  margin-top: 12px;
+}
+
+.ar-adjusted-size {
+  position: absolute;
+  font-size: 12px;
+  top: 35px;
+  right: 20px;
+  width: 74px;
+  text-align: center;
+  cursor: default;
+}

@@ -120,6 +120,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
                         step=shared.ui_params("image_width_step"),
                         label="Width",
                         elem_id="t2i-width",
+                        elem_classes=["prompt-size"],
                     )
                     width.elem_classes = ["inline-flex"]
                     height = gr.Slider(
@@ -129,6 +130,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
                         step=shared.ui_params("image_height_step"),
                         label="Height",
                         elem_id="t2i-height",
+                        elem_classes=["prompt-size"],
                     )
                     height.elem_classes = ["inline-flex"]
                     aspect_ratio = gr.Dropdown(
@@ -138,6 +140,27 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
                         allow_custom_value=True,
                         label="Aspect ratio",
                         elem_classes=["t2i-aspect"],
+                    )
+                    width.change(
+                        fn=None,
+                        _js=f"(width, aspect_ratio) => kubin.UI.aspectRatio.sizeChanged('t2i-width', 't2i-height', 'width', width, aspect_ratio, {shared.ui_params('image_width_step')})",
+                        show_progress=False,
+                        inputs=[width, aspect_ratio],
+                        outputs=gr.State(None),
+                    )
+                    height.change(
+                        fn=None,
+                        _js=f"(height, aspect_ratio) => kubin.UI.aspectRatio.sizeChanged('t2i-width', 't2i-height', 'height', height, aspect_ratio, {shared.ui_params('image_height_step')})",
+                        show_progress=False,
+                        inputs=[height, aspect_ratio],
+                        outputs=gr.State(None),
+                    )
+                    aspect_ratio.change(
+                        fn=None,
+                        _js=f"(width, aspect_ratio) => kubin.UI.aspectRatio.sizeChanged('t2i-width', 't2i-height', 'width', width, aspect_ratio, {shared.ui_params('image_width_step')})",
+                        show_progress=False,
+                        inputs=[width, aspect_ratio],
+                        outputs=gr.State(None),
                     )
 
                 with gr.Row(equal_height=True):
