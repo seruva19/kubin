@@ -400,7 +400,7 @@
     if (!adjustedSize) {
       adjustedSize = document.createElement('span')
       adjustedSize.className = 'ar-adjusted-size'
-      adjustedSize.title = 'The size must be evenly divisible by 64 (defined by MOVQ "block_out_channels" config value), therefore actual output size will be adjusted.'
+      adjustedSize.title = 'The size must be evenly divisible by 64 (as required by the MOVQ configuration), so the actual output size will be adjusted accordingly'
       element.parentNode.insertBefore(adjustedSize, element.nextSibling)
     }
 
