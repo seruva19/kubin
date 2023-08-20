@@ -62,7 +62,12 @@ def write_user_styles(updated_styles):
     with open(user_styles_path, "w") as stream:
         data = {"styles": merge_styles(user_styles, updated_styles)}
         yaml.safe_dump(
-            data, stream, default_flow_style=False, indent=2, allow_unicode=True
+            data,
+            stream,
+            default_flow_style=False,
+            indent=2,
+            allow_unicode=True,
+            width=1000,
         )
 
 
