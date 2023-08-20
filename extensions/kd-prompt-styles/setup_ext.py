@@ -42,7 +42,15 @@ def read_user_styles():
 
 def get_styles():
     return merge_styles(
-        [{"name": "none", "prompt": None, "negative": None, "active": True}],
+        [
+            {
+                "name": "none",
+                "prompt": None,
+                "negative": None,
+                "active": True,
+                "source": None,
+            }
+        ],
         read_default_styles(),
         read_user_styles(),
         only_active=True,
@@ -105,22 +113,29 @@ def setup(kubin):
 
         selected_modifier = selected_style["prompt"]
         selected_negative_modifier = selected_style["negative"]
+        selected_source = selected_style["source"]
 
         return (
             "<br />".join(
-                [
-                    ""
-                    if selected_modifier is None
-                    else f"<span style='font-weight: bold'>prompt template: </span> {selected_modifier}".replace(
-                        "{prompt}", "<span style='color: blue'>{prompt}</span>"
-                    ),
-                    ""
-                    if selected_negative_modifier is None
-                    else f"<span style='font-weight: bold'>negative prompt template: </span> {selected_negative_modifier}".replace(
-                        "{negative_prompt}",
-                        "<span style='color: red'>{negative_prompt}</span>",
-                    ),
-                ]
+                filter(
+                    lambda x: x is not None,
+                    [
+                        None
+                        if selected_modifier is None
+                        else f"<span style='font-weight: bold'>prompt template: </span> {selected_modifier}".replace(
+                            "{prompt}", "<span style='color: blue'>{prompt}</span>"
+                        ),
+                        None
+                        if selected_negative_modifier is None
+                        else f"<span style='font-weight: bold'>negative prompt template: </span> {selected_negative_modifier}".replace(
+                            "{negative_prompt}",
+                            "<span style='color: red'>{negative_prompt}</span>",
+                        ),
+                        None
+                        if selected_source is None
+                        else f"<br /><span>source:  {selected_source}</span>",
+                    ],
+                )
             ),
             gr.update(visible=selected_style["name"] != "none"),
             selected_style,
@@ -134,16 +149,18 @@ def setup(kubin):
             else chosen_style["name"],
             "{prompt}" if chosen_style is None else chosen_style["prompt"],
             "{negative_prompt}" if chosen_style is None else chosen_style["negative"],
+            "" if chosen_style is None else chosen_style["source"],
             gr.update(visible=False),
         )
 
-    def save_style(name, prompt, negative_prompt, active):
+    def save_style(name, prompt, negative_prompt, source, active):
         write_user_styles(
             [
                 {
                     "name": name,
                     "prompt": prompt,
                     "negative": negative_prompt,
+                    "source": source,
                     "active": active,
                 }
             ]
@@ -183,7 +200,7 @@ def setup(kubin):
         with gr.Column() as style_selector_block:
             style_search = gr.Textbox(
                 "",
-                label="Style filter",
+                label="Filter by name",
                 visible=config["use_radiobutton_list"],
                 interactive=True,
                 elem_classes=["kd-styles-search-box"],
@@ -208,9 +225,9 @@ def setup(kubin):
             style_info = gr.HTML(value="", elem_classes="block-info")
 
             with gr.Row() as style_edit_elements:
-                add_style_btn = gr.Button("Add style")
-                edit_style_btn = gr.Button("Edit style", visible=False)
-                refresh_styles_btn = gr.Button("Reload all styles")
+                add_style_btn = gr.Button("➕ Add style", size="sm")
+                edit_style_btn = gr.Button("✏️ Edit style", visible=False, size="sm")
+                refresh_styles_btn = gr.Button("🔄 Reload all styles", size="sm")
 
             with gr.Column(visible=False) as edit_prompt_elements:
                 style_name = gr.Textbox(
@@ -222,11 +239,14 @@ def setup(kubin):
                 style_negative_prompt = gr.Textbox(
                     label="Style negative prompt", value="", lines=4, interactive=True
                 )
+                style_source = gr.Textbox(
+                    label="Style source", value="", lines=1, interactive=True
+                )
 
                 with gr.Row():
-                    save_style_btn = gr.Button("Save style")
-                    cancel_style_btn = gr.Button("Cancel editing")
-                    remove_style_btn = gr.Button("Remove style")
+                    save_style_btn = gr.Button("💾 Save style", size="sm")
+                    cancel_style_btn = gr.Button("❌ Cancel editing", size="sm")
+                    remove_style_btn = gr.Button("🗑️ Remove style", size="sm")
                 gr.HTML(
                     "To apply changes after adding or editing a style, you need to press 'Refresh' button, otherwise changes won't be reflected in list."
                 )
@@ -263,6 +283,7 @@ def setup(kubin):
                     style_name,
                     style_prompt,
                     style_negative_prompt,
+                    style_source,
                     style_edit_elements,
                 ],
             )
@@ -275,6 +296,7 @@ def setup(kubin):
                     style_name,
                     style_prompt,
                     style_negative_prompt,
+                    style_source,
                     style_edit_elements,
                 ],
             )
@@ -285,6 +307,7 @@ def setup(kubin):
                     style_name,
                     style_prompt,
                     style_negative_prompt,
+                    style_source,
                     gr.State(True),
                 ],
                 outputs=[style_edit_elements, edit_prompt_elements],
@@ -332,5 +355,6 @@ def setup(kubin):
         "inject_fn": lambda target, params, augmentations: append_style(
             target, params, augmentations[0], augmentations[1]
         ),
+        "inject_position": "before_generate",
         "targets": targets,
     }
