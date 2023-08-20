@@ -37,12 +37,17 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
                             label="Processing pipeline",
                             allow_custom_value=False,
                         )
-                        cnet_condition = gr.Radio(
-                            choices=["depth-map"],
-                            value="depth-map",
-                            label="Condition",
-                        )
-
+                        with gr.Row():
+                            cnet_condition = gr.Radio(
+                                choices=["depth-map"],
+                                value="depth-map",
+                                label="Condition",
+                            )
+                            cnet_depth_estimator = gr.Dropdown(
+                                choices=["Intel/dpt-hybrid-midas", "Intel/dpt-large"],
+                                value="Intel/dpt-large",
+                                label="Depth estimator",
+                            )
                         with gr.Column(visible=True) as cnet_i2i_params:
                             cnet_emb_transform_strength = gr.Slider(
                                 0,
@@ -115,6 +120,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
                         step=shared.ui_params("image_width_step"),
                         label="Width",
                         elem_id="t2i-width",
+                        elem_classes=["prompt-size"],
                     )
                     width.elem_classes = ["inline-flex"]
                     height = gr.Slider(
@@ -124,13 +130,37 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
                         step=shared.ui_params("image_height_step"),
                         label="Height",
                         elem_id="t2i-height",
+                        elem_classes=["prompt-size"],
                     )
                     height.elem_classes = ["inline-flex"]
                     aspect_ratio = gr.Dropdown(
-                        choices=["none", "1:1", "16:9", "9:16", "3:2", "2:3"],
+                        choices=["none"]
+                        + shared.ui_params("aspect_ratio_list").split(";"),
                         value="none",
+                        allow_custom_value=True,
                         label="Aspect ratio",
-                        elem_id="t2i-aspect",
+                        elem_classes=["t2i-aspect"],
+                    )
+                    width.change(
+                        fn=None,
+                        _js=f"(width, aspect_ratio) => kubin.UI.aspectRatio.sizeChanged('t2i-width', 't2i-height', 'width', width, aspect_ratio, {shared.ui_params('image_width_step')})",
+                        show_progress=False,
+                        inputs=[width, aspect_ratio],
+                        outputs=gr.State(None),
+                    )
+                    height.change(
+                        fn=None,
+                        _js=f"(height, aspect_ratio) => kubin.UI.aspectRatio.sizeChanged('t2i-width', 't2i-height', 'height', height, aspect_ratio, {shared.ui_params('image_height_step')})",
+                        show_progress=False,
+                        inputs=[height, aspect_ratio],
+                        outputs=gr.State(None),
+                    )
+                    aspect_ratio.change(
+                        fn=None,
+                        _js=f"(width, aspect_ratio) => kubin.UI.aspectRatio.sizeChanged('t2i-width', 't2i-height', 'width', width, aspect_ratio, {shared.ui_params('image_width_step')})",
+                        show_progress=False,
+                        inputs=[width, aspect_ratio],
+                        outputs=gr.State(None),
                     )
 
                 with gr.Row(equal_height=True):
@@ -176,6 +206,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
         t2i_params.elem_classes = ["block-params", "t2i_params"]
 
         with gr.Column(scale=1):
+            augmentations["ui_before_generate"]()
             generate_t2i = gr.Button("Generate", variant="primary")
             t2i_output = gr.Gallery(
                 label="Generated Images",
@@ -193,6 +224,8 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
 
             shared.create_base_send_targets(t2i_output, "t2i-output", tabs)
             shared.create_ext_send_targets(t2i_output, "t2i-output", tabs)
+
+            augmentations["ui_after_generate"]()
 
             def generate(
                 session,
@@ -215,6 +248,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
                 cnet_image,
                 cnet_pipeline,
                 cnet_condition,
+                cnet_depth_estimator,
                 cnet_emb_transform_strength,
                 cnet_neg_emb_transform_strength,
                 cnet_img_strength,
@@ -243,6 +277,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
                     "cnet_image": cnet_image,
                     "cnet_pipeline": cnet_pipeline,
                     "cnet_condition": cnet_condition,
+                    "cnet_depth_estimator": cnet_depth_estimator,
                     "cnet_emb_transform_strength": cnet_emb_transform_strength,
                     "cnet_neg_emb_transform_strength": cnet_neg_emb_transform_strength,
                     "cnet_img_strength": cnet_img_strength,
@@ -276,6 +311,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
                     shared.input_cnet_t2i_image,
                     cnet_pipeline,
                     cnet_condition,
+                    cnet_depth_estimator,
                     cnet_emb_transform_strength,
                     cnet_neg_emb_transform_strength,
                     cnet_img_strength,

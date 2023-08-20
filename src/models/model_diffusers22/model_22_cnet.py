@@ -1,11 +1,10 @@
 import numpy as np
 import torch
 from transformers import pipeline
+from utils.logging import k_log
 
 
-def generate_depth_map(image, k_params):
-    # TODO reuse pipeline
-    depth_estimator = pipeline("depth-estimation")
+def generate_depth_map(depth_estimator, image, k_params):
     image = depth_estimator(image)["depth"]
     image = np.array(image)
     image = image[:, :, None]
@@ -15,10 +14,27 @@ def generate_depth_map(image, k_params):
     return depth_map
 
 
-def generate_hint(image, cnet_condition, k_params):
+def generate_hint(model, image, cnet_condition, model_type, k_params):
     device = k_params("general", "device")
+    cache_dir = k_params("general", "cache_dir")
 
     if cnet_condition == "depth-map":
-        return generate_depth_map(image, k_params).unsqueeze(0).half().to(device)
+        depth_estimator = model.pipe_info["cnet_depth_estimator"]
+        dmap_type = model.pipe_info["cnet_dmap_type"]
 
-    return None
+        if depth_estimator is None or dmap_type != model_type:
+            k_log(f"loading depth estimation model: {model_type}")
+            depth_estimator = pipeline(
+                "depth-estimation",
+                model=model_type,
+                model_kwargs={"cache_dir": cache_dir},
+            )
+            model.pipe_info["cnet_depth_estimator"] = depth_estimator
+            model.pipe_info["dmap_type"] = model_type
+
+        return (
+            generate_depth_map(depth_estimator, image, k_params)
+            .unsqueeze(0)
+            .half()
+            .to(device)
+        )

@@ -3,7 +3,7 @@ import string
 
 css_styles = """
 html {overflow-y: scroll;}
-html:not(.is-ready):before {content: " ";position: absolute;right: 20px;bottom: 20px;
+html:not(.is-ready):before {content: " ";position: fixed;right: 50%;bottom: 50%;
 margin: auto; border: 20px solid #EAF0F6; border-radius: 50%; border-top: 20px solid var(--loader-color); width: 20px; height: 20px;animation: loader 2s linear infinite;}
 @keyframes loader {0% { transform: rotate(0deg); }100% { transform: rotate(360deg); }}
 html:not(.is-ready) body {opacity: 0; visibility: hidden;}

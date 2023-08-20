@@ -52,8 +52,8 @@ class Model_KD21:
                     checkpoint_info=self.params.checkpoint,
                 )
 
-                self.kd21.model.to(device)
-                self.kd21.prior.to(device)
+                # self.kd21.model.to(device)
+                # self.kd21.prior.to(device)
 
         elif task == "inpainting" or task == "outpainting":
             if self.kd21_inpaint is None:
@@ -69,8 +69,8 @@ class Model_KD21:
                     checkpoint_info=self.params.checkpoint,
                 )
 
-                self.kd21_inpaint.model.to(device)
-                self.kd21_inpaint.prior.to(device)
+                # self.kd21_inpaint.model.to(device)
+                # self.kd21_inpaint.prior.to(device)
 
         return self
 

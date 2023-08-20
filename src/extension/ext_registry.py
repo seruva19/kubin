@@ -29,7 +29,7 @@ class ExtensionRegistry:
     def get_disabled_extensions(self):
         return (
             []
-            if self.disabled is None
+            if self.disabled is None or self.disabled == ""
             else [x.strip() for x in self.disabled.split(",")]
         )
 

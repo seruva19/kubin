@@ -21,6 +21,7 @@ gradio:
   concurrency_count: 2
   debug: true
   theme: default
+  analytics: true
 
 ui:
   image_width_min: 64
@@ -33,6 +34,7 @@ ui:
   image_height_default: 768
   decoder_steps_default: 50
   max_batch_count: 64
+  aspect_ratio_list: 1:1;2:1;16:9;3:2;2:3;9:16;1:2
   allow_params_panel_resize: true
   enable_vertical_alignment: false
   collapse_advanced_params: false

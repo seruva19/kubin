@@ -13,6 +13,11 @@ def options_tab_gradio(kubin: Kubin):
             label="Gradio theme",
             elem_classes=["options-small"],
         )
+        gr.HTML()
+        analytics = gr.Checkbox(
+            value=lambda: kubin.params("gradio", "analytics"),
+            label="Enable gradio telemetry",
+        )
 
     theme.change(
         fn=None,
@@ -20,6 +25,17 @@ def options_tab_gradio(kubin: Kubin):
         inputs=[
             gr.Text("gradio.theme", visible=False),
             theme,
+            gr.Checkbox(True, visible=False),
+        ],
+        show_progress=False,
+    )
+
+    analytics.change(
+        fn=None,
+        _js=on_change,
+        inputs=[
+            gr.Text("gradio.analytics", visible=False),
+            analytics,
             gr.Checkbox(True, visible=False),
         ],
         show_progress=False,

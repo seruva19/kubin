@@ -48,11 +48,21 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
                                     label="Reuse input image for ControlNet condition",
                                 )
                                 shared.input_cnet_i2i_image.render()
-                                cnet_condition = gr.Radio(
-                                    choices=["depth-map"],
-                                    value="depth-map",
-                                    label="Condition",
-                                )
+                                with gr.Row():
+                                    cnet_condition = gr.Radio(
+                                        choices=["depth-map"],
+                                        value="depth-map",
+                                        label="Condition",
+                                    )
+                                    cnet_depth_estimator = gr.Dropdown(
+                                        choices=[
+                                            "Intel/dpt-hybrid-midas",
+                                            "Intel/dpt-large",
+                                        ],
+                                        value="Intel/dpt-large",
+                                        label="Depth estimator",
+                                    )
+
                             cnet_img_reuse.change(
                                 lambda x: gr.update(visible=not x),
                                 inputs=[cnet_img_reuse],
@@ -159,6 +169,8 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
                         shared.ui_params("image_width_default"),
                         step=shared.ui_params("image_width_step"),
                         label="Width",
+                        elem_id="i2i-width",
+                        elem_classes=["prompt-size"],
                     )
                     width.elem_classes = ["inline-flex"]
                     height = gr.Slider(
@@ -167,13 +179,37 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
                         shared.ui_params("image_height_default"),
                         step=shared.ui_params("image_height_step"),
                         label="Height",
+                        elem_id="i2i-height",
+                        elem_classes=["prompt-size"],
                     )
                     height.elem_classes = ["inline-flex"]
                     aspect_ratio = gr.Dropdown(
-                        choices=["none", "1:1", "16:9", "9:16", "3:2", "2:3"],
+                        choices=["none"]
+                        + shared.ui_params("aspect_ratio_list").split(";"),
                         value="none",
                         label="Aspect ratio",
                         elem_id="i2i-aspect",
+                    )
+                    width.change(
+                        fn=None,
+                        _js=f"(width, aspect_ratio) => kubin.UI.aspectRatio.sizeChanged('i2i-width', 'i2i-height', 'width', width, aspect_ratio, {shared.ui_params('image_width_step')})",
+                        show_progress=False,
+                        inputs=[width, aspect_ratio],
+                        outputs=gr.State(None),
+                    )
+                    height.change(
+                        fn=None,
+                        _js=f"(height, aspect_ratio) => kubin.UI.aspectRatio.sizeChanged('i2i-width', 'i2i-height', 'height', height, aspect_ratio, {shared.ui_params('image_height_step')})",
+                        show_progress=False,
+                        inputs=[height, aspect_ratio],
+                        outputs=gr.State(None),
+                    )
+                    aspect_ratio.change(
+                        fn=None,
+                        _js=f"(width, aspect_ratio) => kubin.UI.aspectRatio.sizeChanged('i2i-width', 'i2i-height', 'width', width, aspect_ratio, {shared.ui_params('image_width_step')})",
+                        show_progress=False,
+                        inputs=[width, aspect_ratio],
+                        outputs=gr.State(None),
                     )
 
                 with gr.Row(equal_height=True):
@@ -214,6 +250,8 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
             augmentations["ui"]()
 
         with gr.Column(scale=1):
+            augmentations["ui_before_generate"]()
+
             generate_i2i = gr.Button("Generate", variant="primary")
             i2i_output = gr.Gallery(
                 label="Generated Images",
@@ -231,6 +269,8 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
 
             shared.create_base_send_targets(i2i_output, "i2i-output", tabs)
             shared.create_ext_send_targets(i2i_output, "i2i-output", tabs)
+
+            augmentations["ui_after_generate"]()
 
             def generate(
                 session,
@@ -254,6 +294,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
                 cnet_img_reuse,
                 cnet_image,
                 cnet_condition,
+                cnet_depth_estimator,
                 cnet_emb_transform_strength,
                 cnet_neg_emb_transform_strength,
                 cnet_img_strength,
@@ -291,6 +332,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
                     "cnet_enable": cnet_enable,
                     "cnet_image": cnet_target_image,
                     "cnet_condition": cnet_condition,
+                    "cnet_depth_estimator": cnet_depth_estimator,
                     "cnet_emb_transform_strength": cnet_emb_transform_strength,
                     "cnet_neg_emb_transform_strength": cnet_neg_emb_transform_strength,
                     "cnet_img_strength": cnet_img_strength,
@@ -325,6 +367,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
                     cnet_img_reuse,
                     shared.input_cnet_i2i_image,
                     cnet_condition,
+                    cnet_depth_estimator,
                     cnet_emb_transform_strength,
                     cnet_neg_emb_transform_strength,
                     cnet_img_strength,

@@ -26,6 +26,7 @@ def gradio_ui(kubin: Kubin, start_fn):
         title="Kubin: Web-GUI for Kandinsky 2.x",
         theme=ui_shared.select_theme(kubin.params("gradio", "theme")),
         css=css_styles,
+        analytics_enabled=kubin.params("gradio", "analytics"),
     ) as ui:
         session = gr.Textbox("-1", visible=False)
 

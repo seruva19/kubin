@@ -1,5 +1,6 @@
 import torch
 import torch.backends
+from models.model_diffusers22.model_22_patch import patch_pipelines
 from utils.image import create_inpaint_targets, create_outpaint_targets
 import itertools
 import os
@@ -10,7 +11,7 @@ from utils.logging import k_log
 
 from model_utils.diffusers_utils import use_scheduler
 from models.model_diffusers22.model_22_cnet import generate_hint
-from models.model_diffusers22.model_22_utils import (
+from models.model_diffusers22.model_22_init import (
     flush_if_required,
     prepare_weights_for_task,
     images_or_texts,
@@ -39,6 +40,8 @@ class Model_Diffusers22:
 
         # self.image_encoder: CLIPVisionModelWithProjection | None = None
         # self.unet_2d: UNet2DConditionModel | None = None
+
+        patch_pipelines()
 
         self.pipe_prior: KandinskyV22PriorPipeline | None = None
         self.pipe_prior_e2e: KandinskyV22PriorEmb2EmbPipeline | None = None
@@ -746,6 +749,7 @@ class Model_Diffusers22:
 
         cnet_image = params["cnet_image"]
         cnet_condition = params["cnet_condition"]
+        cnet_depth_estimator = params["cnet_depth_estimator"]
 
         image_embeds, zero_embeds = prior(
             prompt=params["prompt"],
@@ -782,7 +786,9 @@ class Model_Diffusers22:
         use_scheduler(decoder, params["sampler"])
 
         cnet_image = cnet_image.resize((params["w"], params["h"]))
-        hint = generate_hint(cnet_image, cnet_condition, self.params)
+        hint = generate_hint(
+            self, cnet_image, cnet_condition, cnet_depth_estimator, self.params
+        )
 
         images = []
         prior_on_cpu = self.params("diffusers", "run_prior_on_cpu")
@@ -869,6 +875,7 @@ class Model_Diffusers22:
         init_image = params["init_image"]
         i2i_cnet_image = params["cnet_image"]
         i2i_cnet_condition = params["cnet_condition"]
+        i2i_cnet_depth_estimator = params["cnet_depth_estimator"]
         i2i_cnet_emb_transform_strength = params["cnet_emb_transform_strength"]
         i2i_cnet_neg_emb_transform_strength = params["cnet_neg_emb_transform_strength"]
         i2i_cnet_img_strength = params["cnet_img_strength"]
@@ -912,7 +919,13 @@ class Model_Diffusers22:
         use_scheduler(decoder, params["sampler"])
 
         i2i_cnet_image = i2i_cnet_image.resize((params["w"], params["h"]))
-        hint = generate_hint(i2i_cnet_image, i2i_cnet_condition, self.params)
+        hint = generate_hint(
+            self,
+            i2i_cnet_image,
+            i2i_cnet_condition,
+            i2i_cnet_depth_estimator,
+            self.params,
+        )
 
         images = []
         prior_on_cpu = self.params("diffusers", "run_prior_on_cpu")
@@ -991,6 +1004,7 @@ class Model_Diffusers22:
 
         mix_cnet_image = params["cnet_image"]
         mix_cnet_condition = params["cnet_condition"]
+        mix_cnet_depth_estimator = params["cnet_depth_estimator"]
         mix_cnet_img_strength = params["cnet_img_strength"]
 
         images_texts = images_or_texts(
@@ -1025,7 +1039,13 @@ class Model_Diffusers22:
         use_scheduler(decoder, params["sampler"])
 
         mix_cnet_image = mix_cnet_image.resize((params["w"], params["h"]))
-        hint = generate_hint(mix_cnet_image, mix_cnet_condition, self.params)
+        hint = generate_hint(
+            self,
+            mix_cnet_image,
+            mix_cnet_condition,
+            mix_cnet_depth_estimator,
+            self.params,
+        )
 
         images = []
         prior_on_cpu = self.params("diffusers", "run_prior_on_cpu")

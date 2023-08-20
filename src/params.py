@@ -139,6 +139,9 @@ class KubinParams:
             self.conf["gradio"]["theme"] = self.args.theme
 
         if self.args.debug is not None:
+            self.conf["gradio"]["analytics"] = self.args.analytics == "use"
+
+        if self.args.debug is not None:
             self.conf["gradio"]["debug"] = self.args.debug == "use"
 
         if self.args.mock is not None:

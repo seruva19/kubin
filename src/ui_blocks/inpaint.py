@@ -19,6 +19,7 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs, session):
                 negative_prompt = gr.TextArea(
                     "", placeholder="", label="Negative prompt", lines=2
                 )
+                negative_prompt.elem_classes = ["unsupported_20"]
 
             augmentations["ui_before_cnet"]()
             augmentations["ui_before_params"]()
@@ -47,7 +48,6 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs, session):
                         label="Steps",
                     )
                     guidance_scale = gr.Slider(1, 30, 4, step=1, label="Guidance scale")
-                with gr.Row():
                     batch_count = gr.Slider(
                         1,
                         shared.ui_params("max_batch_count"),
@@ -55,21 +55,16 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs, session):
                         step=1,
                         label="Batch count",
                     )
-                    batch_size = gr.Slider(1, 16, 1, step=1, label="Batch size")
-                    # TODO: fix https://github.com/ai-forever/Kandinsky-2/issues/53
                 with gr.Row():
-                    infer_size = gr.Checkbox(
-                        True,
-                        label="Infer image size from input image",
-                        elem_classes=["inline-flex"],
-                    )
                     width = gr.Slider(
                         shared.ui_params("image_width_min"),
                         shared.ui_params("image_width_max"),
                         shared.ui_params("image_width_default"),
                         step=shared.ui_params("image_width_step"),
                         label="Width",
+                        elem_id="inpaint-width",
                         interactive=False,
+                        elem_classes=["prompt-size", "inline-flex"],
                     )
                     height = gr.Slider(
                         shared.ui_params("image_height_min"),
@@ -77,16 +72,59 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs, session):
                         shared.ui_params("image_height_default"),
                         step=shared.ui_params("image_height_step"),
                         label="Height",
+                        elem_id="inpaint-height",
                         interactive=False,
+                        elem_classes=["prompt-size", "inline-flex"],
                     )
-                with gr.Row():
+                    with gr.Column():
+                        infer_size = gr.Checkbox(
+                            True,
+                            label="Infer image size from input image",
+                            elem_classes=["inline-flex"],
+                        )
+                        aspect_ratio = gr.Dropdown(
+                            choices=["none"]
+                            + shared.ui_params("aspect_ratio_list").split(";"),
+                            value="none",
+                            allow_custom_value=True,
+                            interactive=False,
+                            label="Aspect ratio",
+                            elem_id="inpaint-aspect",
+                        )
+                    width.change(
+                        fn=None,
+                        _js=f"(width, aspect_ratio) => kubin.UI.aspectRatio.sizeChanged('inpaint-width', 'inpaint-height', 'width', width, aspect_ratio, {shared.ui_params('image_width_step')})",
+                        show_progress=False,
+                        inputs=[width, aspect_ratio],
+                        outputs=gr.State(None),
+                    )
+                    height.change(
+                        fn=None,
+                        _js=f"(height, aspect_ratio) => kubin.UI.aspectRatio.sizeChanged('inpaint-width', 'inpaint-height', 'height', height, aspect_ratio, {shared.ui_params('image_height_step')})",
+                        show_progress=False,
+                        inputs=[height, aspect_ratio],
+                        outputs=gr.State(None),
+                    )
+                    aspect_ratio.change(
+                        fn=None,
+                        _js=f"(width, aspect_ratio) => kubin.UI.aspectRatio.sizeChanged('inpaint-width', 'inpaint-height', 'width', width, aspect_ratio, {shared.ui_params('image_width_step')})",
+                        show_progress=False,
+                        inputs=[width, aspect_ratio],
+                        outputs=gr.State(None),
+                    )
+
+                with gr.Row(equal_height=True):
                     (
                         sampler_20,
                         sampler_21_native,
                         sampler_diffusers,
                     ) = samplers_controls()
-
                     seed = gr.Number(-1, label="Seed", precision=0)
+
+                    batch_size = gr.Slider(1, 16, 1, step=1, label="Batch size")
+                    # TODO: fix https://github.com/ai-forever/Kandinsky-2/issues/53
+                    batch_size.elem_classes = ["unsupported_20", "inline-flex"]
+
                 with gr.Row() as prior_block:
                     prior_scale = gr.Slider(
                         1,
@@ -109,10 +147,13 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs, session):
                         label="Negative prior prompt",
                         lines=2,
                     )
+                prior_block.elem_classes = ["unsupported_20"]
 
             augmentations["ui"]()
 
         with gr.Column(scale=1):
+            augmentations["ui_before_generate"]()
+
             generate_inpaint = gr.Button("Generate", variant="primary")
             inpaint_output = gr.Gallery(
                 label="Generated Images",
@@ -131,13 +172,16 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs, session):
             shared.create_base_send_targets(inpaint_output, "inpaint-output", tabs)
             shared.create_ext_send_targets(inpaint_output, "inpaint-output", tabs)
 
+            augmentations["ui_after_generate"]()
+
             infer_size.change(
                 fn=lambda x: [
                     gr.update(interactive=not x),
                     gr.update(interactive=not x),
+                    gr.update(interactive=not x),
                 ],
                 inputs=[infer_size],
-                outputs=[width, height],
+                outputs=[width, height, aspect_ratio],
             )
 
             def generate(
@@ -224,9 +268,6 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs, session):
             ],
         )
 
-        batch_size.elem_classes = (
-            negative_prompt.elem_classes
-        ) = prior_block.elem_classes = ["unsupported_20"]
         inpaint_params.elem_classes = ["block-params inpaint_params"]
         inpaint_advanced_params.elem_classes = [
             "block-advanced-params inpaint_advanced_params"
