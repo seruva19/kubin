@@ -206,6 +206,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
         t2i_params.elem_classes = ["block-params", "t2i_params"]
 
         with gr.Column(scale=1):
+            augmentations["ui_before_generate"]()
             generate_t2i = gr.Button("Generate", variant="primary")
             t2i_output = gr.Gallery(
                 label="Generated Images",
@@ -223,6 +224,8 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
 
             shared.create_base_send_targets(t2i_output, "t2i-output", tabs)
             shared.create_ext_send_targets(t2i_output, "t2i-output", tabs)
+
+            augmentations["ui_after_generate"]()
 
             def generate(
                 session,

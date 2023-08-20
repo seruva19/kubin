@@ -152,6 +152,8 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs, session):
             augmentations["ui"]()
 
         with gr.Column(scale=1):
+            augmentations["ui_before_generate"]()
+
             generate_inpaint = gr.Button("Generate", variant="primary")
             inpaint_output = gr.Gallery(
                 label="Generated Images",
@@ -169,6 +171,8 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs, session):
 
             shared.create_base_send_targets(inpaint_output, "inpaint-output", tabs)
             shared.create_ext_send_targets(inpaint_output, "inpaint-output", tabs)
+
+            augmentations["ui_after_generate"]()
 
             infer_size.change(
                 fn=lambda x: [

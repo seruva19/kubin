@@ -196,6 +196,8 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs, session):
             augmentations["ui"]()
 
         with gr.Column(scale=1):
+            augmentations["ui_before_generate"]()
+
             generate_outpaint = gr.Button("Generate", variant="primary")
             outpaint_output = gr.Gallery(
                 label="Generated Images",
@@ -213,6 +215,8 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs, session):
 
             shared.create_base_send_targets(outpaint_output, "outpaint-output", tabs)
             shared.create_ext_send_targets(outpaint_output, "outpaint-output", tabs)
+
+            augmentations["ui_after_generate"]()
 
             def generate(
                 session,

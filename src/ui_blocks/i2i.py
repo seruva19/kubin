@@ -250,6 +250,8 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
             augmentations["ui"]()
 
         with gr.Column(scale=1):
+            augmentations["ui_before_generate"]()
+
             generate_i2i = gr.Button("Generate", variant="primary")
             i2i_output = gr.Gallery(
                 label="Generated Images",
@@ -267,6 +269,8 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
 
             shared.create_base_send_targets(i2i_output, "i2i-output", tabs)
             shared.create_ext_send_targets(i2i_output, "i2i-output", tabs)
+
+            augmentations["ui_after_generate"]()
 
             def generate(
                 session,

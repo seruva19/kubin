@@ -176,6 +176,8 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
             augmentations["ui"]()
 
         with gr.Column(scale=1):
+            augmentations["ui_before_generate"]()
+
             generate_mix = gr.Button("Generate", variant="primary")
             mix_output = gr.Gallery(
                 label="Generated Images",
@@ -193,6 +195,8 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
 
             shared.create_base_send_targets(mix_output, "mix-output", tabs)
             shared.create_ext_send_targets(mix_output, "mix-output", tabs)
+
+            augmentations["ui_after_generate"]()
 
             def generate(
                 session,

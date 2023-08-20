@@ -302,6 +302,8 @@ class SharedUI:
             "ui_before_prompt": lambda: create_block("before_prompt"),
             "ui_before_cnet": lambda: create_block("before_cnet"),
             "ui_before_params": lambda: create_block("before_params"),
+            "ui_before_generate": lambda: create_block("before_generate"),
+            "ui_after_generate": lambda: create_block("after_generate"),
             "exec": lambda p, a: augment_params(target, p, a),
             "injections": ext_injections,
         }
