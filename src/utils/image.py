@@ -56,4 +56,5 @@ def create_outpaint_targets(image, offset, infer_size, width, height):
     if infer_size:
         height, width = mask.shape[:2]
 
+    mask = 1.0 - mask
     return image, mask, width, height

@@ -1,6 +1,6 @@
 import torch
 import torch.backends
-from models.model_diffusers22.model_22_patch import patch_pipelines
+from models.model_diffusers22.patched.pipeline_patch import patch_pipelines
 from utils.image import create_inpaint_targets, create_outpaint_targets
 import itertools
 import os
@@ -18,8 +18,18 @@ from models.model_diffusers22.model_22_init import (
     clear_pipe_info,
     execute_forced_hooks,
 )
-from transformers import CLIPVisionModelWithProjection
-from diffusers.models import UNet2DConditionModel
+
+from transformers import (
+    CLIPImageProcessor,
+    CLIPTextModelWithProjection,
+    CLIPTokenizer,
+    CLIPVisionModelWithProjection,
+)
+from diffusers.models import (
+    UNet2DConditionModel,
+    PriorTransformer,
+    VQModel,
+)
 from diffusers import (
     KandinskyV22PriorPipeline,
     KandinskyV22PriorEmb2EmbPipeline,
@@ -29,7 +39,7 @@ from diffusers import (
     KandinskyV22ControlnetPipeline,
     KandinskyV22ControlnetImg2ImgPipeline,
 )
-
+from diffusers.schedulers import UnCLIPScheduler
 from hooks.hooks import HOOK
 
 
@@ -38,10 +48,16 @@ class Model_Diffusers22:
         k_log("activating pipeline: diffusers (2.2)")
         self.params = params
 
-        # self.image_encoder: CLIPVisionModelWithProjection | None = None
-        # self.unet_2d: UNet2DConditionModel | None = None
+        self.prior_transformer: PriorTransformer | None = None
+        self.image_encoder: CLIPVisionModelWithProjection | None = None
+        self.text_encoder: CLIPTextModelWithProjection | None = None
+        self.tokenizer: CLIPTokenizer | None = None
+        self.unclip_scheduler: UnCLIPScheduler | None = None
+        self.image_processor: CLIPImageProcessor | None = None
 
-        patch_pipelines()
+        self.scheduler: None = None
+        self.unet_2d: UNet2DConditionModel | None = None
+        self.movq: VQModel | None = None
 
         self.pipe_prior: KandinskyV22PriorPipeline | None = None
         self.pipe_prior_e2e: KandinskyV22PriorEmb2EmbPipeline | None = None
@@ -52,9 +68,10 @@ class Model_Diffusers22:
         self.cnet_i2i_pipe: KandinskyV22ControlnetImg2ImgPipeline | None = None
 
         self.config = {}
-
         self.cublas_config = os.environ.get("CUBLAS_WORKSPACE_CONFIG", None)
+
         clear_pipe_info(self)
+        patch_pipelines()
 
     def prepareModel(self, task):
         k_log(f"task queued: {task}")
