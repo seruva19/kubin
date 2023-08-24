@@ -19,10 +19,10 @@ logger = logging.get_logger(__name__)
 
 def patch_pipelines():
     k_log("patching default diffusers pipelines")
-    replace_encode_prompt_fn()
+    patch_prior()
 
 
-def replace_encode_prompt_fn():
+def patch_prior():
     KandinskyV22PriorPipeline._encode_prompt = patched_encode_prompt
 
 
