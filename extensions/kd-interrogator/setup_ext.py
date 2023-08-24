@@ -1,64 +1,62 @@
 import gradio as gr
 from PIL import Image
 from clip_interrogator import Config, Interrogator
+from transformers import (
+    AutoProcessor,
+    AutoModelForCausalLM,
+    BlipForConditionalGeneration,
+    Blip2ForConditionalGeneration,
+)
 import pandas as pd
 import torch
 import os
 
 title = "Interrogator"
-use_monkey_patch = False
-
-
-def patched_prepare_inputs_for_generation(
-    self,
-    input_ids,
-    past=None,
-    attention_mask=None,
-    encoder_hidden_states=None,
-    encoder_attention_mask=None,
-    **model_kwargs,
-):
-    input_shape = input_ids.shape
-
-    if attention_mask is None:
-        attention_mask = input_ids.new_ones(input_shape)
-
-    if past is not None:
-        input_ids = input_ids[:, -1:]
-
-    return {
-        "input_ids": input_ids,
-        "attention_mask": attention_mask,
-        "past_key_values": past,
-        "encoder_hidden_states": encoder_hidden_states,
-        "encoder_attention_mask": encoder_attention_mask,
-        "is_decoder": True,
-    }
-
-
-# 1) monkey patch to prevent https://github.com/huggingface/transformers/issues/19290
-# 2) force download of CLIP/BLIP models into app models folder
-def use_patch(kubin):
-    from blip.models.med import BertLMHeadModel
-
-    old_method = BertLMHeadModel.prepare_inputs_for_generation
-    old_torch_dir = torch.hub.get_dir()
-
-    BertLMHeadModel.prepare_inputs_for_generation = (
-        patched_prepare_inputs_for_generation
-    )
-    torch.hub.set_dir(kubin.params("general", "cache_dir"))
-    return old_method, old_torch_dir
-
-
-def cancel_patch(patch):
-    from blip.models.med import BertLMHeadModel
-
-    BertLMHeadModel.prepare_inputs_for_generation = patch[0]
-    torch.hub.set_dir(patch[1])
 
 
 def setup(kubin):
+    cache_dir = kubin.params("general", "cache_dir")
+
+    CAPTION_MODELS = {
+        "blip-base": "Salesforce/blip-image-captioning-base",  # 990MB
+        "blip-large": "Salesforce/blip-image-captioning-large",  # 1.9GB
+        "blip2-2.7b": "Salesforce/blip2-opt-2.7b",  # 15.5GB
+        "blip2-flan-t5-xl": "Salesforce/blip2-flan-t5-xl",  # 15.77GB
+        "git-large-coco": "microsoft/git-large-coco",  # 1.58GB
+    }
+
+    def patched_load_caption_model(self):
+        if self.config.caption_model is None and self.config.caption_model_name:
+            if not self.config.quiet:
+                print(f"Loading caption model {self.config.caption_model_name}...")
+
+            model_path = CAPTION_MODELS[self.config.caption_model_name]
+            if self.config.caption_model_name.startswith("git-"):
+                caption_model = AutoModelForCausalLM.from_pretrained(
+                    model_path, torch_dtype=torch.float32, cache_dir=cache_dir
+                )
+            elif self.config.caption_model_name.startswith("blip2-"):
+                caption_model = Blip2ForConditionalGeneration.from_pretrained(
+                    model_path, torch_dtype=self.dtype, cache_dir=cache_dir
+                )
+            else:
+                caption_model = BlipForConditionalGeneration.from_pretrained(
+                    model_path, torch_dtype=self.dtype, cache_dir=cache_dir
+                )
+            self.caption_processor = AutoProcessor.from_pretrained(
+                model_path, cache_dir=cache_dir
+            )
+
+            caption_model.eval()
+            if not self.config.caption_offload:
+                caption_model = caption_model.to(self.config.device)
+            self.caption_model = caption_model
+        else:
+            self.caption_model = self.config.caption_model
+            self.caption_processor = self.config.caption_processor
+
+    Interrogator.load_caption_model = patched_load_caption_model
+
     ci = None
     ci_config = None
     source_image = gr.Image(type="pil", label="Input image", elem_classes=[])
@@ -83,16 +81,13 @@ def setup(kubin):
         return ci
 
     def interrogate(image, mode, clip_model, blip_type, chunk_size):
-        if use_monkey_patch:
-            patch = use_patch(kubin)
-
         image = image.convert("RGB")
         interrogated_text = ""
 
         interrogator = get_interrogator(
             clip_model=clip_model,
             blip_type=blip_type,
-            cache_path=f"{kubin.params('general','cache_dir')}/clip_cache",
+            cache_path=f"{cache_dir}/clip_cache",
             chunk_size=chunk_size,
         )
         if mode == "best":
@@ -103,9 +98,6 @@ def setup(kubin):
             interrogated_text = interrogator.interrogate_fast(image)
         elif mode == "negative":
             interrogated_text = interrogator.interrogate_negative(image)
-
-        if use_monkey_patch:
-            cancel_patch(patch)
 
         return interrogated_text
 
