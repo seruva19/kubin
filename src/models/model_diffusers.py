@@ -4,7 +4,7 @@ import torch
 import torch.backends
 
 from utils.image import create_inpaint_targets, create_outpaint_targets
-from model_utils.diffusers_utils import use_scheduler
+from model_utils.diffusers_samplers import use_sampler
 
 import itertools
 import os
@@ -217,7 +217,7 @@ class Model_Diffusers:
             return_dict=True,
         ).to_tuple()
 
-        use_scheduler(unet_pipe, params["sampler"])
+        use_sampler(unet_pipe, params["sampler"])
 
         images = []
         for _ in itertools.repeat(None, params["batch_count"]):
@@ -267,7 +267,7 @@ class Model_Diffusers:
             return_dict=True,
         ).to_tuple()
 
-        use_scheduler(unet_pipe, params["sampler"])
+        use_sampler(unet_pipe, params["sampler"])
 
         images = []
         for _ in itertools.repeat(None, params["batch_count"]):
@@ -318,7 +318,7 @@ class Model_Diffusers:
         )
         weights = [params["weight_1"], params["weight_2"]]
 
-        use_scheduler(unet_pipe, params["sampler"])
+        use_sampler(unet_pipe, params["sampler"])
 
         prompt = ""
         interpolation_params = self.pipe_prior.interpolate(
@@ -393,7 +393,7 @@ class Model_Diffusers:
             pil_img, mask, output_size, inpaint_region, inpaint_target
         )
 
-        use_scheduler(unet_pipe, params["sampler"])
+        use_sampler(unet_pipe, params["sampler"])
 
         images = []
         for _ in itertools.repeat(None, params["batch_count"]):
@@ -451,7 +451,7 @@ class Model_Diffusers:
             image, offset, infer_size, width, height
         )
 
-        use_scheduler(unet_pipe, params["sampler"])
+        use_sampler(unet_pipe, params["sampler"])
 
         images = []
         for _ in itertools.repeat(None, params["batch_count"]):

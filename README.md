@@ -25,10 +25,10 @@
 ✔ ext. Img2mesh <br>
 ✔ ext. Interrogation <br>
 ✔ ext. Segmentation <br>
-🕒 Multiple samplers <br>
 🕒 Advanced prompt syntax <br>
 🕒 Prompt weighting <br>
 🕒 Checkpoint conversion <br>
+🕒 Checkpoint merging <br>
 🕒 ext. Area composition <br>
 🕒 ext. Animation <br>
 
