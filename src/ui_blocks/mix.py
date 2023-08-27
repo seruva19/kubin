@@ -66,7 +66,7 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
                             0, 1, 1, step=0.05, label="Image strength"
                         )
 
-            mix_cnet.elem_classes = ["control-net"]
+            mix_cnet.elem_classes = ["control-net", "kubin-accordion"]
 
             augmentations["ui_before_params"]()
 
@@ -301,5 +301,9 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
         )
 
         mix_params.elem_classes = ["block-params mix_params"]
-        mix_advanced_params.elem_classes = ["block-advanced-params mix_advanced_params"]
+        mix_advanced_params.elem_classes = [
+            "block-advanced-params",
+            "mix_advanced_params",
+            "kubin-accordion",
+        ]
     return mix_block

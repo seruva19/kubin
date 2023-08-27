@@ -16,7 +16,7 @@ def networks_browser_ui(kubin, config, prior_loras, decoder_loras, networks_list
     lora_prior_pattern = config["lora_prior_pattern"]
     lora_decoder_pattern = config["lora_decoder_pattern"]
 
-    with gr.Accordion("Base", open=True):
+    with gr.Accordion("Base", open=True) as base_browser:
         model_components = gr.State({})
 
         scan_model = gr.Button(value="👓 Scan model components", scale=0, size="sm")
@@ -27,8 +27,9 @@ def networks_browser_ui(kubin, config, prior_loras, decoder_loras, networks_list
             visible=False,
             interactive=True,
         )
+    base_browser.elem_classes = ["kubin-accordion"]
 
-    with gr.Accordion("LoRA", open=True):
+    with gr.Accordion("LoRA", open=True) as lora_browser:
         with gr.Row():
             lora_prior_list = gr.Dropdown(
                 label="List of prior LoRA models",
@@ -44,6 +45,7 @@ def networks_browser_ui(kubin, config, prior_loras, decoder_loras, networks_list
                 value="🔄 Rescan LoRA models", scale=0, size="sm"
             )
 
+    lora_browser.elem_classes = ["kubin-accordion"]
     network_metadata = gr.HTML(
         "",
         label="Network info",

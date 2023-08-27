@@ -20,7 +20,7 @@ def train_lora_prior_ui(kubin, tabs):
         current_lora_config = gr.State(default_lora_config)
 
         with gr.Column(scale=3):
-            with gr.Accordion("Paths", open=True):
+            with gr.Accordion("Paths", open=True) as paths_ui:
                 with gr.Row():
                     pretrained_prior_path = gr.Textbox(
                         value=default_lora_config["paths"]["pretrained_prior_path"],
@@ -56,8 +56,9 @@ def train_lora_prior_ui(kubin, tabs):
                         label="Tokenizer path",
                         info=text_tip("Path to tokenizer"),
                     )
+            paths_ui.elem_classes = ["kubin-accordion"]
 
-            with gr.Accordion("Dataset", open=True):
+            with gr.Accordion("Dataset", open=True) as dataset_ui:
                 with gr.Row():
                     train_images_paths_csv = gr.Textbox(
                         value=default_lora_config["dataset"]["train_images_paths_csv"],
@@ -80,8 +81,9 @@ def train_lora_prior_ui(kubin, tabs):
                         ),
                         interactive=False,
                     )
+            dataset_ui.elem_classes = ["kubin-accordion"]
 
-            with gr.Accordion("Training", open=True):
+            with gr.Accordion("Training", open=True) as training_ui:
                 with gr.Row():
                     train_batch_size = gr.Number(
                         value=default_lora_config["training"]["train_batch_size"],
@@ -309,8 +311,9 @@ def train_lora_prior_ui(kubin, tabs):
                         size="sm",
                         interactive=False,
                     )
+            training_ui.elem_classes = ["kubin-accordion"]
 
-            with gr.Accordion("Other", open=True):
+            with gr.Accordion("Other", open=True) as other_ui:
                 with gr.Row():
                     with gr.Column(scale=2):
                         output_name = gr.Textbox(
@@ -335,6 +338,7 @@ def train_lora_prior_ui(kubin, tabs):
                             label="Convert to safetensors",
                             info=text_tip("Convert pytorch model to safetensors"),
                         )
+            other_ui.elem_classes = ["kubin-accordion"]
 
             config_params = {
                 current_lora_config,
@@ -603,7 +607,7 @@ def train_lora_prior_ui(kubin, tabs):
                     reset_config = gr.Button(
                         "🔁 Reset parameters to default values", size="sm"
                     )
-
+            misc_params.elem_classes = ["training-misc-params", "kubin-accordion"]
             config_error = gr.Checkbox(False, visible=False)
 
             load_config.click(
@@ -664,7 +668,5 @@ def train_lora_prior_ui(kubin, tabs):
                 show_progress=False,
                 _js='() => kubin.notify.success("Parameters were reset to default values")',
             )
-
-            misc_params.elem_classes = ["training-misc-params"]
 
     return train_lora_prior_block

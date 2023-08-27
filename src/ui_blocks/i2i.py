@@ -90,7 +90,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
                                     label="Image strength",
                                 )
 
-                    i2i_cnet.elem_classes = ["control-net"]
+                    i2i_cnet.elem_classes = ["control-net", "kubin-accordion"]
 
                 with gr.TabItem("Batch"):
                     with gr.Row():
@@ -496,5 +496,9 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
             )
 
         i2i_params.elem_classes = ["block-params i2i_params"]
-        i2i_advanced_params.elem_classes = ["block-advanced-params i2i_advanced_params"]
+        i2i_advanced_params.elem_classes = [
+            "block-advanced-params",
+            "i2i_advanced_params",
+            "kubin-accordion",
+        ]
     return i2i_block

@@ -311,6 +311,8 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs, session):
 
         outpaint_params.elem_classes = ["block-params outpaint_params"]
         outpaint_advanced_params.elem_classes = [
-            "block-advanced-params outpaint_advanced_params"
+            "block-advanced-params",
+            "outpaint_advanced_params",
+            "kubin-accordion",
         ]
     return outpaint_block

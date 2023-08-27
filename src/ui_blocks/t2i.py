@@ -89,7 +89,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
                 outputs=[cnet_i2i_params],
             )
 
-            t2i_cnet.elem_classes = ["control-net"]
+            t2i_cnet.elem_classes = ["control-net", "kubin-accordion"]
 
             augmentations["ui_before_params"]()
 
@@ -198,7 +198,9 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
                     )
                 prior_block.elem_classes = ["unsupported_20"]
             t2i_advanced_params.elem_classes = [
-                "block-advanced-params t2i_advanced_params"
+                "block-advanced-params",
+                "t2i_advanced_params",
+                "kubin-accordion",
             ]
 
             augmentations["ui"]()

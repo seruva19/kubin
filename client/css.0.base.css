@@ -28,6 +28,12 @@ body.unselectable * {
 .options-block .form {
   line-height: 50px;
   border-radius: 5px !important;
+  background: transparent;
+
+}
+
+.options-block .form fieldset {
+  background: transparent;
 }
 
 .options-block .form,
@@ -41,6 +47,7 @@ body.unselectable * {
   padding: 5px;
   border-color: transparent;
   box-shadow: none;
+  background: transparent;
 }
 
 .options-block.active {

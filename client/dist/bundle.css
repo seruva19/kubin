@@ -28,6 +28,12 @@ body.unselectable * {
 .options-block .form {
   line-height: 50px;
   border-radius: 5px !important;
+  background: transparent;
+
+}
+
+.options-block .form fieldset {
+  background: transparent;
 }
 
 .options-block .form,
@@ -41,6 +47,7 @@ body.unselectable * {
   padding: 5px;
   border-color: transparent;
   box-shadow: none;
+  background: transparent;
 }
 
 .options-block.active {
@@ -184,6 +191,19 @@ body.gradio-full .gradio-container {
 
 .options-small {
   width: 100px !important;
+}
+
+.kubin-accordion .label-wrap span {
+  font-weight: bold;
+  text-transform: uppercase;
+  padding: 0 5px;
+  border-radius: var(--block-radius);
+
+}
+
+.kubin-accordion .label-wrap span.active {
+  background: var(--color-green-800);
+  color: var(--button-secondary-text-color);
 }
 html.has-lightbox {
   overflow-x: hidden;

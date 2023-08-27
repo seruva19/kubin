@@ -146,7 +146,7 @@ def use_sampler(pipeline, sampler, task):
     elif sampler == "Euler":
         pipeline.scheduler = EulerDiscreteScheduler(
             num_train_timesteps=1000,
-            beta_schedule="scaled_linear",
+            beta_schedule="linear",
             beta_start=0.0001,
             beta_end=0.02,
             trained_betas=None,
@@ -154,7 +154,7 @@ def use_sampler(pipeline, sampler, task):
             interpolation_type="linear",
             use_karras_sigmas=True,
             timestep_spacing="linspace",
-            steps_offset=1,
+            steps_offset=0,
         )
 
     elif sampler == "EulerA":

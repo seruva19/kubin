@@ -5,7 +5,7 @@ from PIL import Image
 
 
 def train_dataset_ui(kubin, tabs):
-    with gr.Accordion(open=True, label="Create dataset") as dataset_block:
+    with gr.Accordion(open=True, label="Dataset preparation") as dataset_block:
         with gr.Row():
             with gr.Column():
                 image_folder_path = gr.Textbox(
@@ -135,6 +135,8 @@ def train_dataset_ui(kubin, tabs):
             outputs=[dataframe_not_exists],
             _js="(err, res) => err && kubin.notify.error(res)",
         )
+
+    dataset_block.elem_classes = ["kubin-accordion"]
     return dataset_block
 
 
