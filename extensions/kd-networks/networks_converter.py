@@ -5,7 +5,7 @@ import torch
 
 def networks_converter_ui(kubin):
     with gr.Row() as nn_converters_block:
-        with gr.Accordion("Network conversion", open=True):
+        with gr.Accordion("Network conversion", open=True) as network_conversion:
             with gr.Row():
                 conversion_from = gr.Dropdown(
                     choices=["bin"],
@@ -56,4 +56,5 @@ def networks_converter_ui(kubin):
                 outputs=None,
             )
 
+    network_conversion.elem_classes = ["kubin-accordion"]
     return nn_converters_block

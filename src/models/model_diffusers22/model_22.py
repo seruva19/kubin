@@ -9,7 +9,7 @@ from params import KubinParams
 from utils.file_system import save_output
 from utils.logging import k_log
 
-from model_utils.diffusers_utils import use_scheduler
+from model_utils.diffusers_samplers import use_sampler
 from models.model_diffusers22.model_22_cnet import generate_hint
 from models.model_diffusers22.model_22_init import (
     flush_if_required,
@@ -151,6 +151,7 @@ class Model_Diffusers22:
         )
 
         prior, decoder = self.prepareModel(task)
+
         assert isinstance(prior, KandinskyV22PriorPipeline)
         assert isinstance(decoder, KandinskyV22Pipeline)
 
@@ -204,7 +205,7 @@ class Model_Diffusers22:
         )
         k_log("negative prior embeddings: done")
 
-        use_scheduler(decoder, params["sampler"])
+        use_sampler(decoder, params["sampler"], task)
 
         images = []
         prior_on_cpu = self.params("diffusers", "run_prior_on_cpu")
@@ -305,7 +306,7 @@ class Model_Diffusers22:
         )
         k_log("prior embeddings: done")
 
-        use_scheduler(decoder, params["sampler"])
+        use_sampler(decoder, params["sampler"], task)
 
         images = []
         prior_on_cpu = self.params("diffusers", "run_prior_on_cpu")
@@ -413,7 +414,7 @@ class Model_Diffusers22:
         )
         k_log("interpolation prior embeddings: done")
 
-        use_scheduler(decoder, params["sampler"])
+        use_sampler(decoder, params["sampler"], task)
 
         images = []
         prior_on_cpu = self.params("diffusers", "run_prior_on_cpu")
@@ -547,7 +548,7 @@ class Model_Diffusers22:
             pil_img, mask, output_size, inpaint_region, inpaint_target
         )
 
-        use_scheduler(decoder, params["sampler"])
+        use_sampler(decoder, params["sampler"], task)
 
         images = []
         prior_on_cpu = self.params("diffusers", "run_prior_on_cpu")
@@ -676,7 +677,7 @@ class Model_Diffusers22:
             image, offset, infer_size, width, height
         )
 
-        use_scheduler(decoder, params["sampler"])
+        use_sampler(decoder, params["sampler"], task)
 
         images = []
         prior_on_cpu = self.params("diffusers", "run_prior_on_cpu")
@@ -800,7 +801,7 @@ class Model_Diffusers22:
         )
         k_log("negative prior embeddings: done")
 
-        use_scheduler(decoder, params["sampler"])
+        use_sampler(decoder, params["sampler"], task)
 
         cnet_image = cnet_image.resize((params["w"], params["h"]))
         hint = generate_hint(
@@ -933,7 +934,7 @@ class Model_Diffusers22:
         )
         k_log("negative prior embeddings: done")
 
-        use_scheduler(decoder, params["sampler"])
+        use_sampler(decoder, params["sampler"], task)
 
         i2i_cnet_image = i2i_cnet_image.resize((params["w"], params["h"]))
         hint = generate_hint(
@@ -1053,7 +1054,7 @@ class Model_Diffusers22:
         )
         k_log("interpolation prior embeddings: done")
 
-        use_scheduler(decoder, params["sampler"])
+        use_sampler(decoder, params["sampler"], task)
 
         mix_cnet_image = mix_cnet_image.resize((params["w"], params["h"]))
         hint = generate_hint(

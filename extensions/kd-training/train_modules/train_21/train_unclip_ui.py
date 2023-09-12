@@ -21,7 +21,7 @@ def train_unclip_ui(kubin, tabs):
         current_config = gr.State(default_config_from_path)
 
         with gr.Column(scale=3):
-            with gr.Accordion("General params", open=True):
+            with gr.Accordion("General params", open=True) as general_params_ui:
                 with gr.Row():
                     params_path = gr.Textbox(
                         value=default_config_from_path["params_path"],
@@ -178,8 +178,9 @@ def train_unclip_ui(kubin, tabs):
                             label="Freeze Attention",
                             interactive=True,
                         )
+            general_params_ui.elem_classes = ["kubin-accordion"]
 
-            with gr.Accordion("Optimizer params", open=True):
+            with gr.Accordion("Optimizer params", open=True) as optimizer_params_ui:
                 with gr.Row():
                     with gr.Column(scale=2):
                         with gr.Row():
@@ -217,8 +218,11 @@ def train_unclip_ui(kubin, tabs):
                             label="Relative step",
                             interactive=True,
                         )
+            optimizer_params_ui.elem_classes = ["kubin-accordion"]
 
-            with gr.Accordion("Image encoder params", open=True):
+            with gr.Accordion(
+                "Image encoder params", open=True
+            ) as image_encoder_params_ui:
                 with gr.Row():
                     scale = gr.Number(
                         value=default_config_from_path["image_enc_params"]["scale"],
@@ -312,8 +316,11 @@ def train_unclip_ui(kubin, tabs):
                         label="Dropout",
                         interactive=True,
                     )
+            image_encoder_params_ui.elem_classes = ["kubin-accordion"]
 
-            with gr.Accordion("Text encoder params", open=True):
+            with gr.Accordion(
+                "Text encoder params", open=True
+            ) as text_encoder_params_ui:
                 with gr.Row():
                     model_path = gr.Textbox(
                         value=default_config_from_path["text_enc_params"]["model_path"],
@@ -339,6 +346,7 @@ def train_unclip_ui(kubin, tabs):
                         label="Output Features",
                         interactive=True,
                     )
+            text_encoder_params_ui.elem_classes = ["kubin-accordion"]
 
             config_params = {
                 current_config,
@@ -638,7 +646,7 @@ def train_unclip_ui(kubin, tabs):
                     reset_config = gr.Button(
                         "🔁 Reset parameters to default values", size="sm"
                     )
-
+            misc_params.elem_classes = ["training-misc-params", "kubin-accordion"]
             config_error = gr.Checkbox(False, visible=False)
 
             load_config.click(
@@ -699,7 +707,5 @@ def train_unclip_ui(kubin, tabs):
                 show_progress=False,
                 _js='() => kubin.notify.success("Parameters were reset to default values")',
             )
-
-            misc_params.elem_classes = ["training-misc-params"]
 
     return train_unclip_block

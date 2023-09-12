@@ -3,18 +3,23 @@ import os
 import pandas as pd
 from PIL import Image
 
+
 def train_dataset_ui(kubin, tabs):
-    with gr.Accordion(open=True, label="Create dataset") as dataset_block:
+    with gr.Accordion(open=True, label="Dataset preparation") as dataset_block:
         with gr.Row():
             with gr.Column():
                 image_folder_path = gr.Textbox(
                     "train/images", label="Path to image folder"
+                )
+                caption_folder_path = gr.Textbox(
+                    "train/images", label="Path to caption folder"
                 )
                 image_extensions = gr.CheckboxGroup(
                     [".jpg", ".jpeg", ".png", ".bmp"],
                     value=[".jpg", ".jpeg", ".png", ".bmp"],
                     label="Image files extensions",
                 )
+
             with gr.Column():
                 resize_images = gr.Checkbox(False, label="Resize images")
                 resized_images_path = gr.Textbox(
@@ -65,12 +70,16 @@ def train_dataset_ui(kubin, tabs):
                 df_image = gr.Image(interactive=False, show_label=False)
 
         def show_image_and_caption(df, evt: gr.SelectData):
-            index = evt.index[0] 
+            index = evt.index[0]
             image = df["image_name"][index]
             caption = df["caption"][index]
             return [gr.update(visible=True), image, caption]
 
-        images_dataframe.select(fn=show_image_and_caption, inputs=[images_dataframe], outputs=[image_info, df_image, df_caption])
+        images_dataframe.select(
+            fn=show_image_and_caption,
+            inputs=[images_dataframe],
+            outputs=[image_info, df_image, df_caption],
+        )
 
         dataframe_error = gr.Checkbox(False, visible=False)
 
@@ -83,6 +92,7 @@ def train_dataset_ui(kubin, tabs):
             fn=prepare_dataset,
             inputs=[
                 image_folder_path,
+                caption_folder_path,
                 image_extensions,
                 caption_extension,
                 output_csv_path,
@@ -94,7 +104,7 @@ def train_dataset_ui(kubin, tabs):
             ],
             outputs=[dataframe_result, dataframe_error],
             queue=False,
-            show_progress=False,  
+            show_progress=False,
         ).then(
             fn=None,
             inputs=[dataframe_error],
@@ -110,7 +120,7 @@ def train_dataset_ui(kubin, tabs):
                 resize_images,
                 resized_images_path,
             ],
-            outputs=[images_dataframe, image_info, dataframe_result],  
+            outputs=[images_dataframe, image_info, dataframe_result],
         )
 
         dataframe_not_exists = gr.Checkbox(False, visible=False)
@@ -125,6 +135,8 @@ def train_dataset_ui(kubin, tabs):
             outputs=[dataframe_not_exists],
             _js="(err, res) => err && kubin.notify.error(res)",
         )
+
+    dataset_block.elem_classes = ["kubin-accordion"]
     return dataset_block
 
 
@@ -163,6 +175,7 @@ def clear_existing_data(csv_path, resize_enabled, resized_path):
 
 def prepare_dataset(
     image_dir,
+    caption_dir,
     image_extensions,
     caption_extension,
     csv_path,
@@ -189,7 +202,7 @@ def prepare_dataset(
                 caption_text = image_filename
             else:
                 caption_file = image_filename + caption_extension
-                caption_path = os.path.join(image_dir, caption_file)
+                caption_path = os.path.join(caption_dir, caption_file)
 
                 if os.path.exists(caption_path):
                     with open(caption_path) as f:

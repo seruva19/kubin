@@ -89,3 +89,16 @@ body.gradio-full .gradio-container {
 .options-small {
   width: 100px !important;
 }
+
+.kubin-accordion .label-wrap span {
+  font-weight: bold;
+  text-transform: uppercase;
+  padding: 0 5px;
+  border-radius: var(--block-radius);
+
+}
+
+.kubin-accordion .label-wrap span.active {
+  background: var(--color-green-800);
+  color: var(--button-secondary-text-color);
+}

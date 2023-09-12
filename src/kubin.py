@@ -16,7 +16,9 @@ def init_kubin(kubin: Kubin):
     kubin.with_pipeline()
 
 
-def reload_app(ui):
+def reload_app(ui, kubin):
+    kubin.model.flush()
+
     from subprocess import Popen
 
     Popen(
@@ -38,7 +40,7 @@ def reload_app(ui):
 
 def start(kubin, ui):
     if ui is not None:
-        reload_app(ui)
+        reload_app(ui, kubin)
 
     init_kubin(kubin)
     ui, resources = gradio_ui(kubin, start)

@@ -19,7 +19,7 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs, session):
                 with gr.Column(scale=1):
                     manual_control = gr.Checkbox(True, label="Outpaint area offset")
                     offset_top = gr.Slider(
-                        1,
+                        0,
                         1024,
                         0,
                         step=shared.ui_params("image_height_step"),
@@ -311,6 +311,8 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs, session):
 
         outpaint_params.elem_classes = ["block-params outpaint_params"]
         outpaint_advanced_params.elem_classes = [
-            "block-advanced-params outpaint_advanced_params"
+            "block-advanced-params",
+            "outpaint_advanced_params",
+            "kubin-accordion",
         ]
     return outpaint_block

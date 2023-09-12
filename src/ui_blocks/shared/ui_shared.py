@@ -270,6 +270,7 @@ class SharedUI:
                             ) as ext_container:
                                 ext_container.elem_classes = [
                                     "extension-container",
+                                    "kubin-accordion",
                                     *self.availability_classes(ext_augment),
                                 ]
 
