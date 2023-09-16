@@ -257,6 +257,7 @@ def use_sampler(pipeline, sampler, task):
 
 deis_step = DEISMultistepScheduler.step
 dpmss_step = DPMSolverSinglestepScheduler.step
+dpmssde_step = DPMSolverSDEScheduler.step
 euler_step = EulerDiscreteScheduler.step
 eulera_step = EulerAncestralDiscreteScheduler.step
 heun_step = HeunDiscreteScheduler.step
@@ -286,6 +287,17 @@ def patched_dpmss_step(
     generator=None,
 ) -> Union[SchedulerOutput, Tuple]:
     return dpmss_step(self, model_output, timestep, sample, return_dict)
+
+
+def patched_dpmssde_step(
+    self,
+    model_output: torch.FloatTensor,
+    timestep: int,
+    sample: torch.FloatTensor,
+    return_dict: bool = True,
+    generator=None,
+) -> Union[SchedulerOutput, Tuple]:
+    return dpmssde_step(self, model_output, timestep, sample, return_dict, s_noise=1.0)
 
 
 def patched_euler_step(
@@ -386,6 +398,7 @@ def patched_unipc_step(
 
 DEISMultistepScheduler.step = patched_deis_step
 DPMSolverSinglestepScheduler.step = patched_dpmss_step
+DPMSolverSDEScheduler.step = patched_dpmssde_step
 EulerDiscreteScheduler.step = patched_euler_step
 EulerAncestralDiscreteScheduler.step = patched_eulera_step
 HeunDiscreteScheduler.step = patched_heun_step
