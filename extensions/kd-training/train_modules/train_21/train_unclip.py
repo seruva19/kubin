@@ -61,7 +61,7 @@ def get_unclip_model(kubin, inpainting):
         config_file_url,
         cache_dir=cache_dir,
         force_filename=model_name,
-        use_auth_token=None,  # type: ignore
+        use_auth_token=None,
     )
 
     cache_dir_text_en = os.path.join(cache_dir, "text_encoder")
@@ -80,7 +80,7 @@ def get_unclip_model(kubin, inpainting):
             config_file_url,
             cache_dir=cache_dir_text_en,
             force_filename=name,
-            use_auth_token=None,  # type: ignore
+            use_auth_token=None,
         )
 
     config_file_url = hf_hub_url(
@@ -90,11 +90,12 @@ def get_unclip_model(kubin, inpainting):
         config_file_url,
         cache_dir=cache_dir,
         force_filename="movq_final.ckpt",
-        use_auth_token=None,  # type: ignore
+        use_auth_token=None,
     )
 
 
 def process_unclip_config(config):
+    config["model_config"]["inpainting"] = config["inpainting"]
     return config
 
 
@@ -135,11 +136,11 @@ def start_unclip_training(kubin, config):
         lr_scheduler = None
 
     clip_model, _ = clip.load(config["clip_name"], device="cpu", jit=False)
-    clip_model.transformer = None  # type: ignore
-    clip_model.positional_embedding = None  # type: ignore
-    clip_model.ln_final = None  # type: ignore
-    clip_model.token_embedding = None  # type: ignore
-    clip_model.text_projection = None  # type: ignore
+    clip_model.transformer = None
+    clip_model.positional_embedding = None
+    clip_model.ln_final = None
+    clip_model.token_embedding = None
+    clip_model.text_projection = None
     clip_model = clip_model.eval().to(device)
 
     train_unclip(
