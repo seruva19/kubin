@@ -29,7 +29,7 @@ class Model_Mock:
             lambda t, **k: k_log(f"mock model received hook event: {t}"),
         )
 
-    def prepareModel(self, task):
+    def prepare_model(self, task):
         assert task in [
             "text2img",
             "text2img_cnet",
@@ -57,7 +57,7 @@ class Model_Mock:
 
         self.config = {}
 
-    def prepareParams(self, params):
+    def prepare_params(self, params):
         k_log(params)
         k_log("mock seed generated")
 
@@ -70,7 +70,7 @@ class Model_Mock:
             **{"model": self, "params": params, "task": task},
         )
 
-        prior, decoder = self.prepareModel(task)
+        prior, decoder = self.prepare_model(task)
 
         self.params.hook_store.call(
             HOOK.BEFORE_PREPARE_PARAMS,
@@ -83,7 +83,7 @@ class Model_Mock:
             },
         )
 
-        self.prepareParams(params)
+        self.prepare_params(params)
         k_log("mock t2i executed")
 
         dummy_images = self.dummyImages()
@@ -111,7 +111,7 @@ class Model_Mock:
             **{"model": self, "params": params, "task": task},
         )
 
-        prior, decoder = self.prepareModel(task)
+        prior, decoder = self.prepare_model(task)
 
         self.params.hook_store.call(
             HOOK.BEFORE_PREPARE_PARAMS,
@@ -124,7 +124,7 @@ class Model_Mock:
             },
         )
 
-        self.prepareParams(params)
+        self.prepare_params(params)
         k_log("mock i2i executed")
         return self.dummyImages()
 
@@ -137,7 +137,7 @@ class Model_Mock:
             **{"model": self, "params": params, "task": task},
         )
 
-        prior, decoder = self.prepareModel(task)
+        prior, decoder = self.prepare_model(task)
 
         self.params.hook_store.call(
             HOOK.BEFORE_PREPARE_PARAMS,
@@ -150,7 +150,7 @@ class Model_Mock:
             },
         )
 
-        self.prepareParams(params)
+        self.prepare_params(params)
         k_log("mock mix executed")
         return self.dummyImages()
 
@@ -163,7 +163,7 @@ class Model_Mock:
             **{"model": self, "params": params, "task": task},
         )
 
-        prior, decoder = self.prepareModel(task)
+        prior, decoder = self.prepare_model(task)
 
         self.params.hook_store.call(
             HOOK.BEFORE_PREPARE_PARAMS,
@@ -176,7 +176,7 @@ class Model_Mock:
             },
         )
 
-        self.prepareParams(params)
+        self.prepare_params(params)
 
         image_with_mask = params["image_mask"]
         image = image_with_mask["image"]
@@ -206,7 +206,7 @@ class Model_Mock:
             **{"model": self, "params": params, "task": task},
         )
 
-        prior, decoder = self.prepareModel(task)
+        prior, decoder = self.prepare_model(task)
 
         self.params.hook_store.call(
             HOOK.BEFORE_PREPARE_PARAMS,
@@ -219,7 +219,7 @@ class Model_Mock:
             },
         )
 
-        self.prepareParams(params)
+        self.prepare_params(params)
 
         image = params["image"]
         image_w, image_h = image.size

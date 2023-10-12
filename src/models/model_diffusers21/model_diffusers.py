@@ -33,7 +33,7 @@ class Model_Diffusers:
         self.current_pipe = None
         self.cublas_config = os.environ.get("CUBLAS_WORKSPACE_CONFIG", None)
 
-    def prepareModel(self, task):
+    def prepare_model(self, task):
         from diffusers import (
             KandinskyPipeline,
             KandinskyImg2ImgPipeline,
@@ -187,7 +187,7 @@ class Model_Diffusers:
                     torch.cuda.empty_cache()
                     torch.cuda.ipc_collect()
 
-    def prepareParams(self, params):
+    def prepare_params(self, params):
         input_seed = params["input_seed"]
         seed = secrets.randbelow(99999999999) if input_seed == -1 else input_seed
 
@@ -198,8 +198,8 @@ class Model_Diffusers:
         return params
 
     def t2i(self, params):
-        unet_pipe = self.prepareModel("text2img")
-        params = self.prepareParams(params)
+        unet_pipe = self.prepare_model("text2img")
+        params = self.prepare_params(params)
 
         generator = torch.Generator(
             device=self.params("general", "device")
@@ -247,8 +247,8 @@ class Model_Diffusers:
         return images
 
     def i2i(self, params):
-        unet_pipe = self.prepareModel("img2img")
-        params = self.prepareParams(params)
+        unet_pipe = self.prepare_model("img2img")
+        params = self.prepare_params(params)
 
         generator = torch.Generator(
             device=self.params("general", "device")
@@ -298,8 +298,8 @@ class Model_Diffusers:
         return images
 
     def mix(self, params):
-        unet_pipe = self.prepareModel("mix")
-        params = self.prepareParams(params)
+        unet_pipe = self.prepare_model("mix")
+        params = self.prepare_params(params)
 
         generator = torch.Generator(
             device=self.params("general", "device")
@@ -358,8 +358,8 @@ class Model_Diffusers:
         return images
 
     def inpaint(self, params):
-        unet_pipe = self.prepareModel("inpainting")
-        params = self.prepareParams(params)
+        unet_pipe = self.prepare_model("inpainting")
+        params = self.prepare_params(params)
 
         generator = torch.Generator(
             device=self.params("general", "device")
@@ -422,8 +422,8 @@ class Model_Diffusers:
         return images
 
     def outpaint(self, params):
-        unet_pipe = self.prepareModel("outpainting")
-        params = self.prepareParams(params)
+        unet_pipe = self.prepare_model("outpainting")
+        params = self.prepare_params(params)
 
         generator = torch.Generator(
             device=self.params("general", "device")

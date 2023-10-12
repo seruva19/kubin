@@ -85,7 +85,7 @@ class Model_Diffusers22:
 
         clear_pipe_info(self)
 
-    def prepareModel(self, task):
+    def prepare_model(self, task):
         k_log(f"task queued: {task}")
         assert task in [
             "text2img",
@@ -113,7 +113,7 @@ class Model_Diffusers22:
             **hook_params,
         )
 
-    def prepareParams(self, params):
+    def prepare_params(self, params):
         input_seed = params["input_seed"]
         seed = secrets.randbelow(99999999999) if input_seed == -1 else input_seed
 
@@ -162,7 +162,7 @@ class Model_Diffusers22:
             **hook_params,
         )
 
-        prior, decoder = self.prepareModel(task)
+        prior, decoder = self.prepare_model(task)
 
         assert isinstance(prior, KandinskyV22PriorPipelinePatched)
         assert isinstance(decoder, KandinskyV22PipelinePatched)
@@ -175,7 +175,7 @@ class Model_Diffusers22:
             **hook_params,
         )
 
-        params, prior_generator, decoder_generator = self.prepareParams(params)
+        params, prior_generator, decoder_generator = self.prepare_params(params)
 
         hook_params["prior_generator"] = prior_generator
         hook_params["decoder_generator"] = decoder_generator
@@ -297,7 +297,7 @@ class Model_Diffusers22:
             **hook_params,
         )
 
-        prior, decoder = self.prepareModel(task)
+        prior, decoder = self.prepare_model(task)
         assert isinstance(prior, KandinskyV22PriorPipelinePatched)
         assert isinstance(decoder, KandinskyV22Img2ImgPipelinePatched)
 
@@ -309,7 +309,7 @@ class Model_Diffusers22:
             **hook_params,
         )
 
-        params, prior_generator, decoder_generator = self.prepareParams(params)
+        params, prior_generator, decoder_generator = self.prepare_params(params)
 
         hook_params["prior_generator"] = prior_generator
         hook_params["decoder_generator"] = decoder_generator
@@ -399,7 +399,7 @@ class Model_Diffusers22:
             **hook_params,
         )
 
-        prior, decoder = self.prepareModel(task)
+        prior, decoder = self.prepare_model(task)
         assert isinstance(prior, KandinskyV22PriorPipelinePatched)
         assert isinstance(decoder, KandinskyV22PipelinePatched)
 
@@ -411,7 +411,7 @@ class Model_Diffusers22:
             **hook_params,
         )
 
-        params, prior_generator, decoder_generator = self.prepareParams(params)
+        params, prior_generator, decoder_generator = self.prepare_params(params)
 
         images_texts = images_or_texts(
             [params["image_1"], params["image_2"]],
@@ -505,7 +505,7 @@ class Model_Diffusers22:
             **hook_params,
         )
 
-        prior, decoder = self.prepareModel(task)
+        prior, decoder = self.prepare_model(task)
         assert isinstance(prior, KandinskyV22PriorPipelinePatched)
         assert isinstance(decoder, KandinskyV22InpaintPipelinePatched)
 
@@ -517,7 +517,7 @@ class Model_Diffusers22:
             **hook_params,
         )
 
-        params, prior_generator, decoder_generator = self.prepareParams(params)
+        params, prior_generator, decoder_generator = self.prepare_params(params)
 
         hook_params["prior_generator"] = prior_generator
         hook_params["decoder_generator"] = decoder_generator
@@ -641,7 +641,7 @@ class Model_Diffusers22:
             **hook_params,
         )
 
-        prior, decoder = self.prepareModel(task)
+        prior, decoder = self.prepare_model(task)
         assert isinstance(prior, KandinskyV22PriorPipelinePatched)
         assert isinstance(decoder, KandinskyV22InpaintPipelinePatched)
 
@@ -653,7 +653,7 @@ class Model_Diffusers22:
             **hook_params,
         )
 
-        params, prior_generator, decoder_generator = self.prepareParams(params)
+        params, prior_generator, decoder_generator = self.prepare_params(params)
 
         hook_params["prior_generator"] = prior_generator
         hook_params["decoder_generator"] = decoder_generator
@@ -771,7 +771,7 @@ class Model_Diffusers22:
             **hook_params,
         )
 
-        prior, decoder = self.prepareModel(task)
+        prior, decoder = self.prepare_model(task)
         assert isinstance(prior, KandinskyV22PriorPipelinePatched)
         assert isinstance(decoder, KandinskyV22ControlnetPipelinePatched)
 
@@ -783,7 +783,7 @@ class Model_Diffusers22:
             **hook_params,
         )
 
-        params, prior_generator, decoder_generator = self.prepareParams(params)
+        params, prior_generator, decoder_generator = self.prepare_params(params)
 
         hook_params["prior_generator"] = prior_generator
         hook_params["decoder_generator"] = decoder_generator
@@ -896,7 +896,7 @@ class Model_Diffusers22:
             **hook_params,
         )
 
-        prior, decoder = self.prepareModel(task)
+        prior, decoder = self.prepare_model(task)
         assert isinstance(prior, KandinskyV22PriorEmb2EmbPipelinePatched)
         assert isinstance(decoder, KandinskyV22ControlnetImg2ImgPipelinePatched)
 
@@ -908,7 +908,7 @@ class Model_Diffusers22:
             **hook_params,
         )
 
-        params, prior_generator, decoder_generator = self.prepareParams(params)
+        params, prior_generator, decoder_generator = self.prepare_params(params)
 
         hook_params["prior_generator"] = prior_generator
         hook_params["decoder_generator"] = decoder_generator
@@ -1034,7 +1034,7 @@ class Model_Diffusers22:
             **hook_params,
         )
 
-        prior, decoder = self.prepareModel(task)
+        prior, decoder = self.prepare_model(task)
         assert isinstance(prior, KandinskyV22PriorPipelinePatched)
         assert isinstance(decoder, KandinskyV22ControlnetImg2ImgPipelinePatched)
 
@@ -1046,7 +1046,7 @@ class Model_Diffusers22:
             **hook_params,
         )
 
-        params, prior_generator, decoder_generator = self.prepareParams(params)
+        params, prior_generator, decoder_generator = self.prepare_params(params)
 
         mix_cnet_image = params["cnet_image"]
         mix_cnet_condition = params["cnet_condition"]
