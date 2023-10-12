@@ -1,10 +1,10 @@
+from upscale import upscale_with
 import gradio as gr
-import torch
-from PIL import Image
-import numpy as np
-from RealESRGAN import RealESRGAN
-import os
+from pathlib import Path
 
+
+dir = Path(__file__).parent.absolute()
+default_upscalers_path = f"{dir}/upscalers.default.yaml"
 
 title = "Upscaler"
 
@@ -38,7 +38,16 @@ def setup(kubin):
                 upscale_btn = gr.Button("Upscale", variant="primary")
                 upscale_output = gr.Gallery(label="Upscaled Image", preview=True)
 
-                ui_shared.create_base_send_targets(upscale_output, gr.State(0), ui_tabs)
+                upscale_output.select(
+                    fn=None,
+                    _js=f"() => kubin.UI.setImageIndex('upscale-output')",
+                    show_progress=False,
+                    outputs=gr.State(None),
+                )
+
+                ui_shared.create_base_send_targets(
+                    upscale_output, "upscale-output", ui_tabs
+                )
 
             kubin.ui_utils.click_and_disable(
                 upscale_btn,
@@ -66,45 +75,20 @@ def setup(kubin):
             upscaler_params_block.elem_classes = ["block-params"]
         return upscaler_block
 
+    def upscaler_select_ui(target):
+        None
+
+    def upscale_after_inference(target, params, upscale_params):
+        None
+
     return {
         "send_to": f"📐 Send to {title}",
         "title": title,
+        "targets": ["t2i", "i2i", "mix", "inpaint", "outpaint"],
+        # "inject_ui": lambda target: upscaler_select_ui(target),
+        "inject_fn": lambda target, params, augmentations: upscale_after_inference(
+            target, params, augmentations[0]
+        ),
         "tab_ui": lambda ui_s, ts: upscaler_ui(ui_s, ts),
         "send_target": source_image,
     }
-
-
-def upscale_with(
-    kubin,
-    upscaler,
-    device,
-    cache_dir,
-    scale,
-    output_dir,
-    input_image,
-    clear_before_upscale,
-):
-    if clear_before_upscale:
-        kubin.model.flush()
-
-    if upscaler == "Real-ESRGAN":
-        upscaled_image = upscale_esrgan(device, cache_dir, input_image, scale)
-        upscaled_image_path = kubin.fs_utils.save_output(
-            os.path.join(output_dir, "upscale"), [upscaled_image]
-        )
-
-        return upscaled_image_path
-
-    else:
-        kubin.log(f"upscale method {upscaler} not implemented")
-        return []
-
-
-def upscale_esrgan(device, cache_dir, input_image, scale):
-    esrgan = RealESRGAN(device, scale=int(scale))
-    esrgan.load_weights(f"{cache_dir}/esrgan/RealESRGAN_x{scale}.pth", download=True)
-
-    image = input_image.convert("RGB")
-    upscaled_image = esrgan.predict(image)
-
-    return upscaled_image

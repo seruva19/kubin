@@ -81,6 +81,10 @@ def get_rank_and_hidden_size(lora_model):
     # there should be a better way to do it, but anyway
     return tuple(lora_model[list(lora_model.keys())[0]].size())
 
+    # for name, state in state_dict.items():
+    #     if "lora_down.weight" in name:
+    #         return tuple(state.shape.size())
+
 
 def apply_lora_to_prior(kubin, lora_prior_path, prior):
     kubin.log(f"applying prior LoRA attention layers from {lora_prior_path}")

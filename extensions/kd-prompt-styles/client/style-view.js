@@ -9,4 +9,10 @@
             })
         })
     })
+
+    kubin.visualizeAddedCondition('.t2i_block .kd-prompt-styles .label-wrap span', '.t2i_block .kd-styles-radiobutton-list', 'none')
+    kubin.visualizeAddedCondition('.i2i_block .kd-prompt-styles .label-wrap span', '.i2i_block .kd-styles-radiobutton-list', 'none')
+    kubin.visualizeAddedCondition('.mix_block .kd-prompt-styles .label-wrap span', '.mix_block .kd-styles-radiobutton-list', 'none')
+    kubin.visualizeAddedCondition('.inpaint_block .kd-prompt-styles .label-wrap span', '.inpaint_block .kd-styles-radiobutton-list', 'none')
+    kubin.visualizeAddedCondition('.outpaint_block .kd-prompt-styles .label-wrap span', '.outpaint_block .kd-styles-radiobutton-list', 'none')
 })(window)

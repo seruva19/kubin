@@ -26,7 +26,7 @@ class Model_KD21:
 
         self.system_config = flatten_yaml(CONFIG_2_1)
 
-    def prepareModel(self, task):
+    def prepare_model(self, task):
         from model_utils.kd21_utils import get_checkpoint
 
         k_log(f"task queued: {task}")
@@ -97,7 +97,7 @@ class Model_KD21:
                     torch.cuda.empty_cache()
                     torch.cuda.ipc_collect()
 
-    def prepareParams(self, params):
+    def prepare_params(self, params):
         input_seed = params["input_seed"]
         seed = secrets.randbelow(99999999999) if input_seed == -1 else input_seed
         torch.manual_seed(seed)
@@ -109,7 +109,7 @@ class Model_KD21:
         return params
 
     def t2i(self, params):
-        params = self.prepareModel("text2img").prepareParams(params)
+        params = self.prepare_model("text2img").prepare_params(params)
         assert self.kd21 is not None
 
         images = []
@@ -136,7 +136,7 @@ class Model_KD21:
         return images
 
     def i2i(self, params):
-        params = self.prepareModel("img2img").prepareParams(params)
+        params = self.prepare_model("img2img").prepare_params(params)
         assert self.kd21 is not None
 
         output_size = (params["w"], params["h"])
@@ -167,7 +167,7 @@ class Model_KD21:
         return images
 
     def mix(self, params):
-        params = self.prepareModel("mix").prepareParams(params)
+        params = self.prepare_model("mix").prepare_params(params)
         assert self.kd21 is not None
 
         def images_or_texts(images, texts):
@@ -204,7 +204,7 @@ class Model_KD21:
         return images
 
     def inpaint(self, params):
-        params = self.prepareModel("inpainting").prepareParams(params)
+        params = self.prepare_model("inpainting").prepare_params(params)
         assert self.kd21_inpaint is not None
 
         image_mask = params["image_mask"]
@@ -250,7 +250,7 @@ class Model_KD21:
         return images
 
     def outpaint(self, params):
-        params = self.prepareModel("outpainting").prepareParams(params)
+        params = self.prepare_model("outpainting").prepare_params(params)
         assert self.kd21_inpaint is not None
 
         image = params["image"]

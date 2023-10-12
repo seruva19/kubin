@@ -11,6 +11,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
     augmentations = shared.create_ext_augment_blocks("i2i")
 
     with gr.Row() as i2i_block:
+        i2i_block.elem_classes = ["i2i_block"]
         with gr.Column(scale=2) as i2i_params:
             augmentations["ui_before_prompt"]()
 
@@ -228,7 +229,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
                         30,
                         4,
                         step=1,
-                        label="Prior scale",
+                        label="Prior guidance scale",
                         elem_classes=["inline-flex"],
                     )
                     prior_steps = gr.Slider(
@@ -257,7 +258,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
                 label="Generated Images",
                 columns=2,
                 preview=True,
-                elem_classes="i2i-output",
+                elem_classes=["i2i-output"],
             )
 
             i2i_output.select(

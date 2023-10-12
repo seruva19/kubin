@@ -1,5 +1,6 @@
 import gradio as gr
 from env import Kubin
+from progress import progress_api
 from ui_blocks.i2i import i2i_ui
 from ui_blocks.inpaint import inpaint_ui
 from ui_blocks.mix import mix_ui
@@ -29,6 +30,7 @@ def gradio_ui(kubin: Kubin, start_fn):
         analytics_enabled=kubin.params("gradio", "analytics"),
     ) as ui:
         session = gr.Textbox("-1", visible=False)
+        progress_api(kubin)
 
         ui.load(
             fn=None,

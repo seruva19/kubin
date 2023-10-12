@@ -80,6 +80,7 @@
 
     kubin.UI.loadParams(window._kubinParams)
     kubin.UI.customEventListeners()
+    kubin.UI.defaultConditions()
 
     kubin.UI.reveal()
     console.log('UI successfully loaded')

@@ -41,6 +41,7 @@ ui:
   full_screen_panel: false
   side_tabs: true
   show_help_text: false
+  progress_poll_interval: 2
 
 native:
   flash_attention: false

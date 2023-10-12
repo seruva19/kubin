@@ -27,7 +27,7 @@ def save_config_to_path(config, path):
 
 
 def train_tools_ui(kubin, tabs):
-    with gr.Row() as train_tools_block:
+    with gr.Column() as train_tools_block:
         with gr.Accordion("Data conversion", open=True) as conversion_tools:
             with gr.Row():
                 conversion_from = gr.Dropdown(
@@ -46,7 +46,7 @@ def train_tools_ui(kubin, tabs):
             with gr.Column() as conversion_sources:
                 with gr.Row():
                     source_path = gr.Text("", label="Source path or URL")
-                    target_path = gr.Text("", label="Target path")
+                    target_path = gr.Text("train/downloaded", label="Target path")
                     caption_name = gr.Text("text", label="Caption field name")
                     imagedata_name = gr.Text(
                         "image.bytes", label="Image data field name"
@@ -73,6 +73,52 @@ def train_tools_ui(kubin, tabs):
             peek_btn.click(
                 peek, [conversion_from, conversion_to, source_path], [conversion_info]
             )
+        conversion_tools.elem_classes = ["kubin-accordion"]
+
+        with gr.Accordion("Image conversion", open=True) as image_conversion_tools:
+            with gr.Row():
+                input_images_path = gr.Textbox(
+                    "train/images", label="Path to folder with input images"
+                )
+                output_images_path = gr.Textbox(
+                    "train/images_converted",
+                    label="Path to save output images",
+                )
+                output_resize = gr.Dropdown(
+                    choices=["max", "min", "1024"],
+                    allow_custom_value=True,
+                    label="Resize dimension",
+                )
+                output_aspect = gr.Textbox("1:1", label="Aspect ratio")
+
+            with gr.Row():
+                image_fill_area = gr.Radio(
+                    choices=["black", "white", "gaussian blur", "outpaint"],
+                    value="gaussian blur",
+                    label="Fill empty area with",
+                )
+                copy_captions = gr.Checkbox(
+                    True, label="Copy caption files to new folder"
+                )
+                interrogate_missing_captions = gr.Checkbox(
+                    True, label="Use interrogator to extract captions"
+                )
+
+            with gr.Row():
+                strip_interrogated_caption_after = gr.Textbox(
+                    ",", label="Strip interrogated captions after symbol"
+                )
+                image_outpaint_prompt = gr.Textbox(
+                    "amazing photo of {source}", label="Outpaint prompt"
+                )
+                image_outpaint_negative_prompt = gr.Textbox(
+                    "black background, frame, human", label="Outpaint negative prompt"
+                )
+
+            with gr.Column():
+                image_convert_btn = gr.Button("Execute conversion", scale=0)
+
+        image_conversion_tools.elem_classes = ["kubin-accordion"]
 
     return train_tools_block
 
