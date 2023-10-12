@@ -6,7 +6,6 @@ import gradio as gr
 import numpy as np
 import os
 from typing import Union
-from deforum.deforum import create_deforum, create_animation
 
 title = "Animation"
 
@@ -94,6 +93,8 @@ def setup(kubin):
 def create_deforum_animation(
     kubin, prompts, negative_prompts, animations, durations, width, height, fps
 ):
+    from deforum.deforum import create_deforum, create_animation
+
     model_version = "2.2"
     prior, decoder = kubin.model.prepare_model("img2img")
     device = kubin.params("general", "device")
