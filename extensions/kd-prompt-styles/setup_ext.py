@@ -5,7 +5,7 @@ import uuid
 import os
 
 
-def merge_styles(*styles, only_active=False):
+def merge_styles(*styles, only_active=False, sort_by_name=False):
     merged_dict = {}
     for style in styles:
         for item in style:
@@ -18,6 +18,10 @@ def merge_styles(*styles, only_active=False):
     merged_array = list(merged_dict.values())
     if only_active:
         merged_array = [item for item in merged_array if item.get("active", True)]
+
+    if sort_by_name:
+        merged_array = sorted(merged_array, key=lambda x: x["name"])
+
     return merged_array
 
 
@@ -41,19 +45,16 @@ def read_user_styles():
 
 
 def get_styles():
-    return merge_styles(
-        [
-            {
-                "name": "none",
-                "prompt": None,
-                "negative": None,
-                "active": True,
-                "source": None,
-            }
-        ],
-        read_default_styles(),
-        read_user_styles(),
-        only_active=True,
+    return [
+        {
+            "name": "none",
+            "prompt": None,
+            "negative": None,
+            "active": True,
+            "source": None,
+        }
+    ] + merge_styles(
+        read_default_styles(), read_user_styles(), only_active=True, sort_by_name=True
     )
 
 
@@ -80,7 +81,9 @@ def append_style(target, params, current_style, default_style):
         if style_not_chosen or style_prompt is None:
             None
         else:
-            params["prompt"] = style_prompt.replace("{prompt}", params["prompt"])
+            params["prompt"] = style_prompt.replace("{prompt}", params["prompt"]).strip(
+                ","
+            )
 
     if "negative_prompt" in params:
         if style_not_chosen or style_negative_prompt is None:
@@ -88,7 +91,7 @@ def append_style(target, params, current_style, default_style):
         else:
             params["negative_prompt"] = style_negative_prompt.replace(
                 "{negative_prompt}", params["negative_prompt"]
-            )
+            ).strip(",")
 
 
 def setup(kubin):

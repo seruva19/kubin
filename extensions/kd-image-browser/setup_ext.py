@@ -90,6 +90,14 @@ def setup(kubin):
                         label="Sort order",
                         interactive=True,
                     )
+                    show_amount = gr.Dropdown(
+                        ["10", "20", "50", "100", "all"],
+                        value="20",
+                        label="How much images to show",
+                        interactive=True,
+                        scale=0,
+                    )
+
                 refresh_btn = gr.Button("Refresh", variant="secondary")
                 metadata_info = gr.HTML()
 
@@ -100,8 +108,38 @@ def setup(kubin):
                     preview=False,
                     elem_classes="kd-image-browser-output",
                 )
+                with gr.Row() as page_nav:
+                    first_page_btn = gr.Button(
+                        "First page", variant="secondary", size="sm", scale=0
+                    )
+                    prev_page_btn = gr.Button(
+                        "Previous page", variant="secondary", size="sm", scale=0
+                    )
+                    current_page = gr.Dropdown(
+                        choices=["1"],
+                        value="1",
+                        label="Current page",
+                        scale=0,
+                        interactive=True,
+                        show_label=False,
+                    )
+                    next_page_btn = gr.Button(
+                        "Next page", variant="secondary", size="sm", scale=0
+                    )
+                    last_page_btn = gr.Button(
+                        "Last page", variant="secondary", size="sm", scale=0
+                    )
+                page_nav.elem_classes = ["image-browser-page-navigation"]
 
                 sender_index = gr.Textbox("-1", visible=False)
+
+                ui_shared.create_base_send_targets(
+                    folder_contents, "kd-image-browser-output", ui_tabs
+                )
+                ui_shared.create_ext_send_targets(
+                    folder_contents, "kd-image-browser-output", ui_tabs
+                )
+
                 folder_contents.select(
                     fn=folder_contents_gallery_select,
                     _js=f"(si, fc) => ([kubin.UI.setImageIndex('kd-image-browser-output'), fc])",
@@ -110,12 +148,6 @@ def setup(kubin):
                     show_progress=False,
                 )
 
-                ui_shared.create_base_send_targets(
-                    folder_contents, "kd-image-browser-output", ui_tabs
-                )
-                ui_shared.create_ext_send_targets(
-                    folder_contents, "kd-image-browser-output", ui_tabs
-                )
                 image_folders.change(
                     fn=view_folder,
                     inputs=[image_folders, image_sort, image_order],

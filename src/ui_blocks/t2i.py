@@ -8,6 +8,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
     augmentations = shared.create_ext_augment_blocks("t2i")
 
     with gr.Row() as t2i_block:
+        t2i_block.elem_classes = ["t2i_block"]
         with gr.Column(scale=2) as t2i_params:
             augmentations["ui_before_prompt"]()
 
@@ -179,7 +180,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
                         30,
                         4,
                         step=1,
-                        label="Prior scale",
+                        label="Prior guidance scale",
                         elem_classes=["inline-flex"],
                     )
                     prior_steps = gr.Slider(
@@ -214,7 +215,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
                 label="Generated Images",
                 columns=2,
                 preview=True,
-                elem_classes="t2i-output",
+                elem_classes=["t2i-output"],
             )
 
             t2i_output.select(

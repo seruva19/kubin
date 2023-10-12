@@ -9,6 +9,7 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs, session):
     augmentations = shared.create_ext_augment_blocks("outpaint")
 
     with gr.Row() as outpaint_block:
+        outpaint_block.elem_classes = ["outpaint_block"]
         with gr.Column(scale=2) as outpaint_params:
             augmentations["ui_before_prompt"]()
 
@@ -167,7 +168,7 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs, session):
                         100,
                         4,
                         step=1,
-                        label="Prior scale",
+                        label="Prior guidance scale",
                         elem_classes=["inline-flex"],
                     )
                     prior_steps = gr.Slider(
@@ -203,7 +204,7 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs, session):
                 label="Generated Images",
                 columns=2,
                 preview=True,
-                elem_classes="outpaint-output",
+                elem_classes=["outpaint-output"],
             )
 
             outpaint_output.select(

@@ -9,6 +9,7 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs, session):
     augmentations = shared.create_ext_augment_blocks("inpaint")
 
     with gr.Row() as inpaint_block:
+        inpaint_block.elem_classes = ["inpaint_block"]
         with gr.Column(scale=2) as inpaint_params:
             augmentations["ui_before_prompt"]()
 
@@ -131,7 +132,7 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs, session):
                         100,
                         4,
                         step=1,
-                        label="Prior scale",
+                        label="Prior guidance scale",
                         elem_classes=["inline-flex"],
                     )
                     prior_steps = gr.Slider(
@@ -159,7 +160,7 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs, session):
                 label="Generated Images",
                 columns=2,
                 preview=True,
-                elem_classes="inpaint-output",
+                elem_classes=["inpaint-output"],
             )
 
             inpaint_output.select(

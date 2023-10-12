@@ -115,6 +115,11 @@ class ExtensionRegistry:
                         if spec.loader is not None:
                             spec.loader.exec_module(module)
 
+                            if hasattr(module, "mount") and callable(
+                                getattr(module, "mount")
+                            ):
+                                module.mount(kubin)
+
                             extension_info = module.setup(kubin)
                             extension_info["_name"] = extension
                             extension_info["_path"] = extension_folder
@@ -137,6 +142,10 @@ class ExtensionRegistry:
             open(postinstall_reqs_installed, "a").close()
 
     def install_pip_reqs(self, reqs_path, arguments=[]):
+        # TODO: venv should be activated, otherwise pip installs globally
+        # venv_activation_cmd = f"call venv\Scripts\activate.bat"
+        # subprocess.run(venv_activation_cmd, shell=True)
+
         subprocess.check_call(
             [sys.executable, "-m", "pip", "install", "-r", f"{reqs_path}"] + arguments
         )

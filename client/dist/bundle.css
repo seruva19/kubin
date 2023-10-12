@@ -7,6 +7,10 @@ body.unselectable * {
   min-width: 0 !important;
 }
 
+:root {
+  /* --layout-gap: var(--spacing-xl); */
+}
+
 .options-select {
   font-size: large !important;
   padding: 0 5px 0 5px;
@@ -194,16 +198,21 @@ body.gradio-full .gradio-container {
 }
 
 .kubin-accordion .label-wrap span {
-  font-weight: bold;
   text-transform: uppercase;
   padding: 0 5px;
   border-radius: var(--block-radius);
-
 }
 
-.kubin-accordion .label-wrap span.active {
-  background: var(--color-green-800);
-  color: var(--button-secondary-text-color);
+.kubin-accordion .label-wrap>span>span.added-condition {
+  background: var(--secondary-600);
+  color: white;
+  text-transform: none;
+  margin-left: 7px;
+  display: none;
+}
+
+.kubin-accordion .label-wrap>span>span.added-condition.active {
+  display: inline;
 }
 html.has-lightbox {
   overflow-x: hidden;
@@ -244,4 +253,17 @@ html.has-lightbox body {
   width: 74px;
   text-align: center;
   cursor: default;
+}
+.kubin-progress-panel {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background: antiquewhite;
+  height: 50px;
+  z-index: 40;
+  display: none;
+}
+
+.kubin-progress-panel.active {
+  /* display: block; */
 }

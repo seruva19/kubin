@@ -21,7 +21,7 @@ class Model_KD20:
         self.kd20: Kandinsky2 | None = None
         self.kd20_inpaint: Kandinsky2 | None = None
 
-    def prepareModel(self, task):
+    def prepare_model(self, task):
         from kandinsky2 import get_kandinsky2_0
 
         print(f"task queued: {task}")
@@ -83,7 +83,7 @@ class Model_KD20:
                     torch.cuda.empty_cache()
                     torch.cuda.ipc_collect()
 
-    def prepareParams(self, params):
+    def prepare_params(self, params):
         input_seed = params["input_seed"]
         seed = secrets.randbelow(99999999999) if input_seed == -1 else input_seed
         torch.manual_seed(seed)
@@ -96,7 +96,7 @@ class Model_KD20:
         return params
 
     def t2i(self, params):
-        params = self.prepareModel("text2img").prepareParams(params)
+        params = self.prepare_model("text2img").prepare_params(params)
         assert self.kd20 is not None
 
         images = []
@@ -123,7 +123,7 @@ class Model_KD20:
         return images
 
     def i2i(self, params):
-        params = self.prepareModel("img2img").prepareParams(params)
+        params = self.prepare_model("img2img").prepare_params(params)
         assert self.kd20 is not None
 
         output_size = (params["w"], params["h"])
@@ -153,7 +153,7 @@ class Model_KD20:
         return images
 
     def inpaint(self, params):
-        params = self.prepareModel("inpainting").prepareParams(params)
+        params = self.prepare_model("inpainting").prepare_params(params)
         assert self.kd20_inpaint is not None
 
         output_size = (params["w"], params["h"])

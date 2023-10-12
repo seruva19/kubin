@@ -1,11 +1,13 @@
 import base64
 import os
+from time import sleep
 from PIL import Image, ImageOps
 from io import BytesIO
 import numpy as np
 
 from hooks.hooks import HOOK
 from params import KubinParams
+from progress import report_progress
 from utils.image import create_inpaint_targets
 from utils.logging import k_log
 
@@ -27,7 +29,7 @@ class Model_Mock:
             lambda t, **k: k_log(f"mock model received hook event: {t}"),
         )
 
-    def prepareModel(self, task):
+    def prepare_model(self, task):
         assert task in [
             "text2img",
             "text2img_cnet",
@@ -55,7 +57,7 @@ class Model_Mock:
 
         self.config = {}
 
-    def prepareParams(self, params):
+    def prepare_params(self, params):
         k_log(params)
         k_log("mock seed generated")
 
@@ -68,7 +70,7 @@ class Model_Mock:
             **{"model": self, "params": params, "task": task},
         )
 
-        prior, decoder = self.prepareModel(task)
+        prior, decoder = self.prepare_model(task)
 
         self.params.hook_store.call(
             HOOK.BEFORE_PREPARE_PARAMS,
@@ -81,9 +83,24 @@ class Model_Mock:
             },
         )
 
-        self.prepareParams(params)
+        self.prepare_params(params)
         k_log("mock t2i executed")
-        return self.dummyImages()
+
+        dummy_images = self.dummyImages()
+
+        for count, _ in enumerate(dummy_images):
+            report_progress(
+                task, "prior", len(dummy_images), count + 1, count + 1, None
+            )
+            sleep(1)
+
+        for count, _ in enumerate(dummy_images):
+            report_progress(
+                task, "decoder", len(dummy_images), count + 1, count + 1, None
+            )
+            sleep(1)
+
+        return dummy_images
 
     def i2i(self, params):
         task = "img2img"
@@ -94,7 +111,7 @@ class Model_Mock:
             **{"model": self, "params": params, "task": task},
         )
 
-        prior, decoder = self.prepareModel(task)
+        prior, decoder = self.prepare_model(task)
 
         self.params.hook_store.call(
             HOOK.BEFORE_PREPARE_PARAMS,
@@ -107,7 +124,7 @@ class Model_Mock:
             },
         )
 
-        self.prepareParams(params)
+        self.prepare_params(params)
         k_log("mock i2i executed")
         return self.dummyImages()
 
@@ -120,7 +137,7 @@ class Model_Mock:
             **{"model": self, "params": params, "task": task},
         )
 
-        prior, decoder = self.prepareModel(task)
+        prior, decoder = self.prepare_model(task)
 
         self.params.hook_store.call(
             HOOK.BEFORE_PREPARE_PARAMS,
@@ -133,7 +150,7 @@ class Model_Mock:
             },
         )
 
-        self.prepareParams(params)
+        self.prepare_params(params)
         k_log("mock mix executed")
         return self.dummyImages()
 
@@ -146,7 +163,7 @@ class Model_Mock:
             **{"model": self, "params": params, "task": task},
         )
 
-        prior, decoder = self.prepareModel(task)
+        prior, decoder = self.prepare_model(task)
 
         self.params.hook_store.call(
             HOOK.BEFORE_PREPARE_PARAMS,
@@ -159,7 +176,7 @@ class Model_Mock:
             },
         )
 
-        self.prepareParams(params)
+        self.prepare_params(params)
 
         image_with_mask = params["image_mask"]
         image = image_with_mask["image"]
@@ -189,7 +206,7 @@ class Model_Mock:
             **{"model": self, "params": params, "task": task},
         )
 
-        prior, decoder = self.prepareModel(task)
+        prior, decoder = self.prepare_model(task)
 
         self.params.hook_store.call(
             HOOK.BEFORE_PREPARE_PARAMS,
@@ -202,7 +219,7 @@ class Model_Mock:
             },
         )
 
-        self.prepareParams(params)
+        self.prepare_params(params)
 
         image = params["image"]
         image_w, image_h = image.size

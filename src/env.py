@@ -51,17 +51,17 @@ class Kubin:
             self.model = Model_Diffusers22(self.params)
 
         elif pipeline == "diffusers" and model_name == "kd21":
-            from models.model_diffusers import Model_Diffusers
+            from models.model_diffusers21.model_diffusers import Model_Diffusers
 
             self.model = Model_Diffusers(self.params)
 
         elif pipeline == "native" and model_name == "kd21":
-            from models.model_kd21 import Model_KD21
+            from models.model_21.model_kd21 import Model_KD21
 
             self.model = Model_KD21(self.params)
 
         elif pipeline == "native" and model_name == "kd20":
-            from models.model_kd20 import Model_KD20
+            from models.model_20.model_kd20 import Model_KD20
 
             self.model = Model_KD20(self.params)
 

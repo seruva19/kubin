@@ -1,19 +1,26 @@
 import gc
 import torch
+from models.model_diffusers22.patched.patched import KandinskyV22PipelinePatched
+from models.model_diffusers22.patched.patched_controlnet_img2img import (
+    KandinskyV22ControlnetImg2ImgPipelinePatched,
+)
+from models.model_diffusers22.patched.patched_img2img import (
+    KandinskyV22Img2ImgPipelinePatched,
+)
+from models.model_diffusers22.patched.patched_inpainting import (
+    KandinskyV22InpaintPipelinePatched,
+)
+from models.model_diffusers22.patched.patched_prior import (
+    KandinskyV22PriorPipelinePatched,
+)
+from models.model_diffusers22.patched.patched_prior_emb2emb import (
+    KandinskyV22PriorEmb2EmbPipelinePatched,
+)
 from utils.logging import k_log
 import os
 
 from transformers import CLIPVisionModelWithProjection
 from diffusers.models import UNet2DConditionModel
-from diffusers import (
-    KandinskyV22PriorPipeline,
-    KandinskyV22PriorEmb2EmbPipeline,
-    KandinskyV22Pipeline,
-    KandinskyV22Img2ImgPipeline,
-    KandinskyV22InpaintPipeline,
-    KandinskyV22ControlnetPipeline,
-    KandinskyV22ControlnetImg2ImgPipeline,
-)
 from diffusers.models.attention_processor import AttnAddedKVProcessor2_0
 
 
@@ -78,7 +85,7 @@ def prepare_weights_for_task(model, task):
         ):
             image_encoder = image_encoder.to(device)
 
-        model.pipe_prior = KandinskyV22PriorPipeline.from_pretrained(
+        model.pipe_prior = KandinskyV22PriorPipelinePatched.from_pretrained(
             "kandinsky-community/kandinsky-2-2-prior",
             image_encoder=image_encoder,
             torch_dtype=torch.float32
@@ -111,7 +118,7 @@ def prepare_weights_for_task(model, task):
             if not sequential_decoder_offload and not full_decoder_offload:
                 unet_2d = unet_2d.to(device)
 
-            model.t2i_pipe = KandinskyV22Pipeline.from_pretrained(
+            model.t2i_pipe = KandinskyV22PipelinePatched.from_pretrained(
                 "kandinsky-community/kandinsky-2-2-decoder",
                 unet=unet_2d,
                 torch_dtype=type_of_weights(model.params),
@@ -124,7 +131,9 @@ def prepare_weights_for_task(model, task):
 
         current_decoder = model.t2i_pipe
         if task == "img2img":
-            model.i2i_pipe = KandinskyV22Img2ImgPipeline(**model.t2i_pipe.components)
+            model.i2i_pipe = KandinskyV22Img2ImgPipelinePatched(
+                **model.t2i_pipe.components
+            )
             current_decoder = model.i2i_pipe
 
     if task == "text2img_cnet" or task == "img2img_cnet" or task == "mix_cnet":
@@ -141,12 +150,14 @@ def prepare_weights_for_task(model, task):
             if not sequential_decoder_offload and not full_decoder_offload:
                 unet_2d = unet_2d.to(device)
 
-            model.cnet_t2i_pipe = KandinskyV22ControlnetPipeline.from_pretrained(
-                "kandinsky-community/kandinsky-2-2-controlnet-depth",
-                unet=unet_2d,
-                torch_dtype=type_of_weights(model.params),
-                cache_dir=cache_dir,
-                resume_download=True,
+            model.cnet_t2i_pipe = (
+                KandinskyV22ControlnetImg2ImgPipelinePatched.from_pretrained(
+                    "kandinsky-community/kandinsky-2-2-controlnet-depth",
+                    unet=unet_2d,
+                    torch_dtype=type_of_weights(model.params),
+                    cache_dir=cache_dir,
+                    resume_download=True,
+                )
             )
 
             if not sequential_decoder_offload and not full_decoder_offload:
@@ -155,18 +166,18 @@ def prepare_weights_for_task(model, task):
         current_decoder = model.cnet_t2i_pipe
 
         if task == "img2img_cnet":
-            model.pipe_prior_e2e = KandinskyV22PriorEmb2EmbPipeline(
+            model.pipe_prior_e2e = KandinskyV22PriorEmb2EmbPipelinePatched(
                 **model.pipe_prior.components
             )
             current_prior = model.pipe_prior_e2e
 
-            model.cnet_i2i_pipe = KandinskyV22ControlnetImg2ImgPipeline(
+            model.cnet_i2i_pipe = KandinskyV22ControlnetImg2ImgPipelinePatched(
                 **model.cnet_t2i_pipe.components
             )
             current_decoder = model.cnet_i2i_pipe
 
         if task == "mix_cnet":
-            model.cnet_i2i_pipe = KandinskyV22ControlnetImg2ImgPipeline(
+            model.cnet_i2i_pipe = KandinskyV22ControlnetImg2ImgPipelinePatched(
                 **model.cnet_t2i_pipe.components
             )
             current_decoder = model.cnet_i2i_pipe
@@ -185,7 +196,7 @@ def prepare_weights_for_task(model, task):
             if not sequential_decoder_offload and not full_decoder_offload:
                 unet_2d = unet_2d.to(device)
 
-            model.inpaint_pipe = KandinskyV22InpaintPipeline.from_pretrained(
+            model.inpaint_pipe = KandinskyV22InpaintPipelinePatched.from_pretrained(
                 "kandinsky-community/kandinsky-2-2-decoder-inpaint",
                 torch_dtype=type_of_weights(model.params),
                 unet=unet_2d,
@@ -340,7 +351,7 @@ def flush_if_required(model, target):
 
     if clear_memory_targets is not None:
         k_log(
-            f"following pipelines, if active, will be released for {target + ' task' if target is not None else 'another model'}: {clear_memory_targets}"
+            f"following pipelines, if active, will be released{' for ' + target + ' task' if target is not None else ''}: {clear_memory_targets}"
         )
         offload_enabled = model.params("diffusers", "sequential_cpu_offload")
 
