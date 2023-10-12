@@ -25,7 +25,7 @@
 ✔ ext. Img2mesh <br>
 ✔ ext. Interrogation <br>
 ✔ ext. Segmentation <br>
-🕒 ext. Animation <br>
+✔ ext. Animation <br>
 🕒 Advanced prompt syntax <br>
 🕒 Prompt weighting <br>
 🕒 Checkpoint conversion <br>
