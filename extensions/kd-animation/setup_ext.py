@@ -79,6 +79,10 @@ def setup(kubin):
                                     fps,
                                 ],
                                 outputs=deforum_output,
+                                js=[
+                                    f"args => kubin.UI.taskStarted('{title}')",
+                                    f"args => kubin.UI.taskFinished('{title}')",
+                                ],
                             )
 
             deforum_params_block.elem_classes = ["block-params"]
@@ -97,7 +101,7 @@ def create_deforum_animation(
     height,
     fps,
 ):
-    from deforum.deforum import create_deforum, create_animation, load_models
+    from wrapper.deforum import create_deforum, create_animation, load_models
 
     prompts = prompts_string.split("\n")
     negative_prompts = (
@@ -114,6 +118,8 @@ def create_deforum_animation(
     prior, decoder = load_models(prior, decoder, device)
 
     deforum = create_deforum(prior, decoder, device)
+
+    output_dir = os.path(kubin.params("general", "output_dir"), "animation")
     animation = create_animation(
         deforum=deforum,
         prompts=prompts,
@@ -124,6 +130,7 @@ def create_deforum_animation(
         H=int(height),
         fps=fps,
         save_samples=False,
+        output_dir=output_dir,
     )
     return animation
 
