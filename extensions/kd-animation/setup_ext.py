@@ -106,7 +106,9 @@ def create_deforum_animation(
         else negative_prompts_string.split("\n")
     )
     animations = animations_string.split("\n")
+
     durations = durations_string.split("\n")
+    durations = [float(s) for s in durations]
 
     prior, decoder = kubin.model.prepare_model("img2img")
     device = kubin.params("general", "device")
