@@ -80,6 +80,7 @@
 
     kubin.UI.loadParams(window._kubinParams)
     kubin.UI.customEventListeners()
+    kubin.UI.defaultConditions()
 
     kubin.UI.reveal()
     console.log('UI successfully loaded')
@@ -273,31 +274,6 @@
     return [o, parseInt(imageIndices[source])]
   }
 
-  kubin.UI.taskStarted = task => {
-    let index = -1
-    document.querySelectorAll(`.ui-tabs.left>.tab-nav button`).forEach((button, i) => button.textContent.includes(task) && (index = i + 1))
-    index != -1 && (() => {
-      const style = document.createElement("style")
-      style.id = `working-indicator-${index}`
-      style.textContent = `
-        .ui-tabs.left>.tab-nav button:nth-child(${index})::after {
-          content: " "; position: absolute; margin: auto; border: 10px solid #EAF0F6; border-radius: 50%; border-top: 10px solid var(--loader-color);
-          width: 20px; height: 20px; animation: loader 2s linear infinite; margin-left: 7px; }
-    `;
-
-      document.head.appendChild(style)
-    })()
-  }
-
-  kubin.UI.taskFinished = task => {
-    let index = -1
-    document.querySelectorAll(`.ui-tabs.left>.tab-nav button`).forEach((button, i) => button.textContent.includes(task) && (index = i + 1))
-    index != -1 && (() => {
-      const style = document.querySelector(`style#working-indicator-${index}`)
-      style && style.parentNode.removeChild(style)
-    })()
-  }
-
   kubin.UI.wakeAll = () => {
     document.querySelectorAll('[disabled]').forEach(disabled => {
       disabled.removeAttribute("disabled")
@@ -451,5 +427,107 @@
 
     }
   }
+})(window)
+;
+(global => {
+  kubin.visualizeAddedCondition = (labelSelector, triggerSelector, defaultValue) => {
+    const label = document.querySelector(labelSelector)
+    const trigger = document.querySelector(triggerSelector)
+
+    if (label && trigger) {
+      const added = document.createElement('span')
+
+      added.textContent = 'enabled'
+      added.className = 'added-condition'
+      label.appendChild(added)
+
+      let type = undefined
+
+      trigger.tagName == 'INPUT' && trigger.type == 'checkbox' && (type = 'checkbox')
+      trigger.tagName == 'FIELDSET' && (type = 'fieldset')
+
+      trigger.addEventListener('change', e => {
+        let value = undefined
+
+        type == 'fieldset' && (value = e.target.value)
+        type == 'checkbox' && (value = e.target.checked)
+        added.classList[value === defaultValue ? 'remove' : 'add']('active')
+      })
+    }
+  }
+
+  kubin.UI.defaultConditions = () => {
+    kubin.visualizeAddedCondition('.t2i_params .control-net .label-wrap span', '.t2i_params .control-net .cnet-enable [type=checkbox]', false)
+    kubin.visualizeAddedCondition('.i2i_params .control-net .label-wrap span', '.i2i_params .control-net .cnet-enable [type=checkbox]', false)
+    kubin.visualizeAddedCondition('.mix_params .control-net .label-wrap span', '.mix_params .control-net .cnet-enable [type=checkbox]', false)
+    kubin.visualizeAddedCondition('.inpaint_params .control-net .label-wrap span', '.inpaint_params .control-net .cnet-enable [type=checkbox]', false)
+    kubin.visualizeAddedCondition('.outpaint_params .control-net .label-wrap span', '.outpaint_params .control-net .cnet-enable [type=checkbox]', false)
+  }
+})(window)
+;
+(global => {
+  kubin.requestApi = async (apiUrl, body) => {
+    const origin = global.location.origin
+    const url = `${origin}/${apiUrl}`
+    const res = await fetch(url, {
+      "headers": {
+        "accept": "*/*",
+        "content-type": "application/json"
+      },
+      "body": body || JSON.stringify({ data: [[], null], event_data: null, fn_index: 0, session_hash: kubin.client_id }),
+      "method": "POST",
+      "mode": "cors",
+      "credentials": "include"
+    })
+
+    const json = await res.json()
+    return json
+  }
+})(window)
+;
+(global => {
+  let progressInterval = undefined
+
+  let progressPanel = document.createElement("div")
+  progressPanel.className = 'kubin-progress-panel'
+  document.body.appendChild(progressPanel)
+
+  kubin.UI.taskStarted = task => {
+    let index = -1
+    document.querySelectorAll(`.ui-tabs.left>.tab-nav button`).forEach((button, i) => button.textContent.includes(task) && (index = i + 1))
+    index != -1 && (() => {
+      const style = document.createElement("style")
+      style.id = `working-indicator-${index}`
+      style.textContent = `
+        .ui-tabs.left>.tab-nav button:nth-child(${index})::after {
+          content: " "; position: absolute; margin: auto; border: 10px solid #EAF0F6; border-radius: 50%; border-top: 10px solid var(--loader-color);
+          width: 20px; height: 20px; animation: loader 2s linear infinite; margin-left: 7px; }
+      `;
+
+      document.head.appendChild(style)
+      progressPanel.classList.add('active')
+      progressInterval = setInterval(kubin.UI.progress, 2000)
+    })()
+  }
+
+  kubin.UI.taskFinished = task => {
+    let index = -1
+    document.querySelectorAll(`.ui-tabs.left>.tab-nav button`).forEach((button, i) => button.textContent.includes(task) && (index = i + 1))
+    index != -1 && (() => {
+      const style = document.querySelector(`style#working-indicator-${index}`)
+      style && style.parentNode.removeChild(style)
+    })()
+
+    progressInterval && clearInterval(progressInterval)
+    progressPanel.classList.remove('active')
+  }
+
+  kubin.UI.progress = async () => {
+    const progressInfo = await kubin.requestApi('api/progress')
+    const taskInfo = progressInfo['data'][0]['progress']
+
+    progressPanel.textContent = JSON.stringify(taskInfo)
+  }
+
 })(window)
 ;

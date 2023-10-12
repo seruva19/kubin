@@ -1,3 +1,5 @@
+# Code adopted from https://github.com/ai-forever/diffusers/blob/main/examples/kandinsky2_2_train/tune_prior_lora.py
+
 import os
 import numpy as np
 from PIL import Image, ImageOps

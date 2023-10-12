@@ -97,7 +97,7 @@ def train_unclip(
                 model_kwargs=cond,
             )
             losses = compute_losses()
-            loss = losses["loss"].mean()  # type: ignore
+            loss = losses["loss"].mean()
             loss.backward()
             optimizer.step()
             if lr_scheduler is not None:

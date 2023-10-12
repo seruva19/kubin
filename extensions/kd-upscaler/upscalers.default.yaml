@@ -1,0 +1,10 @@
+upscalers:
+- name: Real-ESRGAN x2
+  type: built-in
+  source: https://github.com/ai-forever/Real-ESRGAN
+- name: Real-ESRGAN x4
+  type: built-in
+  source: https://github.com/ai-forever/Real-ESRGAN
+- name: Real-ESRGAN x8
+  type: built-in
+  source: https://github.com/ai-forever/Real-ESRGAN

@@ -1,6 +1,27 @@
+from typing import Any
 import torch
 import torch.backends
-from models.model_diffusers22.patched.pipeline_patch import patch_pipelines
+from models.model_diffusers22.patched.patched import KandinskyV22PipelinePatched
+from models.model_diffusers22.patched.patched_controlnet import (
+    KandinskyV22ControlnetPipelinePatched,
+)
+from models.model_diffusers22.patched.patched_controlnet_img2img import (
+    KandinskyV22ControlnetImg2ImgPipelinePatched,
+)
+from models.model_diffusers22.patched.patched_img2img import (
+    KandinskyV22Img2ImgPipelinePatched,
+)
+from models.model_diffusers22.patched.patched_inpainting import (
+    KandinskyV22InpaintPipelinePatched,
+)
+from models.model_diffusers22.patched.patched_prior import (
+    KandinskyV22PriorPipelinePatched,
+)
+from models.model_diffusers22.patched.patched_prior_emb2emb import (
+    KandinskyV22PriorEmb2EmbPipelinePatched,
+)
+from progress import report_progress
+
 from utils.image import create_inpaint_targets, create_outpaint_targets
 import itertools
 import os
@@ -30,15 +51,7 @@ from diffusers.models import (
     PriorTransformer,
     VQModel,
 )
-from diffusers import (
-    KandinskyV22PriorPipeline,
-    KandinskyV22PriorEmb2EmbPipeline,
-    KandinskyV22Pipeline,
-    KandinskyV22Img2ImgPipeline,
-    KandinskyV22InpaintPipeline,
-    KandinskyV22ControlnetPipeline,
-    KandinskyV22ControlnetImg2ImgPipeline,
-)
+
 from diffusers.schedulers import UnCLIPScheduler
 from hooks.hooks import HOOK
 
@@ -55,23 +68,22 @@ class Model_Diffusers22:
         self.unclip_scheduler: UnCLIPScheduler | None = None
         self.image_processor: CLIPImageProcessor | None = None
 
-        self.scheduler: None = None
+        self.scheduler: Any = None
         self.unet_2d: UNet2DConditionModel | None = None
         self.movq: VQModel | None = None
 
-        self.pipe_prior: KandinskyV22PriorPipeline | None = None
-        self.pipe_prior_e2e: KandinskyV22PriorEmb2EmbPipeline | None = None
-        self.t2i_pipe: KandinskyV22Pipeline | None = None
-        self.i2i_pipe: KandinskyV22Img2ImgPipeline | None = None
-        self.inpaint_pipe: KandinskyV22InpaintPipeline | None = None
-        self.cnet_t2i_pipe: KandinskyV22ControlnetPipeline | None = None
-        self.cnet_i2i_pipe: KandinskyV22ControlnetImg2ImgPipeline | None = None
+        self.pipe_prior: KandinskyV22PriorPipelinePatched | None = None
+        self.pipe_prior_e2e: KandinskyV22PriorEmb2EmbPipelinePatched | None = None
+        self.t2i_pipe: KandinskyV22PipelinePatched | None = None
+        self.i2i_pipe: KandinskyV22Img2ImgPipelinePatched | None = None
+        self.inpaint_pipe: KandinskyV22InpaintPipelinePatched | None = None
+        self.cnet_t2i_pipe: KandinskyV22ControlnetPipelinePatched | None = None
+        self.cnet_i2i_pipe: KandinskyV22ControlnetImg2ImgPipelinePatched | None = None
 
         self.config = {}
         self.cublas_config = os.environ.get("CUBLAS_WORKSPACE_CONFIG", None)
 
         clear_pipe_info(self)
-        patch_pipelines()
 
     def prepareModel(self, task):
         k_log(f"task queued: {task}")
@@ -152,8 +164,8 @@ class Model_Diffusers22:
 
         prior, decoder = self.prepareModel(task)
 
-        assert isinstance(prior, KandinskyV22PriorPipeline)
-        assert isinstance(decoder, KandinskyV22Pipeline)
+        assert isinstance(prior, KandinskyV22PriorPipelinePatched)
+        assert isinstance(decoder, KandinskyV22PipelinePatched)
 
         hook_params["prior"] = prior
         hook_params["decoder"] = decoder
@@ -185,6 +197,10 @@ class Model_Diffusers22:
             output_type="pt",
             generator=prior_generator,
             return_dict=False,
+            callback=lambda s, ts, ft: report_progress(
+                task, "prior", params["prior_steps"], s, ts, ft
+            ),
+            callback_steps=1,
         )
         k_log("prior embeddings: done")
 
@@ -199,6 +215,9 @@ class Model_Diffusers22:
                 output_type="pt",
                 generator=prior_generator,
                 return_dict=True,
+                callback=lambda s, ts, ft: report_progress(
+                    task, "prior_negative", params["prior_steps"], s, ts, ft
+                ),
             ).image_embeds
             if params["negative_prompt"] != ""
             else zero_embeds
@@ -234,6 +253,15 @@ class Model_Diffusers22:
                 latents=None,
                 output_type="pil",
                 return_dict=True,
+                callback=lambda s, ts, ft: report_progress(
+                    task,
+                    "decoder",
+                    params["num_steps"] * params["batch_count"],
+                    s,
+                    ts,
+                    ft,
+                ),
+                callback_steps=1,
             ).images
 
             hook_params["batch"] = current_batch
@@ -270,8 +298,8 @@ class Model_Diffusers22:
         )
 
         prior, decoder = self.prepareModel(task)
-        assert isinstance(prior, KandinskyV22PriorPipeline)
-        assert isinstance(decoder, KandinskyV22Img2ImgPipeline)
+        assert isinstance(prior, KandinskyV22PriorPipelinePatched)
+        assert isinstance(decoder, KandinskyV22Img2ImgPipelinePatched)
 
         hook_params["prior"] = prior
         hook_params["decoder"] = decoder
@@ -372,8 +400,8 @@ class Model_Diffusers22:
         )
 
         prior, decoder = self.prepareModel(task)
-        assert isinstance(prior, KandinskyV22PriorPipeline)
-        assert isinstance(decoder, KandinskyV22Pipeline)
+        assert isinstance(prior, KandinskyV22PriorPipelinePatched)
+        assert isinstance(decoder, KandinskyV22PipelinePatched)
 
         hook_params["prior"] = prior
         hook_params["decoder"] = decoder
@@ -478,8 +506,8 @@ class Model_Diffusers22:
         )
 
         prior, decoder = self.prepareModel(task)
-        assert isinstance(prior, KandinskyV22PriorPipeline)
-        assert isinstance(decoder, KandinskyV22InpaintPipeline)
+        assert isinstance(prior, KandinskyV22PriorPipelinePatched)
+        assert isinstance(decoder, KandinskyV22InpaintPipelinePatched)
 
         hook_params["prior"] = prior
         hook_params["decoder"] = decoder
@@ -614,8 +642,8 @@ class Model_Diffusers22:
         )
 
         prior, decoder = self.prepareModel(task)
-        assert isinstance(prior, KandinskyV22PriorPipeline)
-        assert isinstance(decoder, KandinskyV22InpaintPipeline)
+        assert isinstance(prior, KandinskyV22PriorPipelinePatched)
+        assert isinstance(decoder, KandinskyV22InpaintPipelinePatched)
 
         hook_params["prior"] = prior
         hook_params["decoder"] = decoder
@@ -744,8 +772,8 @@ class Model_Diffusers22:
         )
 
         prior, decoder = self.prepareModel(task)
-        assert isinstance(prior, KandinskyV22PriorPipeline)
-        assert isinstance(decoder, KandinskyV22ControlnetPipeline)
+        assert isinstance(prior, KandinskyV22PriorPipelinePatched)
+        assert isinstance(decoder, KandinskyV22ControlnetPipelinePatched)
 
         hook_params["prior"] = prior
         hook_params["decoder"] = decoder
@@ -869,8 +897,8 @@ class Model_Diffusers22:
         )
 
         prior, decoder = self.prepareModel(task)
-        assert isinstance(prior, KandinskyV22PriorEmb2EmbPipeline)
-        assert isinstance(decoder, KandinskyV22ControlnetImg2ImgPipeline)
+        assert isinstance(prior, KandinskyV22PriorEmb2EmbPipelinePatched)
+        assert isinstance(decoder, KandinskyV22ControlnetImg2ImgPipelinePatched)
 
         hook_params["prior"] = prior
         hook_params["decoder"] = decoder
@@ -1007,8 +1035,8 @@ class Model_Diffusers22:
         )
 
         prior, decoder = self.prepareModel(task)
-        assert isinstance(prior, KandinskyV22PriorPipeline)
-        assert isinstance(decoder, KandinskyV22ControlnetImg2ImgPipeline)
+        assert isinstance(prior, KandinskyV22PriorPipelinePatched)
+        assert isinstance(decoder, KandinskyV22ControlnetImg2ImgPipelinePatched)
 
         hook_params["prior"] = prior
         hook_params["decoder"] = decoder

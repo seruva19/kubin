@@ -1,0 +1,13 @@
+.kubin-progress-panel {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background: antiquewhite;
+  height: 50px;
+  z-index: 40;
+  display: none;
+}
+
+.kubin-progress-panel.active {
+  /* display: block; */
+}

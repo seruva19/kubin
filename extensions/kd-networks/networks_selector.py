@@ -12,7 +12,9 @@ def networks_selector_ui(
 
     with gr.Column() as lora_selector:
         lora_selector.elem_classes = ["k-form"]
-        enable_lora = gr.Checkbox(False, label="Enable LoRA")
+        enable_lora = gr.Checkbox(
+            False, label="Enable LoRA", elem_classes=["networks-enable-lora"]
+        )
 
         with gr.Row():
             lora_prior_selector = gr.Dropdown(

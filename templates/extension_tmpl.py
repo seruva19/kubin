@@ -1,6 +1,7 @@
 import gradio as gr
 
 
+# TODO: work in progress
 def setup(kubin):
     image = gr.Image()
 

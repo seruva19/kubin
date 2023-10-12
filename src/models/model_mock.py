@@ -1,11 +1,13 @@
 import base64
 import os
+from time import sleep
 from PIL import Image, ImageOps
 from io import BytesIO
 import numpy as np
 
 from hooks.hooks import HOOK
 from params import KubinParams
+from progress import report_progress
 from utils.image import create_inpaint_targets
 from utils.logging import k_log
 
@@ -83,7 +85,22 @@ class Model_Mock:
 
         self.prepareParams(params)
         k_log("mock t2i executed")
-        return self.dummyImages()
+
+        dummy_images = self.dummyImages()
+
+        for count, _ in enumerate(dummy_images):
+            report_progress(
+                task, "prior", len(dummy_images), count + 1, count + 1, None
+            )
+            sleep(1)
+
+        for count, _ in enumerate(dummy_images):
+            report_progress(
+                task, "decoder", len(dummy_images), count + 1, count + 1, None
+            )
+            sleep(1)
+
+        return dummy_images
 
     def i2i(self, params):
         task = "img2img"

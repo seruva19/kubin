@@ -19,6 +19,7 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
     augmentations = shared.create_ext_augment_blocks("mix")
 
     with gr.Row() as mix_block:
+        mix_block.elem_classes = ["mix_block"]
         with gr.Column(scale=2) as mix_params:
             augmentations["ui_before_prompt"]()
 
@@ -156,7 +157,7 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
                         30,
                         4,
                         step=1,
-                        label="Prior scale",
+                        label="Prior guidance scale",
                         elem_classes=["inline-flex"],
                     )
                     prior_steps = gr.Slider(
@@ -183,7 +184,7 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
                 label="Generated Images",
                 columns=2,
                 preview=True,
-                elem_classes="mix-output",
+                elem_classes=["mix-output"],
             )
 
             mix_output.select(

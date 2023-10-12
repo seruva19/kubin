@@ -16,3 +16,27 @@
     height: 100%;
     position: relative;
 }
+
+.image-browser-page-navigation {
+    display: block !important;
+    text-align: center;
+}
+
+.image-browser-page-navigation button {
+    height: 100%;
+    margin: 0 10px;
+}
+
+.image-browser-page-navigation .form {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.image-browser-page-navigation .form .block {
+    padding: 0;
+}
+
+.image-browser-page-navigation .form .block>label>div {
+    box-shadow: none !important;
+    border: 0 !important;
+}

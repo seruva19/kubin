@@ -91,14 +91,19 @@ body.gradio-full .gradio-container {
 }
 
 .kubin-accordion .label-wrap span {
-  font-weight: bold;
   text-transform: uppercase;
   padding: 0 5px;
   border-radius: var(--block-radius);
-
 }
 
-.kubin-accordion .label-wrap span.active {
-  background: var(--color-green-800);
-  color: var(--button-secondary-text-color);
+.kubin-accordion .label-wrap>span>span.added-condition {
+  background: var(--secondary-600);
+  color: white;
+  text-transform: none;
+  margin-left: 7px;
+  display: none;
+}
+
+.kubin-accordion .label-wrap>span>span.added-condition.active {
+  display: inline;
 }
