@@ -120,8 +120,8 @@ def create_deforum_animation(
         negative_prompts=negative_prompts,
         animations=animations,
         durations=durations,
-        W=width,
-        H=height,
+        W=int(width),
+        H=int(height),
         fps=fps,
         save_samples=False,
     )
