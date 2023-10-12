@@ -114,10 +114,10 @@ def create_deforum_animation(
     deforum = create_deforum(prior, decoder, device)
     animation = create_animation(
         deforum=deforum,
-        prompts=prompts.split("\n"),
-        negative_prompts=negative_prompts.split("\n"),
-        animations=animations.split("\n"),
-        durations=durations.split("\n"),
+        prompts=prompts,
+        negative_prompts=negative_prompts,
+        animations=animations,
+        durations=durations,
         W=width,
         H=height,
         fps=fps,
