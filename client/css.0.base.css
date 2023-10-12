@@ -7,10 +7,6 @@ body.unselectable * {
   min-width: 0 !important;
 }
 
-:root {
-  /* --layout-gap: var(--spacing-xl); */
-}
-
 .options-select {
   font-size: large !important;
   padding: 0 5px 0 5px;

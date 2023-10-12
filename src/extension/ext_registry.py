@@ -143,6 +143,9 @@ class ExtensionRegistry:
 
     def install_pip_reqs(self, reqs_path, arguments=[]):
         # TODO: venv should be activated, otherwise pip installs globally
+        # venv_activation_cmd = f"call venv\Scripts\activate.bat"
+        # subprocess.run(venv_activation_cmd, shell=True)
+
         subprocess.check_call(
             [sys.executable, "-m", "pip", "install", "-r", f"{reqs_path}"] + arguments
         )
