@@ -119,7 +119,7 @@ def create_deforum_animation(
 
     deforum = create_deforum(prior, decoder, device)
 
-    output_dir = os.path(kubin.params("general", "output_dir"), "animation")
+    output_dir = os.path.join(kubin.params("general", "output_dir"), "animation")
     animation = create_animation(
         deforum=deforum,
         prompts=prompts,
