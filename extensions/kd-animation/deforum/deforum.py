@@ -1,5 +1,6 @@
 from IPython.display import Video
-from deforum.inference import DeforumKandinsky
+from deforum_kandinsky import KandinskyV22Img2ImgPipeline, DeforumKandinsky
+from diffusers import KandinskyV22PriorPipeline
 import imageio.v2 as iio
 from PIL import Image
 import numpy as np
@@ -10,7 +11,7 @@ import ipywidgets as widgets
 from IPython import display
 
 # def load_models(model, model_version, device):
-#     if model_version == 2.2:
+#     if model_version == "2.2":
 #         image_encoder = (
 #             CLIPVisionModelWithProjection.from_pretrained(
 #                 "kandinsky-community/kandinsky-2-2-prior", subfolder="image_encoder"
@@ -57,6 +58,13 @@ from IPython import display
 #         ).to(device)
 
 #     return prior, decoder
+
+
+def load_models(prior, decoder, device):
+    prior = KandinskyV22PriorPipeline(**prior.components).to(device)
+    decoder = KandinskyV22Img2ImgPipeline(**decoder.components).to(device)
+
+    return prior, decoder
 
 
 def create_deforum(prior, decoder, device):

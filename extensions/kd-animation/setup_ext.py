@@ -97,21 +97,21 @@ def create_deforum_animation(
     height,
     fps,
 ):
-    from deforum.deforum import create_deforum, create_animation
+    from deforum.deforum import create_deforum, create_animation, load_models
 
     prompts = prompts_string.split("\n")
     negative_prompts = (
-        ["low quality, bad image, cropped, out of frame"] * len(prompts)
-        if negative_prompts_string == ""
-        else negative_prompts_string.split("\n")
+        None if negative_prompts_string == "" else negative_prompts_string.split("\n")
     )
     animations = animations_string.split("\n")
 
     durations = durations_string.split("\n")
     durations = [float(s) for s in durations]
 
-    prior, decoder = kubin.model.prepare_model("img2img")
     device = kubin.params("general", "device")
+
+    prior, decoder = kubin.model.prepare_model("img2img")
+    prior, decoder = load_models(prior, decoder, device)
 
     deforum = create_deforum(prior, decoder, device)
     animation = create_animation(
