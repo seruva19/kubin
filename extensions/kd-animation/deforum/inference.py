@@ -133,10 +133,6 @@ class DeforumKandinsky:
         fps=24,
         **kwargs
     ):
-        if negative_prompts is None:
-            negative_prompts = ["low quility, bad image, cropped, out of frame"] * len(
-                prompts
-            )
         if accelerations is None:
             accelerations = [1.0] * len(prompts)
 

@@ -1,11 +1,8 @@
 import shutil
 import subprocess
 import tempfile
-from typing import Union
 import gradio as gr
-import numpy as np
 import os
-from typing import Union
 
 title = "Animation"
 
@@ -91,11 +88,26 @@ def setup(kubin):
 
 
 def create_deforum_animation(
-    kubin, prompts, negative_prompts, animations, durations, width, height, fps
+    kubin,
+    prompts_string,
+    negative_prompts_string,
+    animations_string,
+    durations_string,
+    width,
+    height,
+    fps,
 ):
     from deforum.deforum import create_deforum, create_animation
 
-    model_version = "2.2"
+    prompts = prompts_string.split("\n")
+    negative_prompts = (
+        ["low quality, bad image, cropped, out of frame"] * len(prompts)
+        if negative_prompts_string == ""
+        else negative_prompts_string.split("\n")
+    )
+    animations = animations_string.split("\n")
+    durations = durations_string.split("\n")
+
     prior, decoder = kubin.model.prepare_model("img2img")
     device = kubin.params("general", "device")
 
