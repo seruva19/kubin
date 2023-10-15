@@ -1,5 +1,7 @@
 import gradio as gr
 
+title = "Sample"
+
 
 # TODO: work in progress
 def setup(kubin):
@@ -42,7 +44,7 @@ def setup(kubin):
         "targets": ["t2i", "i2i", "mix", "inpaint", "outpaint"],
         "hook_fn": lambda hook, params: extension_hook_fn(params),
         "settings_ui": lambda: extension_settings_ui(),
-        "send_to": "✋ Open in 'Example' extension",
+        "send_to": f"✋ Send to {title}",
         "send_target": image,
         "api": {"method": lambda api_params: kubin.log(api_params)},
         "supports_pipeline": None,
