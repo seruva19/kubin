@@ -227,6 +227,7 @@ def prepare_weights_for_task(model, task):
                         attention_op=MemoryEfficientAttentionOp
                     )
                     applied_optimizations.append("xformers for prior")
+                    model.pipe_info["xformers_prior"] = True
             except:
                 k_log("failed to apply xformers for prior")
 
@@ -235,13 +236,16 @@ def prepare_weights_for_task(model, task):
                     attention_op=MemoryEfficientAttentionOp
                 )
                 applied_optimizations.append("xformers for decoder")
+                model.pipe_info["xformers_decoder"] = True
             except:
                 k_log("failed to apply xformers for decoder")
         else:
             k_log("xformers use requested, but no xformers installed")
     else:
-        current_prior.disable_xformers_memory_efficient_attention()
-        current_decoder.disable_xformers_memory_efficient_attention()
+        if model.pipe_info["xformers_prior"]:
+            current_prior.disable_xformers_memory_efficient_attention()
+        if model.pipe_info["xformers_decoder"]:
+            current_decoder.disable_xformers_memory_efficient_attention()
 
     if enable_sdp_attention:
         current_decoder.unet.set_attn_processor(AttnAddedKVProcessor2_0())
@@ -323,6 +327,8 @@ def clear_pipe_info(model):
         "sequential_decoder_offload": False,
         "full_prior_offload": False,
         "full_decoder_offload": False,
+        "xformers_prior": False,
+        "xformers_decoder": False,
         "cnet_depth_estimator": None,
         "cnet_dmap_type": None,
     }
