@@ -326,8 +326,11 @@ class SharedUI:
 
     def availability_classes(self, ext_augment):
         classes = []
-        supports_pipeline_model = ext_augment.get("supports", ["diffusers-kd22"])
-        if "kd20" not in supports_pipeline_model:
+        supports_pipeline_model = ext_augment.get(
+            "supports",
+            ["diffusers-kd22", "diffusers-kd21", "native-kd21", "native-kd20"],
+        )
+        if "native-kd20" not in supports_pipeline_model:
             classes.append("unsupported_20")
 
         if "native-kd21" not in supports_pipeline_model:

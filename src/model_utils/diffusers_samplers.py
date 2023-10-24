@@ -24,7 +24,7 @@ from diffusers import (
 )
 
 
-def use_sampler(pipeline, sampler, task):
+def use_sampler(pipeline, sampler, task="text2img"):
     k_log(f"using sampler: {sampler}")
 
     if sampler == "DDPM":
