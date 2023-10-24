@@ -1,6 +1,10 @@
 from dataclasses import dataclass
+import shutil
+import subprocess
 import gradio as gr
 from env import Kubin
+from urllib.parse import urlparse
+import os
 
 
 @dataclass
@@ -70,6 +74,31 @@ def create_extensions_info(kubin: Kubin):
             )
 
     return sorted(extensions_info, key=lambda extension: extension.name)
+
+
+def install_extension(kubin, path):
+    extensions_root = kubin.params("general", "extensions_path")
+    try:
+        parsed_url = urlparse(path)
+        if parsed_url.scheme and parsed_url.netloc:
+            repo_name = parsed_url.path.split("/")[-1]
+            target_path = os.path.join(extensions_root, repo_name)
+            if os.path.exists(target_path):
+                return "extension with the same name already installed"
+            subprocess.run(["git", "clone", path, target_path])
+            return ""
+        elif os.path.isdir(path):
+            folder_name = os.path.basename(path)
+            target_path = os.path.join(extensions_root, folder_name)
+            if os.path.exists(target_path):
+                return "extension with the same name already installed"
+            else:
+                shutil.copytree(path, target_path)
+            return ""
+        else:
+            return "the provided string is neither URL not path"
+    except Exception as e:
+        return e
 
 
 def extensions_ui(kubin: Kubin):
@@ -164,6 +193,32 @@ def extensions_ui(kubin: Kubin):
                         "hidden",
                     ]
                     extension_info.settings_ui()
+
+        install_error = gr.Textbox("", visible=False)
+        with gr.Accordion("Install extension"):
+            extension_url_or_path = gr.Textbox(label="Github URL or path to folder")
+            install_extension_btn = gr.Button(
+                value="📥 Install extension",
+                label="Install",
+                interactive=True,
+                scale=0,
+                size="sm",
+            )
+            install_extension_btn.click(
+                fn=lambda path: install_extension(kubin, path),
+                inputs=extension_url_or_path,
+                outputs=[install_error],
+                queue=False,
+            ).then(
+                fn=None,
+                inputs=[install_error],
+                outputs=[install_error],
+                show_progress=False,
+                _js="""(e) => e == ''
+                    ? kubin.notify.success("Successfuly installed extension, restart app to activate it")
+                    : kubin.notify.error(`Error installing extension: ${e}`)
+                """,
+            )
 
         clear_ext_install_all_btn = gr.Button(
             value="🔧 Force reinstall of all extensions on next launch",
