@@ -22,12 +22,8 @@ import torch
 
 from diffusers.models import UNet2DConditionModel, VQModel
 from diffusers.schedulers import DDPMScheduler
-from diffusers.utils import (
-    is_accelerate_available,
-    is_accelerate_version,
-    logging,
-    randn_tensor,
-)
+from diffusers.utils import is_accelerate_available, is_accelerate_version, logging
+from diffusers.utils.torch_utils import randn_tensor
 from diffusers.pipelines.pipeline_utils import DiffusionPipeline, ImagePipelineOutput
 
 
