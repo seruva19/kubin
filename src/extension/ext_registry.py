@@ -145,14 +145,13 @@ class ExtensionRegistry:
     def install_pip_reqs(self, reqs_path, arguments=[]):
         current_platform = platform.system()
         if current_platform == "Windows":
-            venv_activation_cmd = f"call venv\\Scripts\\activate.bat"
+            venv_activation_cmd = os.path.join("venv", "Scripts", "activate.bat")
+            pip_install_cmd = f"call {venv_activation_cmd} && {sys.executable} -m pip install -r {reqs_path} {' '.join(arguments)}"
         else:
-            venv_activation_cmd = f". venv\\bin\\activate"
+            venv_activation_cmd = os.path.join("venv", "bin", "activate")
+            pip_install_cmd = f". {venv_activation_cmd} && {sys.executable} -m pip install -r {reqs_path} {' '.join(arguments)}"
 
-        subprocess.run(venv_activation_cmd, shell=True)
-        subprocess.check_call(
-            [sys.executable, "-m", "pip", "install", "-r", f"{reqs_path}"] + arguments
-        )
+        subprocess.check_call(pip_install_cmd, shell=True)
 
     def standalone(self):
         return list(
