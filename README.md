@@ -29,7 +29,6 @@
 🕒 Advanced prompt syntax <br>
 🕒 Prompt weighting <br>
 🕒 Checkpoint conversion <br>
-🕒 Checkpoint merging <br>
 🕒 ext. Area composition <br>
 
 

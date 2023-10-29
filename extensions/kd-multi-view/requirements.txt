@@ -1,0 +1,8 @@
+rembg==2.0.52
+pymatting==1.1.10
+altair==4.2.2
+numba==0.58.1
+llvmlite==0.41.1
+onnxruntime==1.16.1
+pooch==1.8.0
+git+https://github.com/facebookresearch/segment-anything@6fdee8f

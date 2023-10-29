@@ -4,6 +4,7 @@ import os
 import importlib.util
 import sys
 import yaml
+import platform
 
 from utils.logging import k_log
 
@@ -142,13 +143,24 @@ class ExtensionRegistry:
             open(postinstall_reqs_installed, "a").close()
 
     def install_pip_reqs(self, reqs_path, arguments=[]):
-        # TODO: venv should be activated, otherwise pip installs globally
-        # venv_activation_cmd = f"call venv\Scripts\activate.bat"
-        # subprocess.run(venv_activation_cmd, shell=True)
+        current_platform = platform.system()
 
-        subprocess.check_call(
-            [sys.executable, "-m", "pip", "install", "-r", f"{reqs_path}"] + arguments
-        )
+        if current_platform == "Windows":
+            venv_activation_path = os.path.join("venv", "Scripts", "activate.bat")
+        else:
+            venv_activation_path = os.path.join("venv", "bin", "activate")
+
+        if os.path.exists(venv_activation_path):
+            if current_platform == "Windows":
+                pip_install_cmd = f"call {venv_activation_path} && {sys.executable} -m pip install -r {reqs_path} {' '.join(arguments)}"
+            else:
+                pip_install_cmd = f". {venv_activation_path} && {sys.executable} -m pip install -r {reqs_path} {' '.join(arguments)}"
+        else:
+            pip_install_cmd = (
+                f"{sys.executable} -m pip install -r {reqs_path} {' '.join(arguments)}"
+            )
+
+        subprocess.check_call(pip_install_cmd, shell=True)
 
     def standalone(self):
         return list(
