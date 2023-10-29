@@ -144,12 +144,21 @@ class ExtensionRegistry:
 
     def install_pip_reqs(self, reqs_path, arguments=[]):
         current_platform = platform.system()
+
         if current_platform == "Windows":
-            venv_activation_cmd = os.path.join("venv", "Scripts", "activate.bat")
-            pip_install_cmd = f"call {venv_activation_cmd} && {sys.executable} -m pip install -r {reqs_path} {' '.join(arguments)}"
+            venv_activation_path = os.path.join("venv", "Scripts", "activate.bat")
         else:
-            venv_activation_cmd = os.path.join("venv", "bin", "activate")
-            pip_install_cmd = f". {venv_activation_cmd} && {sys.executable} -m pip install -r {reqs_path} {' '.join(arguments)}"
+            venv_activation_path = os.path.join("venv", "bin", "activate")
+
+        if os.path.exists(venv_activation_path):
+            if current_platform == "Windows":
+                pip_install_cmd = f"call {venv_activation_path} && {sys.executable} -m pip install -r {reqs_path} {' '.join(arguments)}"
+            else:
+                pip_install_cmd = f". {venv_activation_path} && {sys.executable} -m pip install -r {reqs_path} {' '.join(arguments)}"
+        else:
+            pip_install_cmd = (
+                f"{sys.executable} -m pip install -r {reqs_path} {' '.join(arguments)}"
+            )
 
         subprocess.check_call(pip_install_cmd, shell=True)
 
