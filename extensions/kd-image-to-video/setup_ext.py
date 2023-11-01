@@ -46,7 +46,7 @@ def setup(kubin):
         result_dir = kubin.params("general", "output_dir")
         save_path = f"{result_dir}/video"
         if not os.path.exists(save_path):
-            os.mkdir(save_path)
+            os.makedirs(save_path)
 
         ckpt_path = f"{path}/model.ckpt"
         config_file = "extensions/kd-image-to-video/configs/inference_i2v_512_v1.0.yaml"
