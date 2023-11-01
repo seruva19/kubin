@@ -113,7 +113,7 @@ def setup(kubin):
                 create_btn = gr.Button(
                     "Generate video", label="Generate video", variant="primary"
                 )
-                video_output = gr.Image(label="Generated video")
+                video_output = gr.Video(label="Generated video")
 
             kubin.ui_utils.click_and_disable(
                 create_btn,
