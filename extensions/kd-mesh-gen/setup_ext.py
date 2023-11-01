@@ -88,7 +88,7 @@ def create_model(kubin, source_image, output_dir, device):
 
     latents = sample_latents(
         batch_size=batch_size,
-        model=model,  # type: ignore
+        model=model, 
         diffusion=diffusion,
         guidance_scale=guidance_scale,
         model_kwargs=dict(images=[source_image] * batch_size),

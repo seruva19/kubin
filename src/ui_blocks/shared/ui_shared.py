@@ -72,7 +72,7 @@ class SharedUI:
             sender_index = gr.Textbox("-1", visible=False)
 
             send_i2i_btn = gr.Button(
-                "📸 Send to Img2img", variant="secondary", size="sm"
+                "📸 Send to Img2Img", variant="secondary", size="sm"
             )
 
             send_i2i_btn.click(

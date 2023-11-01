@@ -137,7 +137,7 @@ def create_deforum_animation(
 
 def mount(kubin):
     deforum_repo = "https://github.com/ai-forever/deforum-kandinsky"
-    commit = "9b29b53"
+    commit = "d793ee9"
     destination_dir = "extensions/kd-animation/deforum_kandinsky"
 
     if not os.path.exists(destination_dir):
