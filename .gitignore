@@ -1,5 +1,6 @@
 .vscode
 .idea
+.local
 /venv
 **/__pycache__
 **/.installed
