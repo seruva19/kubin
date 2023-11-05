@@ -1,4 +1,0 @@
-lora_path: networks/lora;train/lora
-lora_prior_pattern: '*lora_prior*.bin;*lora_prior*.safetensors'
-lora_decoder_pattern: '*lora_decoder*.bin;*lora_decoder*.safetensors'
-autopair_lora_models: false
