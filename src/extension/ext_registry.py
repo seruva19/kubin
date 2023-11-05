@@ -160,7 +160,7 @@ class ExtensionRegistry:
                 f"{sys.executable} -m pip install -r {reqs_path} {' '.join(arguments)}"
             )
 
-        subprocess.check_call(pip_install_cmd, shell=True)
+        subprocess.check_output(pip_install_cmd, shell=True)
 
     def standalone(self):
         return list(
