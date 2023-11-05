@@ -15,7 +15,10 @@ class ExtensionRegistry:
         self.disabled = disabled_exts
         self.order = ext_order
         self.skip_install = skip_install
+
         self.root = ext_path
+        if not os.path.exists(self.root):
+            os.mkdir(self.root)
 
         self.extensions = {}
 
@@ -139,7 +142,11 @@ class ExtensionRegistry:
             kubin.log(
                 "extension post-install phase, installing from extensions/requirements.txt"
             )
-            self.install_pip_reqs(f"{self.root}/requirements.txt")
+
+            root_reqs = f"{self.root}/requirements.txt"
+            if os.path.exists(root_reqs):
+                self.install_pip_reqs(root_reqs)
+
             open(postinstall_reqs_installed, "a").close()
 
     def install_pip_reqs(self, reqs_path, arguments=[]):
