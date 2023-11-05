@@ -23,7 +23,11 @@ class ExtensionRegistry:
         self.extensions = {}
 
     def get_ext_folders(self):
-        return [entry.name for entry in os.scandir(self.root) if entry.is_dir()]
+        return [
+            entry.name
+            for entry in os.scandir(self.root)
+            if entry.is_dir() and not entry.name.startswith(".")
+        ]
 
     def get_enabled_extensions(self):
         return (
