@@ -8,3 +8,4 @@ gradio==3.39.0
 psutil==5.9.5
 deepdiff==6.3.1
 torchsde==0.2.5
+compel==2.0.2

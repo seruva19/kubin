@@ -1,6 +1,8 @@
 rembg==2.0.52
 pymatting==1.1.10
+platformdirs==3.11.0
 altair==4.2.2
+entrypoints==0.4
 numba==0.58.1
 llvmlite==0.41.1
 onnxruntime==1.16.1
