@@ -1,5 +1,7 @@
 
-# Kubin: Web-GUI for [Kandinsky 2.x](https://github.com/ai-forever/Kandinsky-2/)
+# Kubin
+
+Web-GUI for Kandinsky text-to-image diffusion models ([Kandinsky2](https://github.com/ai-forever/Kandinsky-2/), [Kandinsky3](https://github.com/ai-forever/Kandinsky-3)).
 
 ## Disclaimer
 
@@ -7,7 +9,7 @@
 
 ## Roadmap
 
-✔ Supports versions 2.0, 2.1, 2.2 <br>
+✔ Supported models: 2.0, 2.1, 2.2, 3.0 <br>
 ✔ Txt2img <br>
 ✔ Img2img <br>
 ✔ Mixing <br>

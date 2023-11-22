@@ -55,6 +55,11 @@ class Kubin:
 
             self.model = Model_Diffusers(self.params)
 
+        elif pipeline == "diffusers" and model_name == "kd3":
+            from models.model_diffusers3.model_3 import Model_Diffusers3
+
+            self.model = Model_Diffusers3(self.params)
+
         elif pipeline == "native" and model_name == "kd21":
             from models.model_21.model_kd21 import Model_KD21
 
