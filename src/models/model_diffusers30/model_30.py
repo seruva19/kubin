@@ -94,7 +94,7 @@ class Model_Diffusers3:
                 num_images_per_prompt=params["batch_size"],
                 height=params["h"],
                 width=params["w"],
-                eta=0.0,
+                # eta=0.0,
                 generator=generator,
                 prompt_embeds=None,
                 negative_prompt_embeds=None,
