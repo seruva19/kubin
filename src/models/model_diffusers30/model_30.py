@@ -46,7 +46,7 @@ class Model_Diffusers3:
         # prepare_weights_for_task(self, task)
 
         # self.auto_pipe.enable_model_cpu_offload()
-        self.auto_pipe.enable_sequential_cpu_offload
+        self.auto_pipe.enable_sequential_cpu_offload()
 
     def flush(self, target=None):
         flush_if_required(self, target)
