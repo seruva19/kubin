@@ -89,7 +89,7 @@ class Model_Diffusers3:
                 prompt=params["prompt"],
                 negative_prompt=params["negative_prompt"],
                 num_inference_steps=params["num_steps"],
-                timesteps=None,
+                # timesteps=None,
                 guidance_scale=params["guidance_scale"],
                 num_images_per_prompt=params["batch_size"],
                 height=params["h"],
@@ -103,7 +103,7 @@ class Model_Diffusers3:
                 callback=None,
                 callback_steps=1,
                 latents=None,
-                cut_context=True,
+                # cut_context=True,
             ).images
 
             images += self.create_batch_images(params, "text2img", current_batch)
