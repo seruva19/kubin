@@ -1,17 +1,21 @@
 import gc
 import torch
-from diffusers import KandinskyV3Pipeline, KandinskyV3Img2ImgPipeline
+from diffusers import (
+    Kandinsky3Pipeline,
+    Kandinsky3Img2ImgPipeline,
+    AutoPipelineForText2Image,
+)
 
 
-def prepare_weights_for_task_3(model, task):
+def prepare_weights_for_task(model, task):
     cache_dir = model.params("general", "cache_dir")
     device = model.params("general", "device")
 
     if task == "text2img" or task == "img2img":
         if model.t2i_pipe is None:
-            flush_if_required_3(model, task)
+            flush_if_required(model, task)
 
-            model.t2i_pipe = KandinskyV3Pipeline.from_pretrained(
+            model.t2i_pipe = Kandinsky3Pipeline.from_pretrained(
                 "kandinsky-community/kandinsky-3",
                 torch_dtype=type_of_weights(model.params),
                 cache_dir=cache_dir,
@@ -19,13 +23,15 @@ def prepare_weights_for_task_3(model, task):
             )
 
         if task == "text2img":
+            model.t2i_pipe.enable_model_cpu_offload()
             model.t2i_pipe = model.t2i_pipe.to(device)
         else:
-            model.i2i_pipe = KandinskyV3Img2ImgPipeline(**model.t2i_pipe.components)
+            model.i2i_pipe = Kandinsky3Img2ImgPipeline(**model.t2i_pipe.components)
+            model.i2i_pipe.enable_model_cpu_offload()
             model.i2i_pipe = model.t2i_pipe.to(device)
 
 
-def flush_if_required_3(model, target):
+def flush_if_required(model, target):
     None
 
 

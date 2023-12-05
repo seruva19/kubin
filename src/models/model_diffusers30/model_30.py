@@ -1,16 +1,19 @@
 import torch
 import torch.backends
-from diffusers import KandinskyV3Pipeline, KandinskyV3Img2ImgPipeline
-import torch
-
-from models.model_diffusers3.model_3_init import (
-    flush_if_required_3,
-    prepare_weights_for_task_3,
+from diffusers import (
+    Kandinsky3Pipeline,
+    Kandinsky3Img2ImgPipeline,
+    AutoPipelineForText2Image,
 )
+import torch
 
 import itertools
 import os
 import secrets
+from models.model_diffusers30.model_30_init import (
+    flush_if_required,
+    prepare_weights_for_task,
+)
 from params import KubinParams
 from utils.file_system import save_output
 from utils.logging import k_log
@@ -20,21 +23,32 @@ from model_utils.diffusers_samplers import use_sampler
 
 class Model_Diffusers3:
     def __init__(self, params: KubinParams):
-        k_log("activating pipeline: diffusers (3)")
+        k_log("activating pipeline: diffusers (3.0)")
         self.params = params
 
-        self.t2i_pipe: KandinskyV3Pipeline | None = None
-        self.i2i_pipe: KandinskyV3Img2ImgPipeline | None = None
+        self.auto_pipe: Kandinsky3Pipeline | None = None
+        self.t2i_pipe: Kandinsky3Pipeline | None = None
+        self.i2i_pipe: Kandinsky3Img2ImgPipeline | None = None
         self.inpaint_pipe: None = None
 
     def prepare_model(self, task):
         k_log(f"task queued: {task}")
         assert task in ["text2img", "img2img"]
 
-        prepare_weights_for_task_3(self, task)
+        from diffusers import AutoPipelineForText2Image
+
+        cache_dir = self.params("general", "cache_dir")
+        self.auto_pipe = AutoPipelineForText2Image.from_pretrained(
+            "kandinsky-community/kandinsky-3",
+            variant="fp16",
+            torch_dtype=torch.float16,
+            cache_dir=cache_dir,
+        )
+        self.auto_pipe.enable_model_cpu_offload()
+        # prepare_weights_for_task(self, task)
 
     def flush(self, target=None):
-        flush_if_required_3(self, target)
+        flush_if_required(self, target)
 
     def prepare_params(self, params):
         input_seed = params["input_seed"]
@@ -45,7 +59,8 @@ class Model_Diffusers3:
         params["model_name"] = "diffusers3"
 
         generator = torch.Generator(
-            device=self.params("general", "device")
+            # device=self.params("general", "device")
+            device="cpu"
         ).manual_seed(params["input_seed"])
 
         return params, generator
@@ -66,8 +81,11 @@ class Model_Diffusers3:
         self.prepare_model(task)
         params, generator = self.prepare_params(params)
 
+        # pipe = self.t2i_pipe
+        pipe = self.auto_pipe
+
         for _ in itertools.repeat(None, params["batch_count"]):
-            current_batch = self.t2i_pipe(
+            current_batch = pipe(
                 prompt=params["prompt"],
                 negative_prompt=params["negative_prompt"],
                 num_inference_steps=params["num_steps"],
