@@ -35,12 +35,10 @@ class Model_Diffusers3:
         k_log(f"task queued: {task}")
         assert task in ["text2img", "img2img"]
 
-        from diffusers import AutoPipelineForText2Image
-
         cache_dir = self.params("general", "cache_dir")
         self.auto_pipe = AutoPipelineForText2Image.from_pretrained(
             "kandinsky-community/kandinsky-3",
-            # variant="fp16",
+            variant="fp16",
             # torch_dtype=torch.float16,
             cache_dir=cache_dir,
         )
