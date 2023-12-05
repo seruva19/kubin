@@ -1,6 +1,8 @@
 
 # Kubin
 
+## Description
+
 Web-GUI for Kandinsky text-to-image diffusion models ([Kandinsky2](https://github.com/ai-forever/Kandinsky-2/), [Kandinsky3](https://github.com/ai-forever/Kandinsky-3)).
 
 ## Disclaimer
