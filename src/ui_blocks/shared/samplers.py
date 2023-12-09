@@ -14,6 +14,8 @@ def samplers_controls():
         "unsupported_d21",
         "unsupported_22",
         "unsupported_d22",
+        "unsupported_30",
+        "unsupported_d30",
     ]
 
     sampler_21_native = gr.Radio(
@@ -27,6 +29,8 @@ def samplers_controls():
         "unsupported_20",
         "unsupported_d21",
         "unsupported_22",
+        "unsupported_30",
+        "unsupported_d30",
     ]
 
     sampler_diffusers = gr.Dropdown(
@@ -54,6 +58,8 @@ def samplers_controls():
         "t2i_sampler",
         "unsupported_20",
         "unsupported_21",
+        "unsupported_30",
+        "unsupported_d30",
     ]
 
     return sampler_20, sampler_21_native, sampler_diffusers

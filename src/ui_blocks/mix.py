@@ -151,7 +151,7 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
                     batch_size = gr.Slider(1, 16, 1, step=1, label="Batch size")
                     batch_size.elem_classes = ["unsupported_20", "inline-flex"]
 
-                with gr.Row():
+                with gr.Row() as prior_block:
                     prior_scale = gr.Slider(
                         1,
                         30,
@@ -173,6 +173,11 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
                         label="Negative prior prompt",
                         lines=2,
                     )
+                prior_block.elem_classes = [
+                    "unsupported_20",
+                    "unsupported_d30",
+                    "unsupported_30",
+                ]
 
             augmentations["ui"]()
 

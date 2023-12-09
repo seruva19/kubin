@@ -148,7 +148,11 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs, session):
                         label="Negative prior prompt",
                         lines=2,
                     )
-                prior_block.elem_classes = ["unsupported_20"]
+                prior_block.elem_classes = [
+                    "unsupported_20",
+                    "unsupported_d30",
+                    "unsupported_30",
+                ]
 
             augmentations["ui"]()
 

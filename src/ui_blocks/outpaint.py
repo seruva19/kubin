@@ -182,7 +182,11 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs, session):
                     negative_prior_prompt = gr.TextArea(
                         "", label="Negative prior prompt", lines=2
                     )
-                prior_block.elem_classes = ["unsupported_20"]
+                prior_block.elem_classes = [
+                    "unsupported_20",
+                    "unsupported_d30",
+                    "unsupported_30",
+                ]
 
             infer_size.change(
                 fn=lambda x: [
