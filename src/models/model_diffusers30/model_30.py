@@ -4,6 +4,7 @@ from diffusers import (
     Kandinsky3Pipeline,
     Kandinsky3Img2ImgPipeline,
     AutoPipelineForText2Image,
+    AutoPipelineForImage2Image,
 )
 import torch
 
@@ -12,7 +13,7 @@ import os
 import secrets
 from models.model_diffusers30.model_30_init import (
     flush_if_required,
-    prepare_weights_for_task,
+    prepare_autopipeline_for_task,
 )
 from params import KubinParams
 from utils.file_system import save_output
@@ -26,7 +27,9 @@ class Model_Diffusers3:
         k_log("activating pipeline: diffusers (3.0)")
         self.params = params
 
-        self.auto_pipe: Kandinsky3Pipeline | None = None
+        self.auto_t2i_pipe: AutoPipelineForText2Image | None = None
+        self.auto_i2i_pipe: AutoPipelineForImage2Image | None = None
+
         self.t2i_pipe: Kandinsky3Pipeline | None = None
         self.i2i_pipe: Kandinsky3Img2ImgPipeline | None = None
         self.inpaint_pipe: None = None
@@ -35,18 +38,8 @@ class Model_Diffusers3:
         k_log(f"task queued: {task}")
         assert task in ["text2img", "img2img"]
 
-        cache_dir = self.params("general", "cache_dir")
-        self.auto_pipe = AutoPipelineForText2Image.from_pretrained(
-            "kandinsky-community/kandinsky-3",
-            variant="fp16",
-            # torch_dtype=torch.float16,
-            cache_dir=cache_dir,
-        )
-
-        # prepare_weights_for_task(self, task)
-
-        # self.auto_pipe.enable_model_cpu_offload()
-        self.auto_pipe.enable_sequential_cpu_offload()
+        pipe = prepare_autopipeline_for_task(self, task)
+        return pipe
 
     def flush(self, target=None):
         flush_if_required(self, target)
@@ -60,8 +53,7 @@ class Model_Diffusers3:
         params["model_name"] = "diffusers3"
 
         generator = torch.Generator(
-            # device=self.params("general", "device")
-            device="cpu"
+            device=self.params("general", "device")
         ).manual_seed(params["input_seed"])
 
         return params, generator
@@ -79,19 +71,16 @@ class Model_Diffusers3:
     def t2i(self, params):
         task = "text2img"
 
-        self.prepare_model(task)
+        pipe = self.prepare_model(task)
         params, generator = self.prepare_params(params)
-
-        # pipe = self.t2i_pipe
-        pipe = self.auto_pipe
 
         for _ in itertools.repeat(None, params["batch_count"]):
             current_batch = pipe(
                 prompt=params["prompt"],
-                negative_prompt=params["negative_prompt"],
                 num_inference_steps=params["num_steps"],
                 # timesteps=None,
                 guidance_scale=params["guidance_scale"],
+                negative_prompt=params["negative_prompt"],
                 num_images_per_prompt=params["batch_size"],
                 height=params["h"],
                 width=params["w"],
@@ -99,10 +88,14 @@ class Model_Diffusers3:
                 generator=generator,
                 prompt_embeds=None,
                 negative_prompt_embeds=None,
+                # attention_mask=None,
+                # negative_attention_mask=None,
                 output_type="pil",
                 return_dict=True,
                 callback=None,
                 callback_steps=1,
+                # clean_caption=True,
+                # cross_attention_kwargs=None,
                 latents=None,
                 # cut_context=True,
             ).images
@@ -114,7 +107,39 @@ class Model_Diffusers3:
 
     def i2i(self, params):
         task = "img2img"
-        return []
+
+        pipe = self.prepare_model(task)
+        params, generator = self.prepare_params(params)
+
+        for _ in itertools.repeat(None, params["batch_count"]):
+            current_batch = pipe(
+                prompt=params["prompt"],
+                image=params["init_image"],
+                strength=params["strength"],
+                num_inference_steps=params["num_steps"],
+                guidance_scale=params["guidance_scale"],
+                negative_prompt=params["negative_prompt"],
+                num_images_per_prompt=params["batch_size"],
+                # height=params["h"],
+                # width=params["w"],
+                generator=generator,
+                prompt_embeds=None,
+                negative_prompt_embeds=None,
+                # attention_mask=None,
+                # negative_attention_mask=None,
+                output_type="pil",
+                return_dict=True,
+                callback=None,
+                callback_steps=1,
+                # callback_on_step_end=None
+                # callback_on_step_end_tensor_inputs=None
+                latents=None,
+            ).images
+
+            images += self.create_batch_images(params, "img2img", current_batch)
+        k_log("img2img task: done")
+
+        return images
 
     def mix(self, params):
         task = "mix"

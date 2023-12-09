@@ -4,10 +4,13 @@ from diffusers import (
     Kandinsky3Pipeline,
     Kandinsky3Img2ImgPipeline,
     AutoPipelineForText2Image,
+    AutoPipelineForImage2Image,
 )
 
+from utils.logging import k_log
 
-def prepare_weights_for_task(model, task):
+
+def prepare_model_for_task(model, task):
     cache_dir = model.params("general", "cache_dir")
     device = model.params("general", "device")
 
@@ -23,15 +26,51 @@ def prepare_weights_for_task(model, task):
             )
 
         if task == "text2img":
-            model.t2i_pipe.enable_model_cpu_offload()
             model.t2i_pipe = model.t2i_pipe.to(device)
         else:
             model.i2i_pipe = Kandinsky3Img2ImgPipeline(**model.t2i_pipe.components)
-            model.i2i_pipe.enable_model_cpu_offload()
             model.i2i_pipe = model.t2i_pipe.to(device)
 
 
+def prepare_autopipeline_for_task(model, task):
+    cache_dir = model.params("general", "cache_dir")
+    device = model.params("general", "device")
+    model_cpu_offload = model.params("diffusers", "full_model_offload")
+    sequential_cpu_offload = model.params("diffusers", "sequential_cpu_offload")
+
+    pipe = None
+
+    if task == "text2img" or task == "img2img":
+        if model.auto_t2i_pipe is None:
+            flush_if_required(model, task)
+
+            model.auto_t2i_pipe = AutoPipelineForText2Image.from_pretrained(
+                "kandinsky-community/kandinsky-3",
+                variant="fp16",
+                torch_dtype=type_of_weights(model.params),
+                cache_dir=cache_dir,
+            )
+
+        if task == "text2img":
+            pipe = model.auto_t2i_pipe
+        else:
+            model.auto_i2i_pipe = AutoPipelineForImage2Image(
+                **model.auto_t2i_pipe.components
+            )
+            pipe = model.auto_i2i_pipe
+
+        if model_cpu_offload:
+            pipe.enable_model_cpu_offload()
+        elif sequential_cpu_offload:
+            pipe.enable_sequential_cpu_offload()
+        else:
+            pipe.to(device)
+
+    return pipe
+
+
 def flush_if_required(model, target):
+    k_log("flush: not implemented")
     None
 
 
