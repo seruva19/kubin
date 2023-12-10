@@ -13,7 +13,9 @@ body:not([class*="pipeline-diffusers-kd22"]) .diffusers-kd22-control {
 body[class*="pipeline-"][class*="-kd20"] [class*="unsupported_20"],
 body[class*="pipeline-native-kd21"] [class*="unsupported_21"],
 body[class*="pipeline-diffusers-kd21"] [class*="unsupported_d21"],
-body[class*="pipeline-"][class*="-kd22"] [class*="unsupported_22"] {
+body[class*="pipeline-"][class*="-kd22"] [class*="unsupported_22"],
+body[class*="pipeline-native-kd30"] [class*="unsupported_30"],
+body[class*="pipeline-diffusers-kd30"] [class*="unsupported_d30"] {
   display: none;
 }
 
@@ -22,10 +24,23 @@ body[class*="pipeline-"][class*="-kd20"] .ui-tabs>.tab-nav>button:nth-child(5) {
   display: none;
 }
 
+body[class*="pipeline-native-kd30"] .ui-tabs>.tab-nav>button:nth-child(2),
+body[class*="pipeline-native-kd30"] .ui-tabs>.tab-nav>button:nth-child(3),
+body[class*="pipeline-native-kd30"] .ui-tabs>.tab-nav>button:nth-child(5) {
+  display: none;
+}
+
+body[class*="pipeline-diffusers-kd30"] .ui-tabs>.tab-nav>button:nth-child(3),
+body[class*="pipeline-diffusers-kd30"] .ui-tabs>.tab-nav>button:nth-child(4),
+body[class*="pipeline-diffusers-kd30"] .ui-tabs>.tab-nav>button:nth-child(5) {
+  display: none;
+}
+
 
 body[class*="pipeline-"][class*="-kd20"] .settings-tabs>.tabs>.tab-nav>button:nth-child(2),
 body[class*="pipeline-diffusers-kd21"] .settings-tabs>.tabs>.tab-nav>button:nth-child(2),
-body[class*="pipeline-"][class*="-kd22"] .settings-tabs>.tabs>.tab-nav>button:nth-child(2) {
+body[class*="pipeline-"][class*="-kd22"] .settings-tabs>.tabs>.tab-nav>button:nth-child(2),
+body[class*="pipeline-"][class*="-kd30"] .settings-tabs>.tabs>.tab-nav>button:nth-child(2) {
   display: none;
 }
 
@@ -106,4 +121,8 @@ body.gradio-full .gradio-container {
 
 .kubin-accordion .label-wrap>span>span.added-condition.active {
   display: inline;
+}
+
+.inpaint_params>.stretch:first-child>.block {
+  height: 600px !important;
 }

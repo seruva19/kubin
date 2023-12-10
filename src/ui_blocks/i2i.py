@@ -246,7 +246,11 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
                         elem_classes=["inline-flex"],
                         lines=2,
                     )
-                prior_block.elem_classes = ["unsupported_20"]
+                prior_block.elem_classes = [
+                    "unsupported_20",
+                    "unsupported_d30",
+                    "unsupported_30",
+                ]
 
             augmentations["ui"]()
 

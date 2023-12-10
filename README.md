@@ -1,5 +1,9 @@
 
-# Kubin: Web-GUI for [Kandinsky 2.x](https://github.com/ai-forever/Kandinsky-2/)
+# Kubin
+
+## Description
+
+Web-GUI for Kandinsky text-to-image diffusion models ([Kandinsky2](https://github.com/ai-forever/Kandinsky-2/), [Kandinsky3](https://github.com/ai-forever/Kandinsky-3)).
 
 ## Disclaimer
 
@@ -7,7 +11,7 @@
 
 ## Roadmap
 
-✔ Supports versions 2.0, 2.1, 2.2 <br>
+✔ Supported models: 2.0, 2.1, 2.2, 3.0 <br>
 ✔ Txt2img <br>
 ✔ Img2img <br>
 ✔ Mixing <br>
@@ -17,82 +21,27 @@
 ✔ Diffusers pipeline <br>
 ✔ Low-VRAM options <br>
 ✔ Support for extensions <br>
-✔ ext. Image browser<br>
-✔ ext. Fine-tuning <br>
-✔ ext. LoRA training and inference <br>
-✔ ext. Style library <br>
-✔ ext. Upscaling <br>
-✔ ext. Img2mesh <br>
-✔ ext. Interrogation <br>
-✔ ext. Segmentation <br>
-✔ ext. Animation <br>
+✔ ext. [Image browser](https://github.com/seruva19/kubin-extensions) <br>
+✔ ext. [Fine-tuning](https://github.com/seruva19/kubin-extensions) <br>
+✔ ext. [LoRA training and inference](https://github.com/seruva19/kubin-extensions) <br>
+✔ ext. [Style library](https://github.com/seruva19/kubin-extensions) <br>
+✔ ext. [Upscaling](https://github.com/seruva19/kubin-extensions) <br>
+✔ ext. [Img2mesh](https://github.com/seruva19/kubin-extensions) <br>
+✔ ext. [Interrogation](https://github.com/seruva19/kubin-extensions) <br>
+✔ ext. [Segmentation](https://github.com/seruva19/kubin-extensions) <br>
+✔ ext. [Animation](https://github.com/seruva19/kubin-extensions) <br>
 🕒 Advanced prompt syntax <br>
 🕒 Prompt weighting <br>
 🕒 Checkpoint conversion <br>
 🕒 ext. Area composition <br>
 
+## Kandinsky 3
 
-## Screenshots (outdated)
-<details> 
-<summary>Click to expand</summary>
+Read [here](https://github.com/seruva19/kubin/wiki/Docs#kandinsky-3).
 
-### Txt2img tab
+## Screenshot
 	
-![img](/sshots/t2i.png)
-
-### Txt2img tab (with ControlNet)
-	
-![img](/sshots/t2i_cnet.png)	
-
-### Img2img tab
-	
-![img](/sshots/i2i.png)
-
-### Mix tab
-	
-![img](/sshots/mix.png)
-
-### Inpainting tab
-    
-![img](/sshots/inpaint.png)
-
-### Outpainting tab
-    
-![img](/sshots/outpaint.png)
-
-### Upscaler extension tab
-    
-![img](/sshots/upscale.png)
-
-### Segmentation extension tab
-    
-![img](/sshots/segmentation.png)
-
-### Mesh generator extension tab
-    
-![img](/sshots/mesh.png)
-
-### Interrogator extension tab
-    
-![img](/sshots/interrogate.png)
-
-### Image browser extension tab
-    
-![img](/sshots/image_browser.png)
-
-### Training extension tab
-    
-![img](/sshots/training.png)
-
-### Extensions tab
-    
-![img](/sshots/extensions.png)
-
-### Settings tab
-    
-![img](/sshots/settings.png)
-
-</details>
+![img](/sshots/screenshot.png)
 
 ## Google Colab
 

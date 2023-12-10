@@ -328,7 +328,14 @@ class SharedUI:
         classes = []
         supports_pipeline_model = ext_augment.get(
             "supports",
-            ["diffusers-kd22", "diffusers-kd21", "native-kd21", "native-kd20"],
+            [
+                "diffusers-kd30",
+                "native-kd30",
+                "diffusers-kd22",
+                "diffusers-kd21",
+                "native-kd21",
+                "native-kd20",
+            ],
         )
         if "native-kd20" not in supports_pipeline_model:
             classes.append("unsupported_20")
@@ -341,5 +348,11 @@ class SharedUI:
 
         if "diffusers-kd22" not in supports_pipeline_model:
             classes.append("unsupported_d21")
+
+        if "native-kd30" not in supports_pipeline_model:
+            classes.append("unsupported_30")
+
+        if "diffusers-kd30" not in supports_pipeline_model:
+            classes.append("unsupported_d30")
 
         return classes
