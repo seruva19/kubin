@@ -11,7 +11,7 @@ Web-GUI for Kandinsky text-to-image diffusion models ([Kandinsky2](https://githu
 
 ## Roadmap
 
-✔ Supported models: 2.0, 2.1, 2.2 <br>
+✔ Supported models: 2.0, 2.1, 2.2, 3.0 <br>
 ✔ Txt2img <br>
 ✔ Img2img <br>
 ✔ Mixing <br>
