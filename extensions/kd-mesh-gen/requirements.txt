@@ -1,1 +1,0 @@
-git+https://github.com/openai/shap-e@5fad78a

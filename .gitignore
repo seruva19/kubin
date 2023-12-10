@@ -1,15 +1,13 @@
 .vscode
 .idea
+.local
 /venv
 **/__pycache__
 **/.installed
 /flagged
 /configs/*.yaml
 !/configs/kubin.default.yaml
-/extensions/*/config.yaml
-/extensions/*/*custom.yaml
-/extensions/*/*user.yaml
-!/extensions/*/config.default.yaml
+/extensions
 /models
 /output
 /train

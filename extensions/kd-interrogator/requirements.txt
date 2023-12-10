@@ -1,3 +1,0 @@
-clip-interrogator==0.6.0
-open-clip-torch==2.18.0
-transformers==4.31.0

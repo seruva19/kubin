@@ -24,7 +24,7 @@ def gradio_ui(kubin: Kubin, start_fn):
     kubin.ui = ui_shared
 
     with gr.Blocks(
-        title="Kubin: Web-GUI for Kandinsky 2.x",
+        title="Kubin",
         theme=ui_shared.select_theme(kubin.params("gradio", "theme")),
         css=css_styles,
         analytics_enabled=kubin.params("gradio", "analytics"),
