@@ -34,7 +34,7 @@ class Model_Diffusers3:
         self.i2i_pipe: Kandinsky3Img2ImgPipeline | None = None
         self.inpaint_pipe: None = None
 
-        self.optimizations = {"model_offload": False, "sequential_offload": False}
+        self.optimizations = []
 
     def prepare_model(self, task):
         k_log(f"task queued: {task}")
