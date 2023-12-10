@@ -60,9 +60,13 @@ def prepare_autopipeline_for_task(model, task):
             pipe = model.auto_i2i_pipe
 
         if model_cpu_offload:
-            pipe.enable_model_cpu_offload()
+            if not model.optimizations.model_offload:
+                pipe.enable_model_cpu_offload()
+                model.optimizations.model_offload = True
         elif sequential_cpu_offload:
-            pipe.enable_sequential_cpu_offload()
+            if model.optimizations.sequential_offload:
+                pipe.enable_sequential_cpu_offload()
+                model.optimizations.sequential_offload = True
         else:
             pipe.to(device)
 
