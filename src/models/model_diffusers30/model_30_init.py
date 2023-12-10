@@ -54,8 +54,8 @@ def prepare_autopipeline_for_task(model, task):
         if task == "text2img":
             pipe = model.auto_t2i_pipe
         else:
-            model.auto_i2i_pipe = AutoPipelineForImage2Image(
-                **model.auto_t2i_pipe.components
+            model.auto_i2i_pipe = AutoPipelineForImage2Image.from_pipe(
+                model.auto_t2i_pipe
             )
             pipe = model.auto_i2i_pipe
 
