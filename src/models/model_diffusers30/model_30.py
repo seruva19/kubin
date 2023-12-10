@@ -74,6 +74,7 @@ class Model_Diffusers3:
         pipe = self.prepare_model(task)
         params, generator = self.prepare_params(params)
 
+        images = []
         for _ in itertools.repeat(None, params["batch_count"]):
             current_batch = pipe(
                 prompt=params["prompt"],
@@ -111,6 +112,7 @@ class Model_Diffusers3:
         pipe = self.prepare_model(task)
         params, generator = self.prepare_params(params)
 
+        images = []
         for _ in itertools.repeat(None, params["batch_count"]):
             current_batch = pipe(
                 prompt=params["prompt"],

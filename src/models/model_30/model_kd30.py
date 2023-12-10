@@ -144,6 +144,7 @@ class Model_KD3:
 
         self.prepare_model(task)
 
+        images = []
         batch = self.t2i_pipe(
             text=params["prompt"],
             negative_text=params["negative_prompt"],
@@ -185,6 +186,7 @@ class Model_KD3:
             pil_img, mask, output_size, inpaint_region, inpaint_target
         )
 
+        images = []
         batch = self.inpainting_pipe(
             text=params["prompt"],
             image=image,
