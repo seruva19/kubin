@@ -92,6 +92,8 @@
 (global => {
   kubin.UI.customEventListeners = () => {
     window.document.addEventListener('click', e => {
+      console.log(e.target)
+      console.log(e.target.nextElementSibling)
       if (e.target.classList.contains('options-select')) {
         Array.from(document.querySelectorAll('.options-select')).forEach(option => {
           option.classList.remove('selected')
@@ -105,13 +107,13 @@
         })
 
         document.querySelector(`.${id}`).classList.add('active')
-      } else if (e.target.nextElementSibling?.classList.contains('thumbnails')) {
-        const targetGallery = e.target.nextElementSibling
+      } else if (e.target.parentNode?.nextElementSibling?.classList.contains('thumbnails')) {
+        const targetGallery = e.target.parentNode.nextElementSibling
         const thumbnailsSelector = `.gallery-active button img`
         targetGallery.classList.add('gallery-active')
 
         let position = 0
-        const allImages = Array.from(e.target.nextElementSibling.querySelectorAll(thumbnailsSelector))
+        const allImages = Array.from(targetGallery.querySelectorAll(thumbnailsSelector))
         allImages.forEach((image, index) => {
           if (image.src === e.target.src) {
             position = index - 1 == -1 ? allImages.length - 1 : index - 1
@@ -241,7 +243,7 @@
     })
 
     !panelResize && Array.from(document.getElementsByClassName('block-resizable-anchor')).forEach(anchor => {
-      anchor.remove
+      anchor.remove()
     })
   }
 
