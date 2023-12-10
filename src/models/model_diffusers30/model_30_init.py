@@ -67,7 +67,7 @@ def prepare_autopipeline_for_task(model, task):
         if sequential_cpu_offload:
             if not "sequential_offload" in model.optimizations:
                 pipe.enable_sequential_cpu_offload()
-                model.optimizations["sequential_offload"] = True
+                model.optimizations.append("sequential_offload")
 
         if not model_cpu_offload and not sequential_cpu_offload:
             model.optimizations.remove("model_offload")
