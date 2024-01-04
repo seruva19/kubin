@@ -1,8 +1,6 @@
 (global => {
   kubin.UI.customEventListeners = () => {
     window.document.addEventListener('click', e => {
-      console.log(e.target)
-      console.log(e.target.nextElementSibling)
       if (e.target.classList.contains('options-select')) {
         Array.from(document.querySelectorAll('.options-select')).forEach(option => {
           option.classList.remove('selected')

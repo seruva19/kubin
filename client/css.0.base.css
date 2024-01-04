@@ -90,6 +90,10 @@ body.unselectable * {
   display: none;
 }
 
+.kd-extensions-list .prose hr {
+  margin-bottom: 0px !important;
+}
+
 .kd-extension-settings-container {
   margin-top: 15px;
 }

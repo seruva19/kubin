@@ -22,6 +22,7 @@ Web-GUI for Kandinsky text-to-image diffusion models ([Kandinsky2](https://githu
 ✔ Low-VRAM options <br>
 ✔ Support for extensions <br>
 ✔ ext. [Image browser](https://github.com/seruva19/kubin-extensions) <br>
+✔ ext. [Image editor](https://github.com/seruva19/kubin-extensions) <br>
 ✔ ext. [Fine-tuning](https://github.com/seruva19/kubin-extensions) <br>
 ✔ ext. [LoRA training and inference](https://github.com/seruva19/kubin-extensions) <br>
 ✔ ext. [Style library](https://github.com/seruva19/kubin-extensions) <br>
