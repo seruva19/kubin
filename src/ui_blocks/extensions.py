@@ -235,4 +235,5 @@ def extensions_ui(kubin: Kubin):
             _js=f'_ => kubin.notify.success("All extensions will be reinstalled on next launch")',
         )
 
+    extensions_block.elem_classes = ["kd-extensions-list"]
     return extensions_block
