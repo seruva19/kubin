@@ -54,8 +54,8 @@ def prepare_autopipeline_for_task(model, task):
         if task == "text2img":
             pipe = model.auto_t2i_pipe
         else:
-            model.auto_i2i_pipe = AutoPipelineForImage2Image(
-                **model.auto_t2i_pipe.components
+            model.auto_i2i_pipe = AutoPipelineForImage2Image.from_pipe(
+                model.auto_t2i_pipe
             )
             pipe = model.auto_i2i_pipe
 
@@ -63,15 +63,17 @@ def prepare_autopipeline_for_task(model, task):
             if not "model_offload" in model.optimizations:
                 pipe.enable_model_cpu_offload()
                 model.optimizations.append("model_offload")
+        elif "model_offload" in model.optimizations:
+            model.optimizations.remove("model_offload")
 
         if sequential_cpu_offload:
             if not "sequential_offload" in model.optimizations:
                 pipe.enable_sequential_cpu_offload()
                 model.optimizations.append("sequential_offload")
+        elif "sequential_offload" in model.optimizations:
+            model.optimizations.remove("sequential_offload")
 
         if not model_cpu_offload and not sequential_cpu_offload:
-            model.optimizations.remove("model_offload")
-            model.optimizations.remove("sequential_offload")
             pipe.to(device)
 
     return pipe
