@@ -45,6 +45,7 @@ ui:
 
 native:
   flash_attention: false
+  text_encoder: pszemraj/flan-ul2-text-encoder
   
 diffusers:
   half_precision_weights: true
