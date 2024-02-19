@@ -14,7 +14,13 @@ def options_tab_native(kubin: Kubin):
             elem_classes=["options-medium"],
         )
 
-        native = gr.Checkbox(
+        optimization_flags = gr.TextArea(
+            lines=4,
+            value=lambda: kubin.params("native", "optimization_flags"),
+            label="Optimization flags",
+        )
+
+        flash_attention = gr.Checkbox(
             value=lambda: kubin.params("native", "flash_attention"),
             label="Use Flash Attention",
         )
@@ -30,12 +36,23 @@ def options_tab_native(kubin: Kubin):
             show_progress=False,
         )
 
-        native.change(
+        optimization_flags.change(
+            fn=None,
+            _js=on_change,
+            inputs=[
+                gr.Text("native.optimization_flags", visible=False),
+                optimization_flags,
+                gr.Checkbox(False, visible=False),
+            ],
+            show_progress=False,
+        )
+
+        flash_attention.change(
             fn=None,
             _js=on_change,
             inputs=[
                 gr.Text("native.flash_attention", visible=False),
-                native,
+                flash_attention,
                 gr.Checkbox(True, visible=False),
             ],
             show_progress=False,
