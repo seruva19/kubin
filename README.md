@@ -49,8 +49,6 @@ Read [here](https://github.com/seruva19/kubin/wiki/Docs#kandinsky-3).
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1lx4lQS61hYb02BSoAoJUAVwPr7PhhkJt)
 <br>
 
-Notebook examples for Paperspace and Kaggle are in "notebooks" folder.
-
 ## Documentation
 
 Some information can be found in [Wiki](https://github.com/seruva19/kubin/wiki/Docs).

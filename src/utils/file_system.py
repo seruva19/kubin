@@ -31,7 +31,7 @@ def create_filename(path, params):
     filename = f"{path}/{formatted_datetime}{postfix}.png"
     while os.path.exists(filename):
         unique_id = current_datetime.microsecond
-        filename = f"{formatted_datetime}_{unique_id}.png"
+        filename = f"{path}/{formatted_datetime}_{unique_id}.png"
 
     return filename
 
@@ -50,10 +50,10 @@ def save_output(path, images, params=None):
             params, skipkeys=True, default=lambda _: "<parameter cannot be serialized>"
         )
 
-    for img in images:
-        if not os.path.exists(path):
-            os.makedirs(path)
+    if not os.path.exists(path):
+        os.makedirs(path)
 
+    for img in images:
         filename = create_filename(path, params)
         img.save(filename, "PNG", pnginfo=create_png_info(params_as_json))
         output.append(filename)
