@@ -212,6 +212,10 @@ body.gradio-full .gradio-container {
   width: 100px !important;
 }
 
+.options-medium {
+  width: 200px !important;
+}
+
 .kubin-accordion .label-wrap span {
   text-transform: uppercase;
   padding: 0 5px;

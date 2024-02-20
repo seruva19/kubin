@@ -34,7 +34,6 @@ class Model_KD3:
 
         self.params = params
 
-        self.text_encoder: Kandinsky3T2IPipeline | None = None
         self.t2i_pipe: Kandinsky3T2IPipeline | None = None
         self.inpainting_pipe: Kandinsky3InpaintingPipeline | None = None
 
@@ -44,6 +43,7 @@ class Model_KD3:
 
         cache_dir = self.params("general", "cache_dir")
         device = self.params("general", "device")
+        text_encoder_path = self.params("native", "text_encoder")
 
         if task == "text2img":
             if self.t2i_pipe is not None:
@@ -69,11 +69,11 @@ class Model_KD3:
 
                 processor, condition_encoders = get_T5encoder(
                     device,
-                    weights_path="google/flan-ul2",
+                    weights_path=text_encoder_path,
                     projections_state_dict=projections_state_dict,
                     low_cpu_mem_usage=True,
                     fp16=True,
-                    device_map="auto",
+                    device_map=None,
                 )
 
                 movq = get_movq(device, movq_path, fp16=True)
@@ -88,7 +88,7 @@ class Model_KD3:
                 )
 
         if task == "inpainting":
-            if self.inpaint_pipe is not None:
+            if self.inpainting_pipe is not None:
                 return
             else:
                 self.flush(task)
@@ -136,6 +136,7 @@ class Model_KD3:
             ".output_dir",
             os.path.join(self.params("general", "output_dir"), task),
         )
+
         saved_batch = save_output(output_dir, batch, params)
         return saved_batch
 
@@ -212,14 +213,22 @@ class Model_KD3:
         if task == "text2img" or task is None:
             if self.t2i_pipe is not None:
                 k_log(f"moving t2i_pipe to cpu in order to release memory")
-                self.t2i_pipe.to("cpu")
+
+                self.t2i_pipe.t5_encoder.to("cpu")
+                self.t2i_pipe.unet.to("cpu")
+                self.t2i_pipe.movq.to("cpu")
+
                 self.t2i_pipe = None
                 cleared = True
 
         elif task == "inpainting" or task is None:
             if self.inpainting_pipe is not None:
                 k_log(f"moving inpainting_pipe to cpu in order to release memory")
-                self.inpainting_pipe.to("cpu")
+
+                self.inpainting_pipe.t5_encoder.to("cpu")
+                self.inpainting_pipe.unet.to("cpu")
+                self.inpainting_pipe.movq.to("cpu")
+
                 self.inpainting_pipe = None
                 cleared = True
 
