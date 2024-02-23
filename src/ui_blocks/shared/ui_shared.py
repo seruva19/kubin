@@ -261,6 +261,8 @@ class SharedUI:
                         }
 
                         with gr.Row() as row:
+                            row.elem_classes = self.availability_classes(ext_augment)
+
                             title = ext_augment.get(
                                 "inject_title", ext_augment["title"]
                             )
@@ -272,7 +274,6 @@ class SharedUI:
                                     "extension-container",
                                     "kubin-accordion",
                                     f"{name}",
-                                    *self.availability_classes(ext_augment),
                                 ]
 
                                 ext_info = ext_augment["inject_ui"](target)
