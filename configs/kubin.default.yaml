@@ -46,7 +46,7 @@ ui:
 native:
   flash_attention: false
   text_encoder: pszemraj/flan-ul2-text-encoder
-  optimization_flags: kd30_split_model;kd30_t5_encoder_only;kd30_t5_encoder_4bit;kd30_unet_load_float8;kd30_unet_autocast;kd30_movq_autocast
+  optimization_flags: kd30_low_vram
 
 diffusers:
   half_precision_weights: true

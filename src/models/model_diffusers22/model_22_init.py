@@ -88,9 +88,9 @@ def prepare_weights_for_task(model, task):
         model.pipe_prior = KandinskyV22PriorPipelinePatched.from_pretrained(
             "kandinsky-community/kandinsky-2-2-prior",
             image_encoder=image_encoder,
-            torch_dtype=torch.float32
-            if run_prior_on_cpu
-            else type_of_weights(model.params),
+            torch_dtype=(
+                torch.float32 if run_prior_on_cpu else type_of_weights(model.params)
+            ),
             cache_dir=cache_dir,
             resume_download=True,
         )

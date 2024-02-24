@@ -23,6 +23,7 @@ class Model_Mock:
         self.decoder = type("obj", (object,), {"model": "decoder"})
 
         self.config = {}
+        self.unet_2d = "dummy unet"
 
         self.params.hook_store.register_hook(
             ".mock",
@@ -65,25 +66,33 @@ class Model_Mock:
         task = "text2img"
         params[".ui-task"] = task
 
+        hook_params = {"model": self, "params": params, "task": task}
         self.params.hook_store.call(
             HOOK.BEFORE_PREPARE_MODEL,
-            **{"model": self, "params": params, "task": task},
+            **hook_params,
         )
 
         prior, decoder = self.prepare_model(task)
-
+        hook_params["prior"] = prior
+        hook_params["decoder"] = decoder
         self.params.hook_store.call(
             HOOK.BEFORE_PREPARE_PARAMS,
-            **{
-                "model": self,
-                "params": params,
-                "task": task,
-                "prior": prior,
-                "decoder": decoder,
-            },
+            **hook_params,
         )
 
         self.prepare_params(params)
+
+        hook_params["prior_generator"] = {}
+        hook_params["decoder_generator"] = {}
+        hook_params["image_embeds"] = {}
+        hook_params["negative_image_embeds"] = {}
+        hook_params["scheduler"] = {}
+
+        self.params.hook_store.call(
+            HOOK.BEFORE_PREPARE_DECODER,
+            **hook_params,
+        )
+
         k_log("mock t2i executed")
 
         dummy_images = self.dummyImages()

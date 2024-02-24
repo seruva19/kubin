@@ -31,9 +31,10 @@ Web-GUI for Kandinsky text-to-image diffusion models ([Kandinsky2](https://githu
 ✔ ext. [Interrogation](https://github.com/seruva19/kubin-extensions) <br>
 ✔ ext. [Segmentation](https://github.com/seruva19/kubin-extensions) <br>
 ✔ ext. [Animation](https://github.com/seruva19/kubin-extensions) <br>
+✔ ext. [Video](https://github.com/seruva19/kubin-extensions) <br>
+✔ ext. [Background remover](https://github.com/seruva19/kubin-extensions) <br>
 🕒 Advanced prompt syntax <br>
 🕒 Prompt weighting <br>
-🕒 Checkpoint conversion <br>
 🕒 ext. Area composition <br>
 
 ## Kandinsky 3
