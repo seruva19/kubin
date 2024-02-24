@@ -10,10 +10,11 @@ from typing import Optional
 import torch
 from torch import nn
 from einops import repeat
-from transformers import T5Model, CLIPModel
+from transformers import T5Model, T5EncoderModel, CLIPModel, BitsAndBytesConfig
 from typing import Optional
 
 from models.model_30.kandinsky3.utils import freeze
+from models.model_30.model_kd30_env import Model_KD3_Environment
 
 
 class ConditionEncoder(nn.Module):
@@ -68,21 +69,41 @@ class ConditionEncoder(nn.Module):
 class T5TextConditionEncoder(ConditionEncoder):
     def __init__(
         self,
+        environment: Model_KD3_Environment,
         model_names,
         context_dim,
         model_dims,
+        cache_dir,
         low_cpu_mem_usage: bool = True,
         device_map: Optional[str] = None,
     ):
         super().__init__(context_dim, model_dims)
-        t5_model = T5Model.from_pretrained(
+        if environment.kd30_low_vram:
+            quantization_config = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_compute_type=torch.bfloat16,
+                bnb_4bit_quant_type="nf4",
+                bnb_4bit_use_double_quant=False,
+            )
+        else:
+            quantization_config = None
+
+        t5_model = T5EncoderModel.from_pretrained(
             model_names["t5"],
             low_cpu_mem_usage=low_cpu_mem_usage,
             device_map=device_map,
+            load_in_4bit=environment.kd30_low_vram,
+            torch_dtype=torch.bfloat16,
+            cache_dir=cache_dir,
+            quantization_config=quantization_config,
         )
         self.encoders = nn.ModuleDict(
             {
-                "t5": t5_model.encoder.half(),
+                "t5": (
+                    t5_model.encoder
+                    if environment.kd30_low_vram
+                    else t5_model.encoder.half()
+                )
             }
         )
         self.encoders = freeze(self.encoders)

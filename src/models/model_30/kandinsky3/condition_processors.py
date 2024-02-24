@@ -38,9 +38,11 @@ class ConditionProcessor:
 
 
 class T5TextConditionProcessor:
-    def __init__(self, tokens_length, processor_names):
+    def __init__(self, tokens_length, processor_names, cache_dir):
         self.tokens_length = tokens_length["t5"]
-        self.processor = T5Tokenizer.from_pretrained(processor_names["t5"])
+        self.processor = T5Tokenizer.from_pretrained(
+            processor_names["t5"], cache_dir=cache_dir
+        )
 
     def encode(self, text=None, negative_text=None):
         encoded = self.processor(text, max_length=self.tokens_length, truncation=True)

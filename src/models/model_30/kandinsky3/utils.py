@@ -5,13 +5,38 @@ The code has been adopted from Kandinsky-3
 (https://github.com/ai-forever/Kandinsky-3/blob/main/kandinsky3/utils.py)
 """
 
+import gc
+import sys
 from omegaconf import OmegaConf
 import numpy as np
 from scipy import ndimage
 from scipy.interpolate import interp1d
 from matplotlib.path import Path
+import torch
 import torch.nn as nn
 from skimage.transform import resize
+
+
+def release_vram():
+    gc.collect()
+    torch.cuda.empty_cache()
+    torch.cuda.ipc_collect()
+
+
+def vram_info(stage):
+    in_mb = lambda bytes: round(bytes / (1024**2))
+
+    t = in_mb(torch.cuda.get_device_properties(0).total_memory)
+    r = in_mb(torch.cuda.memory_reserved(0))
+    a = in_mb(torch.cuda.memory_allocated(0))
+
+    if stage:
+        stage = f" ({stage})"
+
+    print(
+        f"VRAM Usage{stage}: Total: {t} | Reserved: {r} | Allocated: {a}",
+        file=sys.stderr,
+    )
 
 
 def load_conf(config_path):

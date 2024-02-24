@@ -5,7 +5,7 @@ The code has been adopted from Kandinsky-3
 (https://github.com/ai-forever/Kandinsky-3/blob/main/kandinsky3/t2i_pipeline.py)
 """
 
-from typing import Optional, Union, List
+from typing import List, Callable, Optional, Union
 import PIL
 import io
 import os
@@ -30,28 +30,32 @@ from models.model_30.kandinsky3.model.diffusion import (
     BaseDiffusion,
     get_named_beta_schedule,
 )
+from models.model_30.kandinsky3.utils import release_vram, vram_info
+from utils.logging import k_log
 
 
-class Kandinsky3T2IPipeline:
+class Kandinsky3T2IOptimizedPipeline:
     def __init__(
         self,
         device: Union[str, torch.device],
-        unet: UNet,
+        unet_loader: Callable[[], UNet],
         null_embedding: torch.Tensor,
         t5_processor: T5TextConditionProcessor,
-        t5_encoder: T5TextConditionEncoder,
-        movq: MoVQ,
+        t5_encoder_loader: Callable[[], T5TextConditionEncoder],
+        movq_loader: Callable[[], MoVQ],
         fp16: bool = True,
     ):
+        k_log("running low vram t2i pipeline")
+
         self.device = device
         self.fp16 = fp16
         self.to_pil = T.ToPILImage()
 
-        self.unet = unet
+        self.unet_loader = unet_loader
         self.null_embedding = null_embedding
         self.t5_processor = t5_processor
-        self.t5_encoder = t5_encoder
-        self.movq = movq
+        self.t5_encoder_loader = t5_encoder_loader
+        self.movq_loader = movq_loader
 
     def __call__(
         self,
@@ -93,8 +97,12 @@ class Kandinsky3T2IPipeline:
                     )
 
         pil_images = []
-        with torch.cuda.amp.autocast(enabled=self.fp16):
+
+        with torch.autocast("cuda"):
             with torch.no_grad():
+                vram_info("prepared encoder")
+
+                self.t5_encoder = self.t5_encoder_loader()
                 context, context_mask = self.t5_encoder(condition_model_input)
                 if negative_condition_model_input is not None:
                     negative_context, negative_context_mask = self.t5_encoder(
@@ -102,6 +110,12 @@ class Kandinsky3T2IPipeline:
                     )
                 else:
                     negative_context, negative_context_mask = None, None
+
+                vram_info("used encoder")
+                self.t5_encoder.to("cpu")
+                self.t5_encoder = None
+                release_vram()
+                vram_info("flushed encoder")
 
                 k, m = images_num // bs, images_num % bs
                 for minibatch in [bs] * k + [m]:
@@ -119,6 +133,8 @@ class Kandinsky3T2IPipeline:
                     else:
                         bs_negative_context, bs_negative_context_mask = None, None
 
+                    vram_info("prepared unet")
+                    self.unet = self.unet_loader()
                     images = base_diffusion.p_sample_loop(
                         self.unet,
                         (minibatch, 4, height // 8, width // 8),
@@ -131,9 +147,24 @@ class Kandinsky3T2IPipeline:
                         negative_context_mask=bs_negative_context_mask,
                     )
 
+                    vram_info("used unet")
+                    self.unet.to("cpu")
+                    self.unet = None
+                    release_vram()
+                    vram_info("flushed unet")
+
+                    vram_info("prepared movq")
+                    self.movq = self.movq_loader()
                     images = torch.cat(
                         [self.movq.decode(image) for image in images.chunk(2)]
                     )
+
+                    vram_info("used movq")
+                    self.movq.to("cpu")
+                    self.movq = None
+                    release_vram()
+                    vram_info("flushed movq")
+
                     images = torch.clip((images + 1.0) / 2.0, 0.0, 1.0)
                     for images_chunk in images.chunk(1):
                         pil_images += [self.to_pil(image) for image in images_chunk]

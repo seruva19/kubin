@@ -3,14 +3,9 @@ import torch
 import torch.backends
 import torch
 
-from huggingface_hub import hf_hub_download
 from models.model_30.kandinsky3 import (
     get_T2I_pipeline,
     get_inpainting_pipeline,
-    get_T2I_unet,
-    get_inpainting_unet,
-    get_T5encoder,
-    get_movq,
     Kandinsky3T2IPipeline,
     Kandinsky3InpaintingPipeline,
 )
@@ -18,7 +13,13 @@ from models.model_30.kandinsky3 import (
 import itertools
 import os
 import secrets
-from models.model_30.model_kd30_patches import patch_kd30_pipelines
+from models.model_30.kandinsky3.inpainting_optimized_pipeline import (
+    Kandinsky3InpaintingOptimizedPipeline,
+)
+from models.model_30.kandinsky3.t2i_optimized_pipeline import (
+    Kandinsky3T2IOptimizedPipeline,
+)
+from models.model_30.model_kd30_env import Model_KD3_Environment
 from params import KubinParams
 from utils.file_system import save_output
 from utils.image import create_inpaint_targets
@@ -30,12 +31,14 @@ from model_utils.diffusers_samplers import use_sampler
 class Model_KD3:
     def __init__(self, params: KubinParams):
         k_log("activating pipeline: native (3.0)")
-        patch_kd30_pipelines(params)
 
         self.params = params
-
-        self.t2i_pipe: Kandinsky3T2IPipeline | None = None
-        self.inpainting_pipe: Kandinsky3InpaintingPipeline | None = None
+        self.t2i_pipe: Kandinsky3T2IPipeline | Kandinsky3T2IOptimizedPipeline | None = (
+            None
+        )
+        self.inpainting_pipe: (
+            Kandinsky3InpaintingPipeline | Kandinsky3InpaintingOptimizedPipeline | None
+        ) = None
 
     def prepare_model(self, task):
         k_log(f"task queued: {task}")
@@ -51,39 +54,13 @@ class Model_KD3:
             else:
                 self.flush(task)
 
-                unet_path = hf_hub_download(
-                    repo_id="ai-forever/Kandinsky3.0",
-                    filename="weights/kandinsky3.pt",
+                self.t2i_pipe = get_T2I_pipeline(
+                    device=device,
+                    environment=Model_KD3_Environment().from_config(self.params),
                     cache_dir=cache_dir,
-                )
-
-                movq_path = hf_hub_download(
-                    repo_id="ai-forever/Kandinsky3.0",
-                    filename="weights/movq.pt",
-                    cache_dir=cache_dir,
-                )
-
-                unet, null_embedding, projections_state_dict = get_T2I_unet(
-                    device, unet_path, fp16=True
-                )
-
-                processor, condition_encoders = get_T5encoder(
-                    device,
-                    weights_path=text_encoder_path,
-                    projections_state_dict=projections_state_dict,
-                    low_cpu_mem_usage=True,
-                    fp16=True,
-                    device_map=None,
-                )
-
-                movq = get_movq(device, movq_path, fp16=True)
-                self.t2i_pipe = Kandinsky3T2IPipeline(
-                    device,
-                    unet,
-                    null_embedding,
-                    processor,
-                    condition_encoders,
-                    movq,
+                    movq_path=None,
+                    text_encoder_path=text_encoder_path,
+                    unet_path=None,
                     fp16=True,
                 )
 
@@ -93,40 +70,14 @@ class Model_KD3:
             else:
                 self.flush(task)
 
-                unet_inpainting_path = hf_hub_download(
-                    repo_id="ai-forever/Kandinsky3.0",
-                    filename="weights/kandinsky3_inpainting.pt",
+                self.inpainting_pipe = get_inpainting_pipeline(
+                    device=device,
+                    environment=Model_KD3_Environment().from_config(self.params),
                     cache_dir=cache_dir,
-                )
-
-                movq_path = hf_hub_download(
-                    repo_id="ai-forever/Kandinsky3.0",
-                    filename="weights/movq.pt",
-                    cache_dir=cache_dir,
-                )
-
-                unet, null_embedding, projections_state_dict = get_inpainting_unet(
-                    device, unet_inpainting_path, fp16=True
-                )
-
-                processor, condition_encoders = get_T5encoder(
-                    device,
-                    weights_path="google/flan-ul2",
-                    projections_state_dict=projections_state_dict,
-                    low_cpu_mem_usage=True,
-                    fp16=True,
-                    device_map="auto",
-                )
-
-                movq = get_movq(device, movq_path, fp16=False)
-                self.inpainting_pipe = Kandinsky3InpaintingPipeline(
-                    device,
-                    unet,
-                    null_embedding,
-                    processor,
-                    condition_encoders,
-                    movq,
-                    fp16=True,
+                    movq_path=None,
+                    text_encoder_path=text_encoder_path,
+                    unet_path=None,
+                    fp16=False,
                 )
 
     def create_batch_images(self, params, task, batch):
