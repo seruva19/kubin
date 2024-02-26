@@ -47,6 +47,7 @@ class Model_KD3:
         cache_dir = self.params("general", "cache_dir")
         device = self.params("general", "device")
         text_encoder_path = self.params("native", "text_encoder")
+        environment = Model_KD3_Environment().from_config(self.params)
 
         if task == "text2img":
             if self.t2i_pipe is not None:
@@ -56,7 +57,7 @@ class Model_KD3:
 
                 self.t2i_pipe = get_T2I_pipeline(
                     device=device,
-                    environment=Model_KD3_Environment().from_config(self.params),
+                    environment=environment,
                     cache_dir=cache_dir,
                     movq_path=None,
                     text_encoder_path=text_encoder_path,
@@ -72,7 +73,7 @@ class Model_KD3:
 
                 self.inpainting_pipe = get_inpainting_pipeline(
                     device=device,
-                    environment=Model_KD3_Environment().from_config(self.params),
+                    environment=environment,
                     cache_dir=cache_dir,
                     movq_path=None,
                     text_encoder_path=text_encoder_path,
@@ -160,28 +161,33 @@ class Model_KD3:
         return []
 
     def flush(self, task=None):
-        cleared = False
-        if task == "text2img" or task is None:
-            if self.t2i_pipe is not None:
-                k_log(f"moving t2i_pipe to cpu in order to release memory")
+        environment = Model_KD3_Environment().from_config(self.params)
 
-                self.t2i_pipe.t5_encoder.to("cpu")
-                self.t2i_pipe.unet.to("cpu")
-                self.t2i_pipe.movq.to("cpu")
+        if not environment.kd30_low_vram:
+            cleared = False
+            if task == "text2img" or task is None:
+                if self.t2i_pipe is not None:
+                    k_log(f"moving t2i_pipe to cpu in order to release memory")
 
-                self.t2i_pipe = None
-                cleared = True
+                    self.t2i_pipe.t5_encoder.to("cpu")
+                    self.t2i_pipe.unet.to("cpu")
+                    self.t2i_pipe.movq.to("cpu")
 
-        elif task == "inpainting" or task is None:
-            if self.inpainting_pipe is not None:
-                k_log(f"moving inpainting_pipe to cpu in order to release memory")
+                    self.t2i_pipe = None
+                    cleared = True
 
-                self.inpainting_pipe.t5_encoder.to("cpu")
-                self.inpainting_pipe.unet.to("cpu")
-                self.inpainting_pipe.movq.to("cpu")
+            elif task == "inpainting" or task is None:
+                if self.inpainting_pipe is not None:
+                    k_log(f"moving inpainting_pipe to cpu in order to release memory")
 
-                self.inpainting_pipe = None
-                cleared = True
+                    self.inpainting_pipe.t5_encoder.to("cpu")
+                    self.inpainting_pipe.unet.to("cpu")
+                    self.inpainting_pipe.movq.to("cpu")
+
+                    self.inpainting_pipe = None
+                    cleared = True
+        else:
+            cleared = True
 
         if cleared:
             gc.collect()
