@@ -25,6 +25,8 @@ def options_tab_general(kubin: Kubin):
         device = gr.Textbox(
             value=lambda: kubin.params("general", "device"),
             label="Device",
+            lines=1,
+            max_lines=1,
             elem_classes=["options-small"],
         )
 

@@ -7,7 +7,7 @@ Web-GUI for Kandinsky text-to-image diffusion models ([Kandinsky2](https://githu
 
 ## Disclaimer
 
-🚧 WIP 🚧 NOT PRODUCTION-READY 🚧 
+🚧 WORK IN PROGRESS 🚧 
 
 ## Roadmap
 
@@ -37,7 +37,7 @@ Web-GUI for Kandinsky text-to-image diffusion models ([Kandinsky2](https://githu
 🕒 Prompt weighting <br>
 🕒 ext. Area composition <br>
 
-## Kandinsky 3
+## Kandinsky 3.0
 
 Read [here](https://github.com/seruva19/kubin/wiki/Docs#kandinsky-3).
 

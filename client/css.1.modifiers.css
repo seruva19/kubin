@@ -13,7 +13,8 @@ body:not([class*="pipeline-diffusers-kd22"]) .diffusers-kd22-control {
 body[class*="pipeline-"][class*="-kd20"] [class*="unsupported_20"],
 body[class*="pipeline-native-kd21"] [class*="unsupported_21"],
 body[class*="pipeline-diffusers-kd21"] [class*="unsupported_d21"],
-body[class*="pipeline-"][class*="-kd22"] [class*="unsupported_22"],
+body[class*="pipeline-native-kd22"] [class*="unsupported_22"],
+body[class*="pipeline-diffusers-kd22"] [class*="unsupported_d22"],
 body[class*="pipeline-native-kd30"] [class*="unsupported_30"],
 body[class*="pipeline-diffusers-kd30"] [class*="unsupported_d30"] {
   display: none;

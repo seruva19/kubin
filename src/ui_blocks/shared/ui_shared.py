@@ -344,14 +344,14 @@ class SharedUI:
         if "native-kd21" not in supports_pipeline_model:
             classes.append("unsupported_21")
 
+        if "native-kd30" not in supports_pipeline_model:
+            classes.append("unsupported_30")
+
         if "diffusers-kd21" not in supports_pipeline_model:
             classes.append("unsupported_d21")
 
         if "diffusers-kd22" not in supports_pipeline_model:
-            classes.append("unsupported_d21")
-
-        if "native-kd30" not in supports_pipeline_model:
-            classes.append("unsupported_30")
+            classes.append("unsupported_d22")
 
         if "diffusers-kd30" not in supports_pipeline_model:
             classes.append("unsupported_d30")
