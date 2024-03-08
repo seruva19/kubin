@@ -1,7 +1,7 @@
 git+https://github.com/ai-forever/Kandinsky-2.git@33c3176
 git+https://github.com/openai/CLIP.git@a1d0717
 diffusers==0.24.0
-transformers==4.35.2
+transformers==4.36.2
 accelerate==0.25.0
 opencv-python==4.8.0.74
 gradio==3.50.2
