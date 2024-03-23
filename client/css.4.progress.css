@@ -9,5 +9,5 @@
 }
 
 .kubin-progress-panel.active {
-  /* display: block; */
+  zoom: 1;
 }

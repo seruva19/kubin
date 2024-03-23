@@ -1,4 +1,9 @@
 from env import Kubin
+from ui_blocks.shared.compatibility import (
+    ext_availability_classes,
+    send_outpaint_btn_classes,
+    send_mix_btn_classes,
+)
 from utils.image import image_path_to_pil
 import gradio as gr
 from collections.abc import Iterable
@@ -117,8 +122,9 @@ class SharedUI:
                 outputs=[self.input_mix_image_2],
             )
 
-            send_mix_1_btn.elem_classes = ["unsupported_20"]
-            send_mix_2_btn.elem_classes = ["unsupported_20"]
+            send_mix_1_btn.elem_classes = send_mix_2_btn.elem_classes = (
+                send_mix_btn_classes()
+            )
 
             send_inpaint_btn = gr.Button(
                 "🖌️ Send to Inpaint", variant="secondary", size="sm"
@@ -139,7 +145,7 @@ class SharedUI:
                 "🖋️ Send to Outpaint",
                 variant="secondary",
                 size="sm",
-                elem_classes=["unsupported_20"],
+                elem_classes=send_outpaint_btn_classes(),
             )
             send_outpaint_btn.click(
                 fn=self.open_another_tab,
@@ -326,34 +332,4 @@ class SharedUI:
             return sampler_diffusers
 
     def availability_classes(self, ext_augment):
-        classes = []
-        supports_pipeline_model = ext_augment.get(
-            "supports",
-            [
-                "diffusers-kd30",
-                "native-kd30",
-                "diffusers-kd22",
-                "diffusers-kd21",
-                "native-kd21",
-                "native-kd20",
-            ],
-        )
-        if "native-kd20" not in supports_pipeline_model:
-            classes.append("unsupported_20")
-
-        if "native-kd21" not in supports_pipeline_model:
-            classes.append("unsupported_21")
-
-        if "native-kd30" not in supports_pipeline_model:
-            classes.append("unsupported_30")
-
-        if "diffusers-kd21" not in supports_pipeline_model:
-            classes.append("unsupported_d21")
-
-        if "diffusers-kd22" not in supports_pipeline_model:
-            classes.append("unsupported_d22")
-
-        if "diffusers-kd30" not in supports_pipeline_model:
-            classes.append("unsupported_d30")
-
-        return classes
+        return ext_availability_classes(ext_augment)

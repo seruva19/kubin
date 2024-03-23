@@ -1,4 +1,5 @@
 import gradio as gr
+from ui_blocks.shared.compatibility import batch_size_classes, prior_block_classes
 from ui_blocks.shared.samplers import samplers_controls
 from ui_blocks.shared.ui_shared import SharedUI
 from utils.gradio_ui import click_and_disable
@@ -149,7 +150,7 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
                     seed = gr.Number(-1, label="Seed", precision=0)
 
                     batch_size = gr.Slider(1, 16, 1, step=1, label="Batch size")
-                    batch_size.elem_classes = ["unsupported_20", "inline-flex"]
+                    batch_size.elem_classes = batch_size_classes() + ["inline-flex"]
 
                 with gr.Row() as prior_block:
                     prior_scale = gr.Slider(
@@ -173,11 +174,7 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
                         label="Negative prior prompt",
                         lines=2,
                     )
-                prior_block.elem_classes = [
-                    "unsupported_20",
-                    "unsupported_d30",
-                    "unsupported_30",
-                ]
+                prior_block.elem_classes = prior_block_classes()
 
             augmentations["ui"]()
 

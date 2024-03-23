@@ -9,33 +9,33 @@ Web-GUI for Kandinsky text-to-image diffusion models ([Kandinsky2](https://githu
 
 🚧 WORK IN PROGRESS 🚧 
 
-## Roadmap
+## Features
 
-✔ Supported models: 2.0, 2.1, 2.2, 3.0 <br>
-✔ Txt2img <br>
-✔ Img2img <br>
-✔ Mixing <br>
-✔ Inpainting  <br>
-✔ Outpainting <br>
-✔ ControlNet <br>
-✔ Diffusers pipeline <br>
-✔ Low-VRAM options <br>
-✔ Support for extensions <br>
-✔ ext. [Image browser](https://github.com/seruva19/kubin-extensions) <br>
-✔ ext. [Image editor](https://github.com/seruva19/kubin-extensions) <br>
-✔ ext. [Fine-tuning](https://github.com/seruva19/kubin-extensions) <br>
-✔ ext. [LoRA training and inference](https://github.com/seruva19/kubin-extensions) <br>
-✔ ext. [Style library](https://github.com/seruva19/kubin-extensions) <br>
-✔ ext. [Upscaling](https://github.com/seruva19/kubin-extensions) <br>
-✔ ext. [Img2mesh](https://github.com/seruva19/kubin-extensions) <br>
-✔ ext. [Interrogation](https://github.com/seruva19/kubin-extensions) <br>
-✔ ext. [Segmentation](https://github.com/seruva19/kubin-extensions) <br>
-✔ ext. [Animation](https://github.com/seruva19/kubin-extensions) <br>
-✔ ext. [Video](https://github.com/seruva19/kubin-extensions) <br>
-✔ ext. [Background remover](https://github.com/seruva19/kubin-extensions) <br>
-🕒 Advanced prompt syntax <br>
-🕒 Prompt weighting <br>
-🕒 ext. Area composition <br>
+| Model                                                                              | 2.0 | 2.1 | 2.2 |3.0  |
+| ---------------------------------------------------------------------------------- | --- | --- | --- | --- |
+| Txt2img                                                                            | ✔   | ✔  |  ✔  | ✔  |
+| Img2img                                                                            | ✔   | ✔  |  ✔  | ✔  |
+| Mixing                                                                             |     | ✔  |  ✔  | 🕒 |
+| Inpainting                                                                         | ✔   | ✔  |  ✔  | ✔  |
+| Outpainting                                                                        |     | ✔  |  ✔  | 🕒 |
+| ControlNet                                                                         |     |     |  ✔  |    |
+| Diffusers pipeline                                                                 |     | ✔  |  ✔  |  ✔ |
+| Low-VRAM options                                                                   |     |     |  ✔  |  ✔ |
+| ext. [Image browser](https://github.com/seruva19/kubin-extensions)                 | ✔   | ✔  |  ✔  |  ✔ |
+| ext. [Image editor](https://github.com/seruva19/kubin-extensions)                  | ✔   | ✔  |  ✔  |  ✔ |
+| ext. [Fine-tuning](https://github.com/seruva19/kubin-extensions)                   |     | ✔  |  🕒 |     |
+| ext. [LoRA training and inference](https://github.com/seruva19/kubin-extensions)   |     |     |  ✔  |    |
+| ext. [Style library](https://github.com/seruva19/kubin-extensions)                 | ✔   | ✔  |  ✔  |  ✔ |
+| ext. [Upscaling](https://github.com/seruva19/kubin-extensions)                     | ✔   | ✔  |  ✔  |  ✔ |
+| ext. [Img2mesh](https://github.com/seruva19/kubin-extensions)                      | ✔   | ✔  |  ✔  |  ✔ |
+| ext. [Interrogation](https://github.com/seruva19/kubin-extensions)                 | ✔   | ✔  |  ✔  |  ✔ |
+| ext. [Segmentation](https://github.com/seruva19/kubin-extensions)                  | ✔   | ✔  |  ✔  |  ✔ |
+| ext. [Animation](https://github.com/seruva19/kubin-extensions)                     |     | 🕒  |  ✔  |    |
+| ext. [Video](https://github.com/seruva19/kubin-extensions)                         |     |     |     |  ✔ |
+| ext. [Background remover](https://github.com/seruva19/kubin-extensions)            | ✔   | ✔  |  ✔  |  ✔ |
+| Advanced prompt syntax                                                             |     |     | 🕒  |    |
+| Prompt weighting                                                                   |     |     | 🕒  |    |
+| ext. Area composition                                                              |     |     | 🕒  |    |
 
 ## Kandinsky 3.0
 

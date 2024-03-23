@@ -3,6 +3,12 @@ import fnmatch
 import os
 from model_utils.kd21_utils import KandinskyCheckpoint
 from env import Kubin
+from ui_blocks.shared.compatibility import (
+    ckpt_selector20_classes,
+    ckpt_selector21_classes,
+    ckpt_selector21d_classes,
+    ckpt_selector22_classes,
+)
 
 prior_base_path_placeholder = "🏠 base prior checkpoint"
 decoder_base_path_placeholder = "🏠 base decoder checkpoint"
@@ -27,11 +33,7 @@ def ckpt_selector(kubin: Kubin):
         with gr.Row() as kd20_selector:
             None
 
-        kd20_selector.elem_classes = [
-            "unsupported_21",
-            "unsupported_d21",
-            "unsupported_22",
-        ]
+        kd20_selector.elem_classes = ckpt_selector20_classes()
 
         with gr.Row() as kd21_selector:
             with gr.Column():
@@ -128,30 +130,17 @@ def ckpt_selector(kubin: Kubin):
                     outputs=[prior_select, decoder_select, inpaint_select],
                 )
 
-        kd21_selector.elem_classes = [
-            "unsupported_20",
-            "unsupported_d21",
-            "unsupported_22",
-        ]
+        kd21_selector.elem_classes = ckpt_selector21_classes()
 
         with gr.Row() as kd21d_selector:
             None
 
-        kd21d_selector.elem_classes = [
-            "unsupported_20",
-            "unsupported_21",
-            "unsupported_22",
-            "unsupported_d22",
-        ]
+        kd21d_selector.elem_classes = ckpt_selector21d_classes()
 
         with gr.Row() as kd22_selector:
             None
 
-        kd22_selector.elem_classes = [
-            "unsupported_20",
-            "unsupported_21",
-            "unsupported_d21",
-        ]
+        kd22_selector.elem_classes = ckpt_selector22_classes()
 
     return kd_selector
 

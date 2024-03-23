@@ -1,7 +1,10 @@
 import random
 import string
 
-css_styles = """
+from ui_blocks.shared.compatibility import generate_rules
+
+css_styles = (
+    """
 html {overflow-y: scroll;}
 html:not(.is-ready):before {content: " ";position: fixed;right: 50%;bottom: 50%;
 margin: auto; border: 20px solid #EAF0F6; border-radius: 50%; border-top: 20px solid var(--loader-color); width: 20px; height: 20px;animation: loader 2s linear infinite;}
@@ -19,6 +22,8 @@ html.is-ready body {opacity: 1; visibility: visible; transition: opacity 0.5s;}
 .ui-tabs.left>.tab-nav button.selected {font-weight: bold;}
 .ui-tabs.left>.tabitem {border: none;}
 """
+    + generate_rules()
+)
 
 random_id = "".join(random.choices(string.ascii_letters + string.digits, k=8))
 

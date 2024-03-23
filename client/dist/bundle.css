@@ -105,57 +105,6 @@ body.unselectable * {
 .system-info textarea {
   resize: none;
 }
-body[class*="pipeline-native"] .diffusers-control {
-  display: none;
-}
-
-body[class*="pipeline-diffusers"] .native-control {
-  display: none;
-}
-
-body:not([class*="pipeline-diffusers-kd22"]) .diffusers-kd22-control {
-  display: none;
-}
-
-body[class*="pipeline-"][class*="-kd20"] [class*="unsupported_20"],
-body[class*="pipeline-native-kd21"] [class*="unsupported_21"],
-body[class*="pipeline-diffusers-kd21"] [class*="unsupported_d21"],
-body[class*="pipeline-native-kd22"] [class*="unsupported_22"],
-body[class*="pipeline-diffusers-kd22"] [class*="unsupported_d22"],
-body[class*="pipeline-native-kd30"] [class*="unsupported_30"],
-body[class*="pipeline-diffusers-kd30"] [class*="unsupported_d30"] {
-  display: none;
-}
-
-body[class*="pipeline-"][class*="-kd20"] .ui-tabs>.tab-nav>button:nth-child(3),
-body[class*="pipeline-"][class*="-kd20"] .ui-tabs>.tab-nav>button:nth-child(5) {
-  display: none;
-}
-
-body[class*="pipeline-native-kd30"] .ui-tabs>.tab-nav>button:nth-child(2),
-body[class*="pipeline-native-kd30"] .ui-tabs>.tab-nav>button:nth-child(3),
-body[class*="pipeline-native-kd30"] .ui-tabs>.tab-nav>button:nth-child(5) {
-  display: none;
-}
-
-body[class*="pipeline-diffusers-kd30"] .ui-tabs>.tab-nav>button:nth-child(3),
-body[class*="pipeline-diffusers-kd30"] .ui-tabs>.tab-nav>button:nth-child(4),
-body[class*="pipeline-diffusers-kd30"] .ui-tabs>.tab-nav>button:nth-child(5) {
-  display: none;
-}
-
-
-body[class*="pipeline-"][class*="-kd20"] .settings-tabs>.tabs>.tab-nav>button:nth-child(2),
-body[class*="pipeline-diffusers-kd21"] .settings-tabs>.tabs>.tab-nav>button:nth-child(2),
-body[class*="pipeline-"][class*="-kd22"] .settings-tabs>.tabs>.tab-nav>button:nth-child(2),
-body[class*="pipeline-"][class*="-kd30"] .settings-tabs>.tabs>.tab-nav>button:nth-child(2) {
-  display: none;
-}
-
-body:not(.pipeline-diffusers-kd22) .control-net {
-  display: none;
-}
-
 .k-form>div.form,
 .control-net>div:nth-child(3)>div>div.form {
   box-shadow: none;
@@ -289,5 +238,5 @@ html.has-lightbox body {
 }
 
 .kubin-progress-panel.active {
-  /* display: block; */
+  zoom: 1;
 }

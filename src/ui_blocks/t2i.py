@@ -1,4 +1,9 @@
 import gradio as gr
+from ui_blocks.shared.compatibility import (
+    batch_size_classes,
+    negative_prompt_classes,
+    prior_block_classes,
+)
 from ui_blocks.shared.samplers import samplers_controls
 from ui_blocks.shared.ui_shared import SharedUI
 from utils.gradio_ui import click_and_disable
@@ -19,7 +24,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
                 label="Negative prompt",
                 lines=2,
             )
-            negative_prompt.elem_classes = ["unsupported_20"]
+            negative_prompt.elem_classes = negative_prompt_classes()
 
             augmentations["ui_before_cnet"]()
 
@@ -172,7 +177,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
                     ) = samplers_controls()
                     seed = gr.Number(-1, label="Seed", precision=0)
                     batch_size = gr.Slider(1, 16, 1, step=1, label="Batch size")
-                    batch_size.elem_classes = ["unsupported_20", "inline-flex"]
+                    batch_size.elem_classes = batch_size_classes() + ["inline-flex"]
 
                 with gr.Row() as prior_block:
                     prior_scale = gr.Slider(
@@ -197,11 +202,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
                         elem_classes=["inline-flex"],
                         lines=2,
                     )
-                prior_block.elem_classes = [
-                    "unsupported_20",
-                    "unsupported_d30",
-                    "unsupported_30",
-                ]
+                prior_block.elem_classes = prior_block_classes()
             t2i_advanced_params.elem_classes = [
                 "block-advanced-params",
                 "t2i_advanced_params",

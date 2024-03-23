@@ -1,5 +1,10 @@
 from io import BytesIO
 import gradio as gr
+from ui_blocks.shared.compatibility import (
+    batch_size_classes,
+    negative_prompt_classes,
+    prior_block_classes,
+)
 from ui_blocks.shared.samplers import samplers_controls
 from ui_blocks.shared.ui_shared import SharedUI
 from utils.gradio_ui import click_and_disable
@@ -69,7 +74,7 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs, session):
                 negative_prompt = gr.TextArea(
                     "", placeholder="", label="Negative prompt", lines=2
                 )
-                negative_prompt.elem_classes = ["unsupported_20"]
+                negative_prompt.elem_classes = negative_prompt_classes()
 
             augmentations["ui_before_cnet"]()
             augmentations["ui_before_params"]()
@@ -160,7 +165,7 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs, session):
                     seed = gr.Number(-1, label="Seed", precision=0)
 
                     batch_size = gr.Slider(1, 16, 1, step=1, label="Batch size")
-                    batch_size.elem_classes = ["unsupported_20", "inline-flex"]
+                    batch_size.elem_classes = batch_size_classes() + ["inline-flex"]
 
                 with gr.Row() as prior_block:
                     prior_scale = gr.Slider(
@@ -182,11 +187,7 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs, session):
                     negative_prior_prompt = gr.TextArea(
                         "", label="Negative prior prompt", lines=2
                     )
-                prior_block.elem_classes = [
-                    "unsupported_20",
-                    "unsupported_d30",
-                    "unsupported_30",
-                ]
+                prior_block.elem_classes = prior_block_classes()
 
             infer_size.change(
                 fn=lambda x: [
@@ -269,9 +270,11 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs, session):
                     "prior_steps": prior_steps,
                     "negative_prior_prompt": negative_prior_prompt,
                     "input_seed": input_seed,
-                    "offset": None
-                    if not manual_size
-                    else (offset_top, offset_right, offset_bottom, offset_left),
+                    "offset": (
+                        None
+                        if not manual_size
+                        else (offset_top, offset_right, offset_bottom, offset_left)
+                    ),
                     "infer_size": infer_size,
                 }
 
