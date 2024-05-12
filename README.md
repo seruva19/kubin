@@ -7,39 +7,37 @@ Web-GUI for Kandinsky text-to-image diffusion models ([Kandinsky2](https://githu
 
 ## Disclaimer
 
-🚧 WORK IN PROGRESS 🚧 
+⚠️ THE PROJECT IS NOT ABANDONED ⚠️ BUT UPDATES MIGHT NOT BE AS FREQUENT ⚠️ 
 
 ## Features
 
-| Model                                                                              | 2.0 | 2.1 | 2.2 |3.0  |
-| ---------------------------------------------------------------------------------- | --- | --- | --- | --- |
-| Txt2img                                                                            | ✔   | ✔  |  ✔  | ✔  |
-| Img2img                                                                            | ✔   | ✔  |  ✔  | ✔  |
-| Mixing                                                                             |     | ✔  |  ✔  | 🕒 |
-| Inpainting                                                                         | ✔   | ✔  |  ✔  | ✔  |
-| Outpainting                                                                        |     | ✔  |  ✔  | 🕒 |
-| ControlNet                                                                         |     |     |  ✔  |    |
-| Diffusers pipeline                                                                 |     | ✔  |  ✔  |  ✔ |
-| Low-VRAM options                                                                   |     |     |  ✔  |  ✔ |
-| ext. [Image browser](https://github.com/seruva19/kubin-extensions)                 | ✔   | ✔  |  ✔  |  ✔ |
-| ext. [Image editor](https://github.com/seruva19/kubin-extensions)                  | ✔   | ✔  |  ✔  |  ✔ |
-| ext. [Fine-tuning](https://github.com/seruva19/kubin-extensions)                   |     | ✔  |  🕒 |     |
-| ext. [LoRA training and inference](https://github.com/seruva19/kubin-extensions)   |     |     |  ✔  |    |
-| ext. [Style library](https://github.com/seruva19/kubin-extensions)                 | ✔   | ✔  |  ✔  |  ✔ |
-| ext. [Upscaling](https://github.com/seruva19/kubin-extensions)                     | ✔   | ✔  |  ✔  |  ✔ |
-| ext. [Img2mesh](https://github.com/seruva19/kubin-extensions)                      | ✔   | ✔  |  ✔  |  ✔ |
-| ext. [Interrogation](https://github.com/seruva19/kubin-extensions)                 | ✔   | ✔  |  ✔  |  ✔ |
-| ext. [Segmentation](https://github.com/seruva19/kubin-extensions)                  | ✔   | ✔  |  ✔  |  ✔ |
-| ext. [Animation](https://github.com/seruva19/kubin-extensions)                     |     | 🕒  |  ✔  |    |
-| ext. [Video](https://github.com/seruva19/kubin-extensions)                         |     |     |     |  ✔ |
-| ext. [Background remover](https://github.com/seruva19/kubin-extensions)            | ✔   | ✔  |  ✔  |  ✔ |
-| Advanced prompt syntax                                                             |     |     | 🕒  |    |
-| Prompt weighting                                                                   |     |     | 🕒  |    |
-| ext. Area composition                                                              |     |     | 🕒  |    |
-
-## Kandinsky 3.0
-
-Read [here](https://github.com/seruva19/kubin/wiki/Docs#kandinsky-3).
+| Model                                                                              | 2.0 | 2.1 | 2.2 |3.0  |3.1  |
+| ---------------------------------------------------------------------------------- | --- | --- | --- | --- | --- |
+| Txt2img                                                                            | ✔   | ✔  |  ✔  | ✔  | ✔  |
+| Img2img                                                                            | ✔   | ✔  |  ✔  | ✔  |    |
+| Mixing                                                                             |     | ✔  |  ✔  | 🕒 |    |
+| Inpainting                                                                         | ✔   | ✔  |  ✔  | ✔  | 🕒  |
+| Outpainting                                                                        |     | ✔  |  ✔  | 🕒 | 🕒  |
+| ControlNet                                                                         |     |     |  ✔  |    |    |
+| IpAdapter                                                                          |     |     |      |    | 🕒  |
+| Diffusers pipeline                                                                 |     | ✔  |  ✔  |  ✔ |    |
+| Low-VRAM options                                                                   |     |     |  ✔  |  ✔ | 🕒  |
+| ext. [Image browser](https://github.com/seruva19/kubin-extensions)                 | ✔   | ✔  |  ✔  |  ✔ | ✔  |
+| ext. [Image editor](https://github.com/seruva19/kubin-extensions)                  | ✔   | ✔  |  ✔  |  ✔ | ✔  |
+| ext. [Fine-tuning](https://github.com/seruva19/kubin-extensions)                   |     | ✔  |  🕒 |     |    |
+| ext. [LoRA training and inference](https://github.com/seruva19/kubin-extensions)   |     |     |  ✔  |    |   |
+| ext. [Style library](https://github.com/seruva19/kubin-extensions)                 | ✔   | ✔  |  ✔  |  ✔ | ✔  |
+| ext. [Upscaling](https://github.com/seruva19/kubin-extensions)                     | ✔   | ✔  |  ✔  |  ✔ | ✔  |
+| ext. [Img2mesh](https://github.com/seruva19/kubin-extensions)                      | ✔   | ✔  |  ✔  |  ✔ | ✔  |
+| ext. [Interrogation](https://github.com/seruva19/kubin-extensions)                 | ✔   | ✔  |  ✔  |  ✔ | ✔  |
+| ext. [Segmentation](https://github.com/seruva19/kubin-extensions)                  | ✔   | ✔  |  ✔  |  ✔ | ✔  |
+| ext. [Animation](https://github.com/seruva19/kubin-extensions)                     |     | 🕒  |  ✔  |    |    |
+| ext. [Video](https://github.com/seruva19/kubin-extensions)                         |     |     |     |  ✔ |    |
+| ext. [Background remover](https://github.com/seruva19/kubin-extensions)            | ✔   | ✔  |  ✔  |  ✔ | ✔  |
+| ext. LLM prompt enhancer                                                           |     |     |     |    | 🕒  |
+| Advanced prompt syntax                                                             |     |     | 🕒  |    |     |
+| Prompt weighting                                                                   |     |     | 🕒  |    |     |
+| ext. Area composition                                                              |     |     | 🕒  |    |     |
 
 ## Screenshot
 	
@@ -52,5 +50,5 @@ Read [here](https://github.com/seruva19/kubin/wiki/Docs#kandinsky-3).
 
 ## Documentation
 
-Some information can be found in [Wiki](https://github.com/seruva19/kubin/wiki/Docs).
+Some bits of information can be found [here](https://github.com/seruva19/kubin/blob/main/DOCS.md).
 
