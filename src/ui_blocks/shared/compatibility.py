@@ -13,6 +13,9 @@ def send_outpaint_btn_classes():
 def send_mix_btn_classes():
     return [
         "unsupported_20",
+        "unsupported_30",
+        "unsupported_d30",
+        "unsupported_31",
     ]
 
 
@@ -21,6 +24,7 @@ def prior_block_classes():
         "unsupported_20",
         "unsupported_d30",
         "unsupported_30",
+        "unsupported_31",
     ]
 
 
@@ -68,6 +72,7 @@ def ext_availability_classes(ext_augment):
     supports_pipeline_model = ext_augment.get(
         "supports",
         [
+            "native-kd31",
             "diffusers-kd30",
             "native-kd30",
             "diffusers-kd22",
@@ -84,6 +89,9 @@ def ext_availability_classes(ext_augment):
 
     if "native-kd30" not in supports_pipeline_model:
         classes.append("unsupported_30")
+
+    if "native-kd31" not in supports_pipeline_model:
+        classes.append("unsupported_31")
 
     if "diffusers-kd21" not in supports_pipeline_model:
         classes.append("unsupported_d21")
@@ -117,7 +125,8 @@ def generate_rules():
         body[class*="pipeline-native-kd22"] [class*="unsupported_22"],
         body[class*="pipeline-diffusers-kd22"] [class*="unsupported_d22"],
         body[class*="pipeline-native-kd30"] [class*="unsupported_30"],
-        body[class*="pipeline-diffusers-kd30"] [class*="unsupported_d30"] {
+        body[class*="pipeline-diffusers-kd30"] [class*="unsupported_d30"],
+        body[class*="pipeline-native-kd31"] [class*="unsupported_31"] {
             display: none;
         }
 
@@ -138,6 +147,11 @@ def generate_rules():
             display: none;
         }
 
+        body[class*="pipeline-native-kd31"] .ui-tabs>.tab-nav>button:nth-child(2),
+        body[class*="pipeline-native-kd31"] .ui-tabs>.tab-nav>button:nth-child(3),
+        body[class*="pipeline-native-kd31"] .ui-tabs>.tab-nav>button:nth-child(5) {
+            display: none;
+        }
 
         body[class*="pipeline-"][class*="-kd20"] .settings-tabs>.tabs>.tab-nav>button:nth-child(2),
         body[class*="pipeline-diffusers-kd21"] .settings-tabs>.tabs>.tab-nav>button:nth-child(2),
@@ -147,6 +161,10 @@ def generate_rules():
         }
 
         body:not(.pipeline-diffusers-kd22) .control-net {
+            display: none;
+        }
+        
+        body:not(.pipeline-native-kd31) .ip-adapter {
             display: none;
         }
     """
@@ -160,6 +178,7 @@ def sampler20_classes():
         "unsupported_d22",
         "unsupported_30",
         "unsupported_d30",
+        "unsupported_31",
     ]
 
 
@@ -170,6 +189,7 @@ def sampler21_classes():
         "unsupported_22",
         "unsupported_30",
         "unsupported_d30",
+        "unsupported_31",
     ]
 
 
@@ -179,4 +199,5 @@ def sampler_diffusers_classes():
         "unsupported_21",
         "unsupported_30",
         "unsupported_d30",
+        "unsupported_31",
     ]

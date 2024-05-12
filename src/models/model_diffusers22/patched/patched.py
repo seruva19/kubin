@@ -160,6 +160,7 @@ class KandinskyV22PipelinePatched(DiffusionPipeline):
                 encoder_hidden_states=None,
                 added_cond_kwargs=added_cond_kwargs,
                 return_dict=False,
+                # cross_attention_kwargs={"scale": 0.5},
             )[0]
 
             if do_classifier_free_guidance:
