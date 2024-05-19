@@ -45,8 +45,9 @@ ui:
 
 native:
   flash_attention: false
-  text_encoder: pszemraj/flan-ul2-text-encoder
-  optimization_flags: kd30_low_vram
+  text_encoder: default
+  use_kandinsky_flash: true
+  optimization_flags: kd30_low_vram;kd31_low_vram
 
 diffusers:
   half_precision_weights: true
