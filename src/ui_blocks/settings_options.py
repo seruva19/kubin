@@ -21,16 +21,18 @@ def options_ui(kubin: Kubin, start_fn, ui):
                     elem_classes=["options-select", "selected"],
                 )
                 gr.HTML(
-                    "Gradio", elem_id="options-gradio", elem_classes="options-select"
-                )
-                gr.HTML("UI", elem_id="options-ui", elem_classes="options-select")
-                gr.HTML(
                     "Native", elem_id="options-native", elem_classes="options-select"
                 )
                 gr.HTML(
                     "Diffusers",
                     elem_id="options-diffusers",
                     elem_classes="options-select",
+                )
+                gr.HTML(
+                    "Gradio", elem_id="options-gradio", elem_classes="options-select"
+                )
+                gr.HTML(
+                    "Interface", elem_id="options-ui", elem_classes="options-select"
                 )
 
         with gr.Column(scale=5):
