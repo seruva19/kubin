@@ -16,7 +16,7 @@ Web-GUI for Kandinsky text-to-image diffusion models ([Kandinsky2](https://githu
 | Txt2img                                                                            | ✔   | ✔  |  ✔  | ✔  | ✔  |
 | Img2img                                                                            | ✔   | ✔  |  ✔  | ✔  |    |
 | Mixing                                                                             |     | ✔  |  ✔  | 🕒 |    |
-| Inpainting                                                                         | ✔   | ✔  |  ✔  | ✔  | 🕒  |
+| Inpainting                                                                         | ✔   | ✔  |  ✔  | ✔  | ✔  |
 | Outpainting                                                                        |     | ✔  |  ✔  | 🕒 | 🕒  |
 | ControlNet                                                                         |     |     |  ✔  |    |    |
 | IpAdapter                                                                          |     |     |      |    | 🕒  |
