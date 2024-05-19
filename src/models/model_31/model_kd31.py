@@ -3,7 +3,11 @@ import torch
 import torch.backends
 import torch
 
-from models.model_31.kandinsky31 import get_T2I_Flash_pipeline, get_inpainting_pipeline
+from models.model_31.kandinsky31 import (
+    get_T2I_Flash_pipeline,
+    get_T2I_pipeline,
+    get_inpainting_pipeline,
+)
 import os
 from models.model_31.kandinsky31.inpainting_pipeline import Kandinsky3InpaintingPipeline
 from models.model_31.kandinsky31.t2i_pipeline import Kandinsky3T2IPipeline
@@ -19,44 +23,73 @@ class Model_KD31:
         k_log("activating pipeline: native (3.1)")
 
         self.params = params
+
+        self.use_flash_pipeline = False
         self.t2i_pipe: Kandinsky3T2IPipeline | None = None
         self.inpainting_pipe: Kandinsky3InpaintingPipeline | None = None
 
     def prepare_model(self, task):
         k_log(f"task queued: {task}")
-        assert task in ["text2img"]
+        assert task in ["text2img", "inpainting"]
 
         cache_dir = self.params("general", "cache_dir")
         device = self.params("general", "device")
+
+        use_flash_pipeline_before = self.use_flash_pipeline
+        self.use_flash_pipeline = self.params("native", "use_kandinsky_flash")
+
         text_encoder_path = self.params("native", "text_encoder")
+        if text_encoder_path == "default":
+            text_encoder_path = None
+
         environment = Model_KD31_Environment().from_config(self.params)
 
         if task == "text2img":
-            if self.t2i_pipe is not None:
-                return
-            else:
+            if (
+                self.t2i_pipe is None
+                or use_flash_pipeline_before != self.use_flash_pipeline
+            ):
                 self.flush(task)
 
-                self.t2i_pipe = get_T2I_Flash_pipeline(
-                    device_map=torch.device(device),
-                    dtype_map={
-                        "unet": torch.float32,
-                        "text_encoder": torch.float16,
-                        "movq": torch.float32,
-                    },
-                    low_cpu_mem_usage=True,
-                    load_in_8bit=False,
-                    load_in_4bit=False,
-                    cache_dir=cache_dir,
-                    unet_path=None,
-                    # text_encoder_path=text_encoder_path,
-                    movq_path=None,
-                )
+                if self.use_flash_pipeline:
+                    k_log(f"running flash K3 pipeline")
 
-        if task == "inpainting":
-            if self.inpainting_pipe is not None:
-                return
-            else:
+                    self.t2i_pipe = get_T2I_Flash_pipeline(
+                        device_map=torch.device(device),
+                        dtype_map={
+                            "unet": torch.float32,
+                            "text_encoder": torch.float16,
+                            "movq": torch.float32,
+                        },
+                        low_cpu_mem_usage=True,
+                        load_in_8bit=False,
+                        load_in_4bit=False,
+                        cache_dir=cache_dir,
+                        unet_path=None,
+                        text_encoder_path=text_encoder_path,
+                        movq_path=None,
+                    )
+                else:
+                    k_log(f"running regular K3 pipeline")
+
+                    self.t2i_pipe = get_T2I_pipeline(
+                        device_map=torch.device(device),
+                        dtype_map={
+                            "unet": torch.float32,
+                            "text_encoder": torch.float16,
+                            "movq": torch.float32,
+                        },
+                        low_cpu_mem_usage=True,
+                        load_in_8bit=False,
+                        load_in_4bit=False,
+                        cache_dir=cache_dir,
+                        unet_path=None,
+                        text_encoder_path=text_encoder_path,
+                        movq_path=None,
+                    )
+
+        elif task == "inpainting":
+            if self.inpainting_pipe is None:
                 self.flush(task)
 
                 self.inpainting_pipe = get_inpainting_pipeline(
@@ -71,7 +104,7 @@ class Model_KD31:
                     load_in_4bit=False,
                     cache_dir=cache_dir,
                     unet_path=None,
-                    text_encoder_path=None,
+                    text_encoder_path=text_encoder_path,
                     movq_path=None,
                 )
 
@@ -138,7 +171,7 @@ class Model_KD31:
             text=params["prompt"],
             image=image,
             mask=mask,
-            negative_text=params["negative_prompt"],
+            negative_text=None,  # TODO: when using params["negative_prompt"], error is raised
             images_num=params["batch_count"],
             bs=params["batch_size"],
             guidance_weight_text=params["guidance_scale"],
@@ -158,7 +191,7 @@ class Model_KD31:
         environment = Model_KD31_Environment().from_config(self.params)
         cleared = False
 
-        if task == "text2img" or task is None:
+        if task == "inpainting" or task is None:
             if self.t2i_pipe is not None:
                 k_log(f"t2i_pipe -> cpu")
 
@@ -169,7 +202,7 @@ class Model_KD31:
                 self.t2i_pipe = None
                 cleared = True
 
-        elif task == "inpainting" or task is None:
+        elif task == "text2img" or task is None:
             if self.inpainting_pipe is not None:
                 k_log(f"inpainting_pipe -> cpu")
 

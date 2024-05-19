@@ -307,12 +307,14 @@ def get_inpainting_pipeline(
             repo_id="ai-forever/Kandinsky3.1",
             filename="weights/kandinsky3_inpainting.pt",
             cache_dir=cache_dir,
+            resume_download=True,
         )
     if text_encoder_path is None:
         text_encoder_path = snapshot_download(
             repo_id="ai-forever/Kandinsky3.1",
             allow_patterns="weights/flan_ul2_encoder/*",
             cache_dir=cache_dir,
+            resume_download=True,
         )
         text_encoder_path = os.path.join(text_encoder_path, "weights/flan_ul2_encoder")
     if movq_path is None:
@@ -320,6 +322,7 @@ def get_inpainting_pipeline(
             repo_id="ai-forever/Kandinsky3.1",
             filename="weights/movq.pt",
             cache_dir=cache_dir,
+            resume_download=True,
         )
 
     unet, null_embedding = get_inpainting_unet(
