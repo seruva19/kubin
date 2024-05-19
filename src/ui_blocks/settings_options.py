@@ -35,10 +35,10 @@ def options_ui(kubin: Kubin, start_fn, ui):
 
         with gr.Column(scale=5):
             options_tab_general(kubin)
-            options_tab_gradio(kubin)
-            options_tab_ui(kubin)
             options_tab_native(kubin)
             options_tab_diffusers(kubin)
+            options_tab_gradio(kubin)
+            options_tab_ui(kubin)
 
     with gr.Row():
         apply_changes = gr.Button(
