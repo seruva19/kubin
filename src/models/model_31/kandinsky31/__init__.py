@@ -6,7 +6,8 @@ The code has been adopted from Kandinsky-3
 """
 
 import os
-from typing import Optional, Union
+from typing import Optional, Union, cast, no_type_check
+
 
 import torch
 from huggingface_hub import hf_hub_download, snapshot_download
@@ -22,10 +23,16 @@ from models.model_31.kandinsky31.model.diffusion import (
 
 from models.model_31.kandinsky31.t2i_pipeline import Kandinsky3T2IPipeline
 from models.model_31.kandinsky31.inpainting_pipeline import Kandinsky3InpaintingPipeline
+from models.model_31.kandinsky31.t2i_lowvram_pipeline import (
+    Kandinsky3T2ILowVRAMPipeline,
+)
+from models.model_31.kandinsky31.utils import release_vram
+from models.model_31.model_kd31_env import Model_KD31_Environment
 
 
 def get_T2I_unet(
     device: Union[str, torch.device],
+    environment: Model_KD31_Environment,
     weights_path: Optional[str] = None,
     dtype: Union[str, torch.dtype] = torch.float32,
 ) -> (UNet, Optional[torch.Tensor], Optional[dict]):  # type: ignore
@@ -45,19 +52,26 @@ def get_T2I_unet(
         add_self_attention=(False, True, True, True),
     )
 
-    null_embedding = None
-    if weights_path:
+    if environment.kd31_low_vram:
         state_dict = torch.load(weights_path, map_location=torch.device("cpu"))
-        null_embedding = state_dict["null_embedding"]
         unet.load_state_dict(state_dict["unet"])
-
-    unet.to(device=device, dtype=dtype).eval()
-    return unet, null_embedding
+        unet.eval().to(cast(torch.device, device), torch.float8_e4m3fn)
+        return unet, None, None
+    else:
+        null_embedding = None
+        if weights_path:
+            state_dict = torch.load(weights_path, map_location=torch.device("cpu"))
+            null_embedding = state_dict["null_embedding"]
+            unet.load_state_dict(state_dict["unet"])
+        unet.to(device=device, dtype=dtype).eval()
+        return unet, null_embedding
 
 
 def get_T5encoder(
     device: Union[str, torch.device],
+    environment: Model_KD31_Environment,
     weights_path: str,
+    cache_dir: str,
     projection_name: str,
     dtype: Union[str, torch.dtype] = torch.float32,
     low_cpu_mem_usage: bool = True,
@@ -66,10 +80,14 @@ def get_T5encoder(
 ) -> (T5TextConditionProcessor, T5TextConditionEncoder):  # type: ignore
     tokens_length = 128
     context_dim = 4096
-    processor = T5TextConditionProcessor(tokens_length, weights_path)
+    processor = T5TextConditionProcessor(
+        tokens_length=tokens_length, processor_path=weights_path, cache_dir=cache_dir
+    )
     condition_encoder = T5TextConditionEncoder(
-        weights_path,
-        context_dim,
+        model_path=weights_path,
+        environment=environment,
+        context_dim=context_dim,
+        cache_dir=cache_dir,
         low_cpu_mem_usage=low_cpu_mem_usage,
         device=device,
         dtype=dtype,
@@ -88,8 +106,19 @@ def get_T5encoder(
     return processor, condition_encoder
 
 
+def get_T5processor(weights_path: str, cache_dir: str) -> T5TextConditionProcessor:
+    model_names = {"t5": weights_path}
+    tokens_length = {"t5": 128}
+
+    processor = T5TextConditionProcessor(
+        tokens_length["t5"], model_names["t5"], cache_dir
+    )
+    return processor
+
+
 def get_movq(
     device: Union[str, torch.device],
+    environment: Model_KD31_Environment,
     weights_path: Optional[str] = None,
     dtype: Union[str, torch.dtype] = torch.float32,
 ) -> MoVQ:
@@ -106,17 +135,20 @@ def get_movq(
         "dropout": 0.0,
     }
     movq = MoVQ(generator_config)
-
     if weights_path:
         state_dict = torch.load(weights_path, map_location=torch.device("cpu"))
         movq.load_state_dict(state_dict)
 
-    movq.to(device=device, dtype=dtype).eval()
+    if environment.kd31_low_vram:
+        movq.eval().to(cast(torch.device, device), torch.float8_e4m3fn)
+    else:
+        movq.to(device=device, dtype=dtype).eval()
     return movq
 
 
 def get_inpainting_unet(
     device: Union[str, torch.device],
+    environment: Model_KD31_Environment,
     weights_path: Optional[str] = None,
     dtype: Union[str, torch.dtype] = torch.float32,
 ) -> (UNet, Optional[torch.Tensor], Optional[dict]):  # type: ignore
@@ -136,17 +168,23 @@ def get_inpainting_unet(
         add_self_attention=(False, True, True, True),
     )
 
-    null_embedding = None
-    if weights_path:
+    if environment.kd31_low_vram:
         state_dict = torch.load(weights_path, map_location=torch.device("cpu"))
-        null_embedding = state_dict["null_embedding"]
         unet.load_state_dict(state_dict["unet"])
-
-    unet.to(device=device, dtype=dtype).eval()
-    return unet, null_embedding
+        unet.eval().to(cast(torch.device, device), torch.float8_e4m3fn)
+        return unet, None, None
+    else:
+        null_embedding = None
+        if weights_path:
+            state_dict = torch.load(weights_path, map_location=torch.device("cpu"))
+            null_embedding = state_dict["null_embedding"]
+            unet.load_state_dict(state_dict["unet"])
+        unet.to(device=device, dtype=dtype).eval()
+        return unet, null_embedding
 
 
 def get_T2I_pipeline(
+    environment: Model_KD31_Environment,
     device_map: Union[str, torch.device, dict],
     dtype_map: Union[str, torch.dtype, dict] = torch.float32,
     low_cpu_mem_usage: bool = True,
@@ -187,32 +225,86 @@ def get_T2I_pipeline(
             cache_dir=cache_dir,
         )
 
-    unet, null_embedding = get_T2I_unet(
-        device_map["unet"], unet_path, dtype=dtype_map["unet"]
-    )
-    processor, condition_encoder = get_T5encoder(
-        device_map["text_encoder"],
-        text_encoder_path,
-        "projection.pt",
-        dtype=dtype_map["text_encoder"],
-        low_cpu_mem_usage=low_cpu_mem_usage,
-        load_in_8bit=load_in_8bit,
-        load_in_4bit=load_in_4bit,
-    )
-    movq = get_movq(device_map["movq"], movq_path, dtype=dtype_map["movq"])
-    return Kandinsky3T2IPipeline(
-        device_map,
-        dtype_map,
-        unet,
-        null_embedding,
-        processor,
-        condition_encoder,
-        movq,
-        False,
-    )
+    if environment.kd31_low_vram:
+        unet_loader = lambda: get_T2I_unet(
+            device=device_map["unet"],
+            environment=environment,
+            weights_path=unet_path,
+            dtype=dtype_map["unet"],
+        )[0]
+
+        null_embedding = get_T2I_nullemb_projections(unet_path)
+        processor = get_T5processor(text_encoder_path, cache_dir)
+
+        encoder_loader = lambda: get_T5encoder(
+            device=device_map["text_encoder"],
+            environment=environment,
+            weights_path=text_encoder_path,
+            cache_dir=cache_dir,
+            projection_name="projection.pt",
+            dtype=dtype_map["text_encoder"],
+            low_cpu_mem_usage=low_cpu_mem_usage,
+            load_in_8bit=load_in_8bit,
+            load_in_4bit=load_in_4bit,
+        )[1]
+
+        movq_loader = lambda: get_movq(
+            device=device_map["movq"],
+            environment=environment,
+            weights_path=movq_path,
+            dtype=dtype_map["movq"],
+        )
+
+        release_vram()
+
+        return Kandinsky3T2ILowVRAMPipeline(
+            device_map=device_map,
+            dtype_map=dtype_map,
+            unet_loader=unet_loader,
+            null_embedding=null_embedding,
+            t5_processor=processor,
+            t5_encoder_loader=encoder_loader,
+            movq_loader=movq_loader,
+            gan=False,
+        )
+    else:
+        unet, null_embedding = get_T2I_unet(
+            device_map["unet"], unet_path, dtype=dtype_map["unet"]
+        )
+        processor, condition_encoder = get_T5encoder(
+            device_map["text_encoder"],
+            text_encoder_path,
+            "projection.pt",
+            dtype=dtype_map["text_encoder"],
+            low_cpu_mem_usage=low_cpu_mem_usage,
+            load_in_8bit=load_in_8bit,
+            load_in_4bit=load_in_4bit,
+        )
+        movq = get_movq(device_map["movq"], movq_path, dtype=dtype_map["movq"])
+        return Kandinsky3T2IPipeline(
+            device_map,
+            dtype_map,
+            unet,
+            null_embedding,
+            processor,
+            condition_encoder,
+            movq,
+            False,
+        )
+
+
+@no_type_check
+def get_T2I_nullemb_projections(
+    weights_path: Optional[str] = None,
+) -> (torch.Tensor, dict):
+    state_dict = torch.load(weights_path, map_location=torch.device("cpu"))
+    null_embedding = state_dict["null_embedding"]
+
+    return null_embedding
 
 
 def get_T2I_Flash_pipeline(
+    environment: Model_KD31_Environment,
     device_map: Union[str, torch.device, dict],
     dtype_map: Union[str, torch.dtype, dict] = torch.float32,
     low_cpu_mem_usage: bool = True,
@@ -222,6 +314,7 @@ def get_T2I_Flash_pipeline(
     unet_path: str = None,
     text_encoder_path: str = None,
     movq_path: str = None,
+    fp16: bool = True,
 ) -> Kandinsky3T2IPipeline:
     # assert ((unet_path is not None) or (text_encoder_path is not None) or (movq_path is not None))
     if not isinstance(device_map, dict):
@@ -256,29 +349,73 @@ def get_T2I_Flash_pipeline(
             resume_download=True,
         )
 
-    unet, null_embedding = get_T2I_unet(
-        device_map["unet"], unet_path, dtype=dtype_map["unet"]
-    )
-    processor, condition_encoder = get_T5encoder(
-        device_map["text_encoder"],
-        text_encoder_path,
-        "projection_flash.pt",
-        dtype=dtype_map["text_encoder"],
-        low_cpu_mem_usage=low_cpu_mem_usage,
-        load_in_8bit=load_in_8bit,
-        load_in_4bit=load_in_4bit,
-    )
-    movq = get_movq(device_map["movq"], movq_path, dtype=dtype_map["movq"])
-    return Kandinsky3T2IPipeline(
-        device_map,
-        dtype_map,
-        unet,
-        null_embedding,
-        processor,
-        condition_encoder,
-        movq,
-        True,
-    )
+    if environment.kd31_low_vram:
+        null_embedding = get_T2I_nullemb_projections(unet_path)
+        processor = get_T5processor(text_encoder_path, cache_dir)
+        encoder_loader = lambda: get_T5encoder(
+            device=device_map["text_encoder"],
+            environment=environment,
+            weights_path=text_encoder_path,
+            cache_dir=cache_dir,
+            projection_name="projection_flash.pt",
+            dtype=dtype_map["text_encoder"],
+            low_cpu_mem_usage=low_cpu_mem_usage,
+            load_in_8bit=load_in_8bit,
+            load_in_4bit=load_in_4bit,
+        )[1]
+
+        unet_loader = lambda: get_T2I_unet(
+            device=device_map["unet"],
+            environment=environment,
+            weights_path=unet_path,
+            dtype=dtype_map["unet"],
+        )[0]
+
+        movq_loader = lambda: get_movq(
+            device=device_map["movq"],
+            environment=environment,
+            weights_path=movq_path,
+            dtype=dtype_map["movq"],
+        )
+
+        release_vram()
+
+        return Kandinsky3T2ILowVRAMPipeline(
+            device_map=device_map,
+            dtype_map=dtype_map,
+            unet_loader=unet_loader,
+            null_embedding=null_embedding,
+            t5_processor=processor,
+            t5_encoder_loader=encoder_loader,
+            movq_loader=movq_loader,
+            gan=True,
+        )
+
+    else:
+        unet, null_embedding = get_T2I_unet(
+            device_map["unet"], unet_path, dtype=dtype_map["unet"]
+        )
+        processor, condition_encoder = get_T5encoder(
+            device_map["text_encoder"],
+            text_encoder_path,
+            "projection_flash.pt",
+            dtype=dtype_map["text_encoder"],
+            low_cpu_mem_usage=low_cpu_mem_usage,
+            load_in_8bit=load_in_8bit,
+            load_in_4bit=load_in_4bit,
+        )
+        movq = get_movq(device_map["movq"], movq_path, dtype=dtype_map["movq"])
+
+        return Kandinsky3T2IPipeline(
+            device_map,
+            dtype_map,
+            unet,
+            null_embedding,
+            processor,
+            condition_encoder,
+            movq,
+            True,
+        )
 
 
 def get_inpainting_pipeline(

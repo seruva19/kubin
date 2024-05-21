@@ -4,12 +4,37 @@
 The code has been adopted from Kandinsky-3
 (https://github.com/ai-forever/Kandinsky-3/blob/main/kandinsky3/utils.py)
 """
-
+import math
+import gc
+import sys
 from omegaconf import OmegaConf
 import numpy as np
 from scipy import ndimage
+import torch
 import torch.nn as nn
 from skimage.transform import resize
+
+from utils.logging import k_log
+
+
+def release_vram():
+    gc.collect()
+    torch.cuda.empty_cache()
+    torch.cuda.ipc_collect()
+
+
+def report_mem_usage(stage):
+    stage = f" ({stage})" if stage else ""
+    in_mb = lambda bytes: round(bytes / (1024**2))
+
+    total_memory = in_mb(torch.cuda.get_device_properties(0).total_memory)
+    reserved_memory = in_mb(torch.cuda.memory_reserved(0))
+    allocated_memory = in_mb(torch.cuda.memory_allocated(0))
+
+    reserved_percentage = math.ceil((reserved_memory / total_memory) * 100)
+
+    message = f"vram usage{stage} -> total: {total_memory} MB / reserved: {reserved_memory} MB ({reserved_percentage}%) / allocated: {allocated_memory} MB"
+    k_log(message)
 
 
 def load_conf(config_path):

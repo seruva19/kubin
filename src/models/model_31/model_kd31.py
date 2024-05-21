@@ -1,4 +1,7 @@
 import gc
+from models.model_31.kandinsky31.t2i_lowvram_pipeline import (
+    Kandinsky3T2ILowVRAMPipeline,
+)
 import torch
 import torch.backends
 import torch
@@ -25,7 +28,9 @@ class Model_KD31:
         self.params = params
 
         self.use_flash_pipeline = False
-        self.t2i_pipe: Kandinsky3T2IPipeline | None = None
+        self.t2i_pipe: Kandinsky3T2IPipeline | Kandinsky3T2ILowVRAMPipeline | None = (
+            None
+        )
         self.inpainting_pipe: Kandinsky3InpaintingPipeline | None = None
 
     def prepare_model(self, task):
@@ -55,6 +60,7 @@ class Model_KD31:
                     k_log(f"running flash K3 pipeline")
 
                     self.t2i_pipe = get_T2I_Flash_pipeline(
+                        environment=environment,
                         device_map=torch.device(device),
                         dtype_map={
                             "unet": torch.float32,
@@ -73,6 +79,7 @@ class Model_KD31:
                     k_log(f"running regular K3 pipeline")
 
                     self.t2i_pipe = get_T2I_pipeline(
+                        environment=environment,
                         device_map=torch.device(device),
                         dtype_map={
                             "unet": torch.float32,
