@@ -85,9 +85,9 @@ Running on Metal GPUs (Apple) [instructions here](https://github.com/seruva19/ku
 Its [text encoder](https://huggingface.co/google/flan-ul2) is large, so "out-of-the-box" inference without CUDA OOM error is not possible even for GPUs with 24 Gb of VRAM.
 
 There are two options to overcome this:
-1) Run original ('native') pipeline with some optimizations that were borrowed from @SLAPaper's [work](https://github.com/seruva19/kubin/discussions/166). This pipeline is enabled by adding `kd30_low_vram` string into 'Optimization flags' field ('Options' -> 'Native'). This flag has been included by default since [c2e2a8a](https://github.com/seruva19/kubin/commit/c2e2a8a1c00b30e418d79708ebd3732c53e4de4c), so choosing the 'kd30+native' pipeline will automatically enable optimizations and reduce VRAM usage to about 11 Gb. 
+1) Run original ('native') pipeline with some optimizations that were borrowed from @SLAPaper's [work](https://github.com/seruva19/kubin/discussions/166). This pipeline is enabled by adding `kd30_low_vram` (or `kd31_low_vram` accordingly) string into 'Optimization flags' field ('Options' -> 'Native'). The optimizations  have been enabled by default, so choosing the 'kd30+native' (or 'kd31+native') pipeline will automatically reduce VRAM usage (to about 11 Gb for 3.0 and 17 Gb for 3.1). 
 
-2) Run 🤗 diffusers-based pipeline, which offer a [sequential model offloading option](https://huggingface.co/docs/diffusers/optimization/memory#cpu-offloading). It should be turned on manually, go to "Settings" -> "Diffusers" tab and check the box for "Enable sequential CPU offload". 
+2) (currently only for 3.0) Run 🤗 diffusers-based pipeline, which offer a [sequential model offloading option](https://huggingface.co/docs/diffusers/optimization/memory#cpu-offloading). It should be turned on manually, go to "Settings" -> "Diffusers" tab and check the box for "Enable sequential CPU offload". 
 
 Perhaps MPS users also might be able to run Kandinsky 3 thanks to unified memory (see https://github.com/huggingface/diffusers/issues/6028), but I haven't been able to try it out and confirm this. 
 
@@ -110,7 +110,7 @@ At default settings, full 2.2 model does not fit into 8 Gb. If you have a low-en
 
 That should decrease VRAM consumption to somewhere around 2 Gb for 512x512 image (3 Gb for 1024x1024). 
 Depending of your computing power, you may try turn on/off specific flags until optimal VRAM/speed ratio will be met. 
-Note that these optimizations are implemented only for 2.2 model, and not applicable to earlier models (2.0 and 2.1) or Kandinsky 3.0 (which has its own optimizations, read [above](https://github.com/seruva19/kubin/wiki/Docs/_edit#kandinsky-3))
+Note that these optimizations are implemented only for 2.2 model, and not applicable to earlier models (2.0 and 2.1) or Kandinsky 3.* (which has its own optimizations, read section above).  
 
 ### FlashAttention
 
@@ -151,10 +151,14 @@ You may want to check [closed pull requests](https://github.com/seruva19/kubin/i
 * Kandinsky model weights: https://huggingface.co/ai-forever, https://huggingface.co/kandinsky-community
 * Default styles list from: https://fusionbrain.ai/, https://github.com/Douleb/SDXL-A1111-Styles
 * Diffusers Kandinsky pipeline: https://huggingface.co/docs/diffusers/main/en/api/pipelines/kandinsky
-* Scripts for t2i, i2i, mix, inpaint, fine-tuning: https://github.com/ai-forever/Kandinsky-2
+* Scripts for t2i, i2i, mix, inpaint, fine-tuning: https://github.com/ai-forever/Kandinsky-2, https://github.com/ai-forever/Kandinsky-3 
 * Upscaling: https://github.com/xinntao/Real-ESRGAN, https://github.com/ai-forever/Real-ESRGAN
 * 3D model generation: https://github.com/openai/shap-e
 * Mask extraction: https://github.com/facebookresearch/segment-anything
+* Deforum-Kandinsky: https://github.com/ai-forever/deforum-kandinsky
+* Rembg: https://github.com/danielgatis/rembg
+* VideoCrafter: https://github.com/AILab-CVC/VideoCrafter 
+* Zero123++: https://github.com/SUDO-AI-3D/zero123plus
+* Kandinsky Video: https://github.com/ai-forever/KandinskyVideo/
 * Prompt interrogation: https://github.com/pharmapsychotic/clip-interrogator
 * JS libraries: https://github.com/caroso1222/notyf, https://github.com/andreknieriem/simplelightbox, https://github.com/scaleflex/filerobot-image-editor
-* TODO
