@@ -100,6 +100,9 @@ class Model_KD31:
                 self.flush(task)
 
                 self.inpainting_pipe = get_inpainting_pipeline(
+                    environment=Model_KD31_Environment(
+                        kd31_low_vram=False
+                    ),  # optimizations for inpainting are currently not functioning properly
                     device_map=torch.device(device),
                     dtype_map={
                         "unet": torch.float32,
@@ -202,9 +205,14 @@ class Model_KD31:
             if self.t2i_pipe is not None:
                 k_log(f"t2i_pipe -> cpu")
 
-                self.t2i_pipe.t5_encoder.to("cpu")
-                self.t2i_pipe.unet.to("cpu")
-                self.t2i_pipe.movq.to("cpu")
+                if self.t2i_pipe.t5_encoder is not None:
+                    self.t2i_pipe.t5_encoder.to("cpu")
+
+                if self.t2i_pipe.unet is not None:
+                    self.t2i_pipe.unet.to("cpu")
+
+                if self.t2i_pipe.movq is not None:
+                    self.t2i_pipe.movq.to("cpu")
 
                 self.t2i_pipe = None
                 cleared = True
@@ -213,9 +221,14 @@ class Model_KD31:
             if self.inpainting_pipe is not None:
                 k_log(f"inpainting_pipe -> cpu")
 
-                self.inpainting_pipe.t5_encoder.to("cpu")
-                self.inpainting_pipe.unet.to("cpu")
-                self.inpainting_pipe.movq.to("cpu")
+                if self.inpainting_pipe.t5_encoder is not None:
+                    self.inpainting_pipe.t5_encoder.to("cpu")
+
+                if self.inpainting_pipe.unet is not None:
+                    self.inpainting_pipe.unet.to("cpu")
+
+                if self.inpainting_pipe.movq is not None:
+                    self.inpainting_pipe.movq.to("cpu")
 
                 self.inpainting_pipe = None
                 cleared = True

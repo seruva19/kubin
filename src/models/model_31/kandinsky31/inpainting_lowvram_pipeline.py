@@ -5,7 +5,8 @@ The code has been adopted from Kandinsky-3
 (https://github.com/ai-forever/Kandinsky-3/blob/main/kandinsky3/inpainting_pipeline.py)
 """
 
-from typing import Union, List
+import random
+from typing import Callable, Union, List
 import PIL
 import numpy as np
 
@@ -13,6 +14,7 @@ import torch
 import torchvision.transforms as T
 from einops import repeat
 
+from models.model_30.kandinsky3.utils import release_vram
 from models.model_31.kandinsky31.model.unet import UNet
 from models.model_31.kandinsky31.movq import MoVQ
 from models.model_31.kandinsky31.condition_encoders import T5TextConditionEncoder
@@ -22,9 +24,11 @@ from models.model_31.kandinsky31.model.diffusion import (
     get_named_beta_schedule,
 )
 from models.model_31.kandinsky31.utils import (
+    report_mem_usage,
     resize_image_for_diffusion,
     resize_mask_for_diffusion,
 )
+from utils.logging import k_log
 
 
 class Kandinsky3InpaintingLowVRAMPipeline:
@@ -33,22 +37,24 @@ class Kandinsky3InpaintingLowVRAMPipeline:
         self,
         device_map: Union[str, torch.device, dict],
         dtype_map: Union[str, torch.dtype, dict],
-        unet: UNet,
+        unet_loader: Callable[[], UNet],
         null_embedding: torch.Tensor,
         t5_processor: T5TextConditionProcessor,
-        t5_encoder: T5TextConditionEncoder,
-        movq: MoVQ,
+        t5_encoder_loader: Callable[[], T5TextConditionEncoder],
+        movq_loader: Callable[[], MoVQ],
     ):
+        k_log("running low vram inpainting pipeline")
+
         self.device_map = device_map
         self.dtype_map = dtype_map
         self.to_pil = T.ToPILImage()
         self.to_tensor = T.ToTensor()
 
-        self.unet = unet
+        self.unet_loader = unet_loader
         self.null_embedding = null_embedding
         self.t5_processor = t5_processor
-        self.t5_encoder = t5_encoder
-        self.movq = movq
+        self.t5_encoder_loader = t5_encoder_loader
+        self.movq_loader = movq_loader
 
     def shared_step(self, batch: dict) -> dict:
         image = batch["image"]
@@ -62,19 +68,34 @@ class Kandinsky3InpaintingLowVRAMPipeline:
 
         if "masked_image" in batch:
             masked_latent = batch["masked_image"]
-        elif self.unet.in_layer.in_channels == 9:
+        # elif self.unet.in_layer.in_channels == 9:
+        elif True:  # self.unet.in_layer.in_channels is always 9 for inpainting unet
             masked_latent = image.masked_fill((1 - mask).bool(), 0)
         else:
             raise ValueError()
 
-        with torch.cuda.amp.autocast(dtype=self.dtype_map["movq"]):
-            masked_latent = self.movq.encode(masked_latent)
+        # with torch.cuda.amp.autocast(dtype=self.dtype_map["movq"]):
+        with torch.autocast("cuda"):
+            with torch.no_grad():
+                report_mem_usage("preparing shared_step movq")
+                self.movq = self.movq_loader()
+                masked_latent = self.movq.encode(masked_latent)
+
+                report_mem_usage("loaded shared_step movq")
+                self.movq.to("cpu")
+                self.movq = None
+                release_vram()
+                report_mem_usage("unloaded shared_step movq")
+
         mask = torch.nn.functional.interpolate(
             mask, size=(masked_latent.shape[2], masked_latent.shape[3])
         )
 
-        with torch.cuda.amp.autocast(dtype=self.dtype_map["text_encoder"]):
-            context, context_mask = self.t5_encoder(condition_model_input)
+        # with torch.cuda.amp.autocast(dtype=self.dtype_map["text_encoder"]):
+        report_mem_usage("preparing shared_step t5_encoder")
+        self.t5_encoder = self.t5_encoder_loader()
+
+        context, context_mask = self.t5_encoder(condition_model_input)
 
         if negative_condition_model_input is not None:
             negative_context, negative_context_mask = self.t5_encoder(
@@ -82,6 +103,12 @@ class Kandinsky3InpaintingLowVRAMPipeline:
             )
         else:
             negative_context, negative_context_mask = None, None
+
+        report_mem_usage("loaded shared_step t5_encoder")
+        self.t5_encoder.to("cpu")
+        self.t5_encoder = None
+        release_vram()
+        report_mem_usage("unloaded shared_step t5_encoder")
 
         return {
             "context": context,
@@ -145,74 +172,103 @@ class Kandinsky3InpaintingLowVRAMPipeline:
         steps: int = 50,
         guidance_weight_text: float = 4,
         eta=1.0,
+        seed: int | None = None,
     ) -> List[PIL.Image.Image]:
+        if seed is not None:
+            torch.manual_seed(seed)
+            random.seed(seed)
+            np.random.seed(seed)
 
-        with torch.no_grad():
-            batch = self.prepare_batch(text, negative_text, image, mask)
-            processed = self.shared_step(batch)
-            betas = get_named_beta_schedule("cosine", 1000)
-            base_diffusion = BaseDiffusion(betas, percentile=0.95)
-            times = list(range(999, 0, -1000 // steps))
+        batch = self.prepare_batch(text, negative_text, image, mask)
+        processed = self.shared_step(batch)
+        betas = get_named_beta_schedule("cosine", 1000)
+        base_diffusion = BaseDiffusion(betas, percentile=0.95)
+        times = list(range(999, 0, -1000 // steps))
 
-            pil_images = []
-            k, m = images_num // bs, images_num % bs
-            for minibatch in [bs] * k + [m]:
-                if minibatch == 0:
-                    continue
+        with torch.autocast("cuda"):
+            with torch.no_grad():
+                pil_images = []
+                k, m = images_num // bs, images_num % bs
+                for minibatch in [bs] * k + [m]:
+                    if minibatch == 0:
+                        continue
 
-                bs_context = repeat(processed["context"], "1 n d -> b n d", b=minibatch)
-                bs_context_mask = repeat(
-                    processed["context_mask"], "1 n -> b n", b=minibatch
-                )
-
-                if processed["negative_context"] is not None:
-                    bs_negative_context = repeat(
-                        processed["negative_context"], "1 n d -> b n d", b=minibatch
+                    bs_context = repeat(
+                        processed["context"], "1 n d -> b n d", b=minibatch
                     )
-                    bs_negative_context_mask = repeat(
-                        processed["negative_context_mask"], "1 n -> b n", b=minibatch
+                    bs_context_mask = repeat(
+                        processed["context_mask"], "1 n -> b n", b=minibatch
                     )
-                else:
-                    bs_negative_context, bs_negative_context_mask = None, None
 
-                mask = processed["mask"].repeat_interleave(minibatch, dim=0)
-                masked_latent = processed["masked_latent"].repeat_interleave(
-                    minibatch, dim=0
-                )
-
-                minibatch = masked_latent.shape[0]
-
-                with torch.cuda.amp.autocast(dtype=self.dtype_map["unet"]):
-                    with torch.no_grad():
-                        images = base_diffusion.p_sample_loop(
-                            self.unet,
-                            (
-                                minibatch,
-                                4,
-                                masked_latent.shape[2],
-                                masked_latent.shape[3],
-                            ),
-                            times,
-                            self.device_map["unet"],
-                            bs_context,
-                            bs_context_mask,
-                            self.null_embedding,
-                            guidance_weight_text,
-                            eta,
-                            negative_context=bs_negative_context,
-                            negative_context_mask=bs_negative_context_mask,
-                            mask=mask,
-                            masked_latent=masked_latent,
-                            gan=False,
+                    if processed["negative_context"] is not None:
+                        bs_negative_context = repeat(
+                            processed["negative_context"], "1 n d -> b n d", b=minibatch
                         )
+                        bs_negative_context_mask = repeat(
+                            processed["negative_context_mask"],
+                            "1 n -> b n",
+                            b=minibatch,
+                        )
+                    else:
+                        bs_negative_context, bs_negative_context_mask = None, None
 
-                with torch.cuda.amp.autocast(dtype=self.dtype_map["movq"]):
+                    mask = processed["mask"].repeat_interleave(minibatch, dim=0)
+                    masked_latent = processed["masked_latent"].repeat_interleave(
+                        minibatch, dim=0
+                    )
+
+                    minibatch = masked_latent.shape[0]
+
+                    # with torch.cuda.amp.autocast(dtype=self.dtype_map["unet"]):
+                    # with torch.no_grad():
+
+                    report_mem_usage("preparing unet")
+                    self.unet = self.unet_loader()
+
+                    images = base_diffusion.p_sample_loop(
+                        self.unet,
+                        (
+                            minibatch,
+                            4,
+                            masked_latent.shape[2],
+                            masked_latent.shape[3],
+                        ),
+                        times,
+                        self.device_map["unet"],
+                        bs_context,
+                        bs_context_mask,
+                        self.null_embedding,
+                        guidance_weight_text,
+                        eta,
+                        negative_context=bs_negative_context,
+                        negative_context_mask=bs_negative_context_mask,
+                        mask=mask,
+                        masked_latent=masked_latent,
+                        gan=False,
+                    )
+
+                    report_mem_usage("loaded unet")
+                    self.unet.to("cpu")
+                    self.unet = None
+                    release_vram()
+                    report_mem_usage("unloaded unet")
+
+                    # with torch.cuda.amp.autocast(dtype=self.dtype_map["movq"]):
+                    report_mem_usage("preparing movq")
+                    self.movq = self.movq_loader()
+
                     images = torch.cat(
                         [self.movq.decode(image) for image in images.chunk(2)]
                     )
                     images = torch.clip((images + 1.0) / 2.0, 0.0, 1.0).cpu()
 
-                for images_chunk in images.chunk(1):
-                    pil_images += [self.to_pil(image) for image in images_chunk]
+                    for images_chunk in images.chunk(1):
+                        pil_images += [self.to_pil(image) for image in images_chunk]
+
+                    report_mem_usage("loaded movq")
+                    self.movq.to("cpu")
+                    self.movq = None
+                    release_vram()
+                    report_mem_usage("unloaded movq")
 
         return pil_images

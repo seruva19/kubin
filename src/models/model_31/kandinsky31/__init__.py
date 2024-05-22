@@ -12,6 +12,9 @@ from typing import Optional, Union, cast, no_type_check
 import torch
 from huggingface_hub import hf_hub_download, snapshot_download
 
+from models.model_31.kandinsky31.inpainting_lowvram_pipeline import (
+    Kandinsky3InpaintingLowVRAMPipeline,
+)
 from models.model_31.kandinsky31.model.unet import UNet
 from models.model_31.kandinsky31.movq import MoVQ
 from models.model_31.kandinsky31.condition_encoders import T5TextConditionEncoder
@@ -77,6 +80,7 @@ def get_T5encoder(
     low_cpu_mem_usage: bool = True,
     load_in_8bit: bool = False,
     load_in_4bit: bool = False,
+    is_custom_encoder: bool = False,
 ) -> (T5TextConditionProcessor, T5TextConditionEncoder):  # type: ignore
     tokens_length = 128
     context_dim = 4096
@@ -95,12 +99,14 @@ def get_T5encoder(
         load_in_4bit=load_in_4bit,
     )
 
+    if is_custom_encoder:  # need to stick to original projections
+        weights_path = original_text_encoder_path(cache_dir=cache_dir)
+
     if weights_path:
         projections_weights_path = os.path.join(weights_path, projection_name)
-        state_dict = torch.load(
-            projections_weights_path, map_location=torch.device("cpu")
-        )
-        condition_encoder.projection.load_state_dict(state_dict)
+
+    state_dict = torch.load(projections_weights_path, map_location=torch.device("cpu"))
+    condition_encoder.projection.load_state_dict(state_dict)
 
     condition_encoder.projection.to(device=device, dtype=dtype).eval()
     return processor, condition_encoder
@@ -172,7 +178,7 @@ def get_inpainting_unet(
         state_dict = torch.load(weights_path, map_location=torch.device("cpu"))
         unet.load_state_dict(state_dict["unet"])
         unet.eval().to(cast(torch.device, device), torch.float8_e4m3fn)
-        return unet, None, None
+        return unet, None
     else:
         null_embedding = None
         if weights_path:
@@ -211,13 +217,10 @@ def get_T2I_pipeline(
             filename="weights/kandinsky3.pt",
             cache_dir=cache_dir,
         )
+
     if text_encoder_path is None:
-        text_encoder_path = snapshot_download(
-            repo_id="ai-forever/Kandinsky3.1",
-            allow_patterns="weights/flan_ul2_encoder/*",
-            cache_dir=cache_dir,
-        )
-        text_encoder_path = os.path.join(text_encoder_path, "weights/flan_ul2_encoder")
+        text_encoder_path = original_text_encoder_path(cache_dir=cache_dir)
+
     if movq_path is None:
         movq_path = hf_hub_download(
             repo_id="ai-forever/Kandinsky3.1",
@@ -233,7 +236,7 @@ def get_T2I_pipeline(
             dtype=dtype_map["unet"],
         )[0]
 
-        null_embedding = get_T2I_nullemb_projections(unet_path)
+        null_embedding = get_unet_nullemb_projections(unet_path)
         processor = get_T5processor(text_encoder_path, cache_dir)
 
         encoder_loader = lambda: get_T5encoder(
@@ -246,6 +249,7 @@ def get_T2I_pipeline(
             low_cpu_mem_usage=low_cpu_mem_usage,
             load_in_8bit=load_in_8bit,
             load_in_4bit=load_in_4bit,
+            is_custom_encoder=text_encoder_path is not None,
         )[1]
 
         movq_loader = lambda: get_movq(
@@ -279,6 +283,7 @@ def get_T2I_pipeline(
             low_cpu_mem_usage=low_cpu_mem_usage,
             load_in_8bit=load_in_8bit,
             load_in_4bit=load_in_4bit,
+            is_custom_encoder=text_encoder_path is not None,
         )
         movq = get_movq(device_map["movq"], movq_path, dtype=dtype_map["movq"])
         return Kandinsky3T2IPipeline(
@@ -294,13 +299,24 @@ def get_T2I_pipeline(
 
 
 @no_type_check
-def get_T2I_nullemb_projections(
+def get_unet_nullemb_projections(
     weights_path: Optional[str] = None,
 ) -> (torch.Tensor, dict):
     state_dict = torch.load(weights_path, map_location=torch.device("cpu"))
     null_embedding = state_dict["null_embedding"]
 
     return null_embedding
+
+
+def original_text_encoder_path(cache_dir):
+    text_encoder_path = snapshot_download(
+        repo_id="ai-forever/Kandinsky3.1",
+        allow_patterns="weights/flan_ul2_encoder/*",
+        cache_dir=cache_dir,
+        resume_download=True,
+    )
+    text_encoder_path = os.path.join(text_encoder_path, "weights/flan_ul2_encoder")
+    return text_encoder_path
 
 
 def get_T2I_Flash_pipeline(
@@ -334,13 +350,8 @@ def get_T2I_Flash_pipeline(
             resume_download=True,
         )
     if text_encoder_path is None:
-        text_encoder_path = snapshot_download(
-            repo_id="ai-forever/Kandinsky3.1",
-            allow_patterns="weights/flan_ul2_encoder/*",
-            cache_dir=cache_dir,
-            resume_download=True,
-        )
-        text_encoder_path = os.path.join(text_encoder_path, "weights/flan_ul2_encoder")
+        text_encoder_path = original_text_encoder_path(cache_dir=cache_dir)
+
     if movq_path is None:
         movq_path = hf_hub_download(
             repo_id="ai-forever/Kandinsky3.1",
@@ -350,7 +361,7 @@ def get_T2I_Flash_pipeline(
         )
 
     if environment.kd31_low_vram:
-        null_embedding = get_T2I_nullemb_projections(unet_path)
+        null_embedding = get_unet_nullemb_projections(unet_path)
         processor = get_T5processor(text_encoder_path, cache_dir)
         encoder_loader = lambda: get_T5encoder(
             device=device_map["text_encoder"],
@@ -362,6 +373,7 @@ def get_T2I_Flash_pipeline(
             low_cpu_mem_usage=low_cpu_mem_usage,
             load_in_8bit=load_in_8bit,
             load_in_4bit=load_in_4bit,
+            is_custom_encoder=text_encoder_path is not None,
         )[1]
 
         unet_loader = lambda: get_T2I_unet(
@@ -403,6 +415,7 @@ def get_T2I_Flash_pipeline(
             low_cpu_mem_usage=low_cpu_mem_usage,
             load_in_8bit=load_in_8bit,
             load_in_4bit=load_in_4bit,
+            is_custom_encoder=text_encoder_path is not None,
         )
         movq = get_movq(device_map["movq"], movq_path, dtype=dtype_map["movq"])
 
@@ -419,6 +432,7 @@ def get_T2I_Flash_pipeline(
 
 
 def get_inpainting_pipeline(
+    environment: Model_KD31_Environment,
     device_map: Union[str, torch.device, dict],
     dtype_map: Union[str, torch.dtype, dict] = torch.float32,
     low_cpu_mem_usage: bool = True,
@@ -446,14 +460,10 @@ def get_inpainting_pipeline(
             cache_dir=cache_dir,
             resume_download=True,
         )
+
     if text_encoder_path is None:
-        text_encoder_path = snapshot_download(
-            repo_id="ai-forever/Kandinsky3.1",
-            allow_patterns="weights/flan_ul2_encoder/*",
-            cache_dir=cache_dir,
-            resume_download=True,
-        )
-        text_encoder_path = os.path.join(text_encoder_path, "weights/flan_ul2_encoder")
+        text_encoder_path = original_text_encoder_path(cache_dir=cache_dir)
+
     if movq_path is None:
         movq_path = hf_hub_download(
             repo_id="ai-forever/Kandinsky3.1",
@@ -462,19 +472,80 @@ def get_inpainting_pipeline(
             resume_download=True,
         )
 
-    unet, null_embedding = get_inpainting_unet(
-        device_map["unet"], unet_path, dtype=dtype_map["unet"]
-    )
-    processor, condition_encoder = get_T5encoder(
-        device_map["text_encoder"],
-        text_encoder_path,
-        "projection_inpainting.pt",
-        dtype=dtype_map["text_encoder"],
-        low_cpu_mem_usage=low_cpu_mem_usage,
-        load_in_8bit=load_in_8bit,
-        load_in_4bit=load_in_4bit,
-    )
-    movq = get_movq(device_map["movq"], movq_path, dtype=dtype_map["movq"])
-    return Kandinsky3InpaintingPipeline(
-        device_map, dtype_map, unet, null_embedding, processor, condition_encoder, movq
-    )
+    if environment.kd31_low_vram:
+        unet_loader = lambda: get_inpainting_unet(
+            device=device_map["unet"],
+            environment=environment,
+            weights_path=unet_path,
+            dtype=dtype_map["unet"],
+        )[0]
+
+        null_embedding = get_unet_nullemb_projections(unet_path)
+        processor = get_T5processor(text_encoder_path, cache_dir)
+
+        encoder_loader = lambda: get_T5encoder(
+            device=device_map["text_encoder"],
+            environment=environment,
+            weights_path=text_encoder_path,
+            cache_dir=cache_dir,
+            projection_name="projection_inpainting.pt",
+            dtype=dtype_map["text_encoder"],
+            low_cpu_mem_usage=low_cpu_mem_usage,
+            load_in_8bit=load_in_8bit,
+            load_in_4bit=load_in_4bit,
+            is_custom_encoder=text_encoder_path is not None,
+        )[1]
+
+        movq_loader = lambda: get_movq(
+            device=device_map["movq"],
+            environment=environment,
+            weights_path=movq_path,
+            dtype=dtype_map["movq"],
+        )
+
+        release_vram()
+
+        return Kandinsky3InpaintingLowVRAMPipeline(
+            device_map=device_map,
+            dtype_map=dtype_map,
+            unet_loader=unet_loader,
+            null_embedding=null_embedding,
+            t5_processor=processor,
+            t5_encoder_loader=encoder_loader,
+            movq_loader=movq_loader,
+        )
+
+    else:
+        unet, null_embedding = get_inpainting_unet(
+            device_map["unet"],
+            environment=environment,
+            weights_path=unet_path,
+            dtype=dtype_map["unet"],
+        )
+        processor, condition_encoder = get_T5encoder(
+            device=device_map["text_encoder"],
+            environment=environment,
+            weights_path=text_encoder_path,
+            cache_dir=cache_dir,
+            projection_name="projection_inpainting.pt",
+            dtype=dtype_map["text_encoder"],
+            low_cpu_mem_usage=low_cpu_mem_usage,
+            load_in_8bit=load_in_8bit,
+            load_in_4bit=load_in_4bit,
+            is_custom_encoder=text_encoder_path is not None,
+        )
+        movq = get_movq(
+            device=device_map["movq"],
+            environment=environment,
+            weights_path=movq_path,
+            dtype=dtype_map["movq"],
+        )
+        return Kandinsky3InpaintingPipeline(
+            device_map,
+            dtype_map,
+            unet,
+            null_embedding,
+            processor,
+            condition_encoder,
+            movq,
+        )

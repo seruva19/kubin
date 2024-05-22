@@ -7,21 +7,21 @@ Web-GUI for Kandinsky text-to-image diffusion models ([Kandinsky2](https://githu
 
 ## Disclaimer
 
-⚠️ THE PROJECT IS NOT ABANDONED ⚠️ BUT UPDATES MIGHT NOT BE AS FREQUENT ⚠️ 
+⚠️ THE PROJECT IS STILL ACTIVE ⚠️ HOWEVER, UPDATES MAY BE LESS FREQUENT ⚠️
 
 ## Features
 
 | Model                                                                              | 2.0 | 2.1 | 2.2 |3.0  |3.1  |
 | ---------------------------------------------------------------------------------- | --- | --- | --- | --- | --- |
 | Txt2img                                                                            | ✔   | ✔  |  ✔  | ✔  | ✔  |
-| Img2img                                                                            | ✔   | ✔  |  ✔  | ✔  |    |
-| Mixing                                                                             |     | ✔  |  ✔  | 🕒 |    |
+| Img2img                                                                            | ✔   | ✔  |  ✔  | ✔  | 🕒 |
+| Mixing                                                                             |     | ✔  |  ✔  | 🕒 | 🕒 |
 | Inpainting                                                                         | ✔   | ✔  |  ✔  | ✔  | ✔  |
 | Outpainting                                                                        |     | ✔  |  ✔  | 🕒 | 🕒  |
-| ControlNet                                                                         |     |     |  ✔  |    |    |
+| ControlNet                                                                         |     |     |  ✔  |    | 🕒 |
 | IpAdapter                                                                          |     |     |      |    | 🕒  |
-| Diffusers pipeline                                                                 |     | ✔  |  ✔  |  ✔ |    |
-| Low-VRAM options                                                                   |     |     |  ✔  |  ✔ | 🕒  |
+| Diffusers pipeline                                                                 |     | ✔  |  ✔  |  ✔ | 🕒 |
+| Low-VRAM options                                                                   |     |     |  ✔  |  ✔ | ✔  |
 | ext. [Image browser](https://github.com/seruva19/kubin-extensions)                 | ✔   | ✔  |  ✔  |  ✔ | ✔  |
 | ext. [Image editor](https://github.com/seruva19/kubin-extensions)                  | ✔   | ✔  |  ✔  |  ✔ | ✔  |
 | ext. [Fine-tuning](https://github.com/seruva19/kubin-extensions)                   |     | ✔  |  🕒 |     |    |

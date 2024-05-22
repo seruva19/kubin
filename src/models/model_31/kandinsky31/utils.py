@@ -7,6 +7,7 @@ The code has been adopted from Kandinsky-3
 import math
 import gc
 import sys
+from typing import Any, Callable
 from omegaconf import OmegaConf
 import numpy as np
 from scipy import ndimage

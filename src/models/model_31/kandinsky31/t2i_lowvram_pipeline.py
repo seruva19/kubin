@@ -98,7 +98,7 @@ class Kandinsky3T2ILowVRAMPipeline:
         with torch.autocast("cuda"):
             with torch.no_grad():
                 # with torch.cuda.amp.autocast(dtype=self.dtype_map["text_encoder"]):
-                report_mem_usage("loading t5_encoder")
+                report_mem_usage("preparing t5_encoder")
                 self.t5_encoder = self.t5_encoder_loader()
 
                 context, context_mask = self.t5_encoder(condition_model_input)
@@ -132,7 +132,7 @@ class Kandinsky3T2ILowVRAMPipeline:
                         bs_negative_context, bs_negative_context_mask = None, None
 
                     # with torch.cuda.amp.autocast(dtype=self.dtype_map["unet"]):
-                    report_mem_usage("loading unet")
+                    report_mem_usage("preparing unet")
                     self.unet = self.unet_loader()
 
                     images = base_diffusion.p_sample_loop(
@@ -157,7 +157,7 @@ class Kandinsky3T2ILowVRAMPipeline:
                     report_mem_usage("unloaded unet")
 
                     # with torch.cuda.amp.autocast(dtype=self.dtype_map["movq"]):
-                    report_mem_usage("loading movq")
+                    report_mem_usage("preparing movq")
                     self.movq = self.movq_loader()
 
                     images = torch.cat(
