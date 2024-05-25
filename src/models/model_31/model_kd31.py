@@ -27,7 +27,7 @@ class Model_KD31:
 
         self.params = params
 
-        self.use_flash_pipeline = False
+        self.use_flash_pipeline = self.params("native", "use_kandinsky_flash")
         self.t2i_pipe: Kandinsky3T2IPipeline | Kandinsky3T2ILowVRAMPipeline | None = (
             None
         )
@@ -57,7 +57,7 @@ class Model_KD31:
                 self.flush(task)
 
                 if self.use_flash_pipeline:
-                    k_log(f"running flash K3 pipeline")
+                    k_log(f"preparing flash K3 pipeline")
 
                     self.t2i_pipe = get_T2I_Flash_pipeline(
                         environment=environment,
@@ -76,7 +76,7 @@ class Model_KD31:
                         movq_path=None,
                     )
                 else:
-                    k_log(f"running regular K3 pipeline")
+                    k_log(f"preparing regular K3 pipeline")
 
                     self.t2i_pipe = get_T2I_pipeline(
                         environment=environment,
