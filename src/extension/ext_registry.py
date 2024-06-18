@@ -161,17 +161,32 @@ class ExtensionRegistry:
         else:
             venv_activation_path = os.path.join("venv", "bin", "activate")
 
+        pip_install_cmd = [
+            sys.executable,
+            "-m",
+            "pip",
+            "install",
+            "-r",
+            reqs_path,
+        ] + arguments
+
         if os.path.exists(venv_activation_path):
             if current_platform == "Windows":
-                pip_install_cmd = f"call {venv_activation_path} && {sys.executable} -m pip install -r {reqs_path} {' '.join(arguments)}"
+                activation_cmd = [
+                    "cmd.exe",
+                    "/C",
+                    venv_activation_path + " && " + " ".join(pip_install_cmd),
+                ]
+                subprocess.check_call(activation_cmd)
             else:
-                pip_install_cmd = f". {venv_activation_path} && {sys.executable} -m pip install -r {reqs_path} {' '.join(arguments)}"
+                activation_cmd = [
+                    "sh",
+                    "-c",
+                    f". {venv_activation_path} && {' '.join(pip_install_cmd)}",
+                ]
+                subprocess.check_call(activation_cmd)
         else:
-            pip_install_cmd = (
-                f"{sys.executable} -m pip install -r {reqs_path} {' '.join(arguments)}"
-            )
-
-        subprocess.check_output(pip_install_cmd, shell=True)
+            subprocess.check_call(pip_install_cmd)
 
     def standalone(self):
         return list(
