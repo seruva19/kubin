@@ -14,8 +14,6 @@ def update(image):
     )
 
 
-# TODO: add mixing for images > 2
-# gradio does not directly support dynamic number of elements https://github.com/gradio-app/gradio/issues/2680
 def mix_ui(generate_fn, shared: SharedUI, tabs, session):
     augmentations = shared.create_ext_augment_blocks("mix")
 
@@ -24,21 +22,94 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
         with gr.Column(scale=2) as mix_params:
             augmentations["ui_before_prompt"]()
 
+            with gr.Row(visible=False):
+                mix_image_count = gr.Slider(
+                    1,
+                    10,
+                    value=shared.ui_params("mix_image_count"),
+                    step=1,
+                    label="Mix image count",
+                )
+
             with gr.Row():
                 with gr.Column(scale=1):
-                    shared.input_mix_image_1.render()
+                    shared.input_mix_images[0].render()
                     text_1 = gr.TextArea("", placeholder="", label="Prompt", lines=2)
-                    shared.input_mix_image_1.change(
-                        fn=update, inputs=shared.input_mix_image_1, outputs=text_1
+                    shared.input_mix_images[0].change(
+                        fn=update, inputs=shared.input_mix_images[0], outputs=text_1
                     )
                     weight_1 = gr.Slider(0, 1, 0.5, step=0.05, label="Weight")
                 with gr.Column(scale=1):
-                    shared.input_mix_image_2.render()
+                    shared.input_mix_images[1].render()
                     text_2 = gr.TextArea("", placeholder="", label="Prompt", lines=2)
-                    shared.input_mix_image_2.change(
-                        fn=update, inputs=shared.input_mix_image_2, outputs=text_2
+                    shared.input_mix_images[1].change(
+                        fn=update, inputs=shared.input_mix_images[1], outputs=text_2
                     )
                     weight_2 = gr.Slider(0, 1, 0.5, step=0.05, label="Weight")
+
+            with gr.Row(visible=False):
+                with gr.Column(scale=1):
+                    shared.input_mix_images[2].render()
+                    text_3 = gr.TextArea("", placeholder="", label="Prompt", lines=2)
+                    shared.input_mix_images[2].change(
+                        fn=update, inputs=shared.input_mix_images[2], outputs=text_3
+                    )
+                    weight_3 = gr.Slider(0, 1, 0.5, step=0.05, label="Weight")
+                with gr.Column(scale=1):
+                    shared.input_mix_images[3].render()
+                    text_4 = gr.TextArea("", placeholder="", label="Prompt", lines=2)
+                    shared.input_mix_images[3].change(
+                        fn=update, inputs=shared.input_mix_images[3], outputs=text_2
+                    )
+                    weight_4 = gr.Slider(0, 1, 0.5, step=0.05, label="Weight")
+
+            with gr.Row(visible=False):
+                with gr.Column(scale=1):
+                    shared.input_mix_images[4].render()
+                    text_5 = gr.TextArea("", placeholder="", label="Prompt", lines=2)
+                    shared.input_mix_images[4].change(
+                        fn=update, inputs=shared.input_mix_images[4], outputs=text_5
+                    )
+                    weight_5 = gr.Slider(0, 1, 0.5, step=0.05, label="Weight")
+                with gr.Column(scale=1):
+                    shared.input_mix_images[5].render()
+                    text_6 = gr.TextArea("", placeholder="", label="Prompt", lines=2)
+                    shared.input_mix_images[5].change(
+                        fn=update, inputs=shared.input_mix_images[5], outputs=text_6
+                    )
+                    weight_6 = gr.Slider(0, 1, 0.5, step=0.05, label="Weight")
+
+            with gr.Row(visible=False):
+                with gr.Column(scale=1):
+                    shared.input_mix_images[6].render()
+                    text_7 = gr.TextArea("", placeholder="", label="Prompt", lines=2)
+                    shared.input_mix_images[6].change(
+                        fn=update, inputs=shared.input_mix_images[6], outputs=text_7
+                    )
+                    weight_7 = gr.Slider(0, 1, 0.5, step=0.05, label="Weight")
+                with gr.Column(scale=1):
+                    shared.input_mix_images[7].render()
+                    text_8 = gr.TextArea("", placeholder="", label="Prompt", lines=2)
+                    shared.input_mix_images[7].change(
+                        fn=update, inputs=shared.input_mix_images[7], outputs=text_8
+                    )
+                    weight_8 = gr.Slider(0, 1, 0.5, step=0.05, label="Weight")
+
+            with gr.Row(visible=False):
+                with gr.Column(scale=1):
+                    shared.input_mix_images[8].render()
+                    text_9 = gr.TextArea("", placeholder="", label="Prompt", lines=2)
+                    shared.input_mix_images[8].change(
+                        fn=update, inputs=shared.input_mix_images[8], outputs=text_9
+                    )
+                    weight_9 = gr.Slider(0, 1, 0.5, step=0.05, label="Weight")
+                with gr.Column(scale=1):
+                    shared.input_mix_images[9].render()
+                    text_10 = gr.TextArea("", placeholder="", label="Prompt", lines=2)
+                    shared.input_mix_images[9].change(
+                        fn=update, inputs=shared.input_mix_images[9], outputs=text_10
+                    )
+                    weight_10 = gr.Slider(0, 1, 0.5, step=0.05, label="Weight")
 
             negative_prompt = gr.TextArea("", label="Negative prompt", lines=2)
 
@@ -269,8 +340,8 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
             fn=generate,
             inputs=[
                 session,
-                shared.input_mix_image_1,
-                shared.input_mix_image_2,
+                shared.input_mix_images[0],
+                shared.input_mix_images[1],
                 text_1,
                 text_2,
                 weight_1,

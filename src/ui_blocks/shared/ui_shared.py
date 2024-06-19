@@ -29,12 +29,19 @@ class SharedUI:
         self.input_i2i_image = gr.Image(
             type="pil", elem_classes=["i2i_image", "full-height"]
         )
-        self.input_mix_image_1 = gr.Image(
-            type="pil", elem_classes=["mix_1_image", "full-height"]
-        )
-        self.input_mix_image_2 = gr.Image(
-            type="pil", elem_classes=["mix_2_image", "full-height"]
-        )
+        self.input_mix_images = [
+            gr.Image(type="pil", elem_classes=["mix_1_image", "full-height"]),
+            gr.Image(type="pil", elem_classes=["mix_2_image", "full-height"]),
+            gr.Image(type="pil", elem_classes=["mix_3_image", "full-height"]),
+            gr.Image(type="pil", elem_classes=["mix_4_image", "full-height"]),
+            gr.Image(type="pil", elem_classes=["mix_5_image", "full-height"]),
+            gr.Image(type="pil", elem_classes=["mix_6_image", "full-height"]),
+            gr.Image(type="pil", elem_classes=["mix_7_image", "full-height"]),
+            gr.Image(type="pil", elem_classes=["mix_8_image", "full-height"]),
+            gr.Image(type="pil", elem_classes=["mix_9_image", "full-height"]),
+            gr.Image(type="pil", elem_classes=["mix_10_image", "full-height"]),
+        ]
+
         self.input_cnet_mix_image = gr.Image(
             type="pil",
             elem_classes=["input_cnet_mix_image", "full-height"],
@@ -104,7 +111,7 @@ class SharedUI:
                 fn=self.send_gallery_image_to_another_tab,
                 _js=f"(o, i) => kubin.UI.getImageIndex(o, i, '{sender}')",
                 inputs=[output, sender_index],
-                outputs=[self.input_mix_image_1],
+                outputs=[self.input_mix_images[0]],
             )
 
             send_mix_2_btn = gr.Button(
@@ -119,7 +126,7 @@ class SharedUI:
                 fn=self.send_gallery_image_to_another_tab,
                 _js=f"(o, i) => kubin.UI.getImageIndex(o, i, '{sender}')",
                 inputs=[output, sender_index],
-                outputs=[self.input_mix_image_2],
+                outputs=[self.input_mix_images[1]],
             )
 
             send_mix_1_btn.elem_classes = send_mix_2_btn.elem_classes = (
