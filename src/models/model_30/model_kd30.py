@@ -22,7 +22,7 @@ from models.model_30.kandinsky3.t2i_optimized_pipeline import (
 from models.model_30.model_kd30_env import Model_KD3_Environment
 from params import KubinParams
 from utils.file_system import save_output
-from utils.image import create_inpaint_targets
+from utils.image import composite_images, create_inpaint_targets
 from utils.logging import k_log
 
 from model_utils.diffusers_samplers import use_sampler
@@ -150,6 +150,12 @@ class Model_KD3:
             guidance_weight_text=params["guidance_scale"],
             steps=params["num_steps"],
         )
+        if inpaint_region == "mask":
+            batch_composed = []
+            for inpainted_image in batch:
+                merged_image = composite_images(pil_img, inpainted_image, mask)
+                batch_composed.append(merged_image)
+            batch = batch_composed
 
         images += self.create_batch_images(params, "text2img", batch)
         k_log("inpainting task: done")

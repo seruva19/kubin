@@ -42,8 +42,7 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs, session):
                     inpainting_region = gr.Radio(
                         ["whole", "mask"],
                         value="whole",
-                        label="Inpainting region",
-                        interactive=False,
+                        label="Inpainting composition",
                     )
                 with gr.Row():
                     steps = gr.Slider(

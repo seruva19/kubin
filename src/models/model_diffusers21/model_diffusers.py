@@ -3,7 +3,12 @@ import torch
 import torch
 import torch.backends
 
-from utils.image import create_inpaint_targets, create_outpaint_targets
+from utils.image import (
+    composite_images,
+    create_inpaint_targets,
+    create_outpaint_targets,
+    round_to_nearest,
+)
 from model_utils.diffusers_samplers import use_sampler
 
 import itertools
@@ -65,9 +70,11 @@ class Model_Diffusers:
         if self.pipe_prior is None:
             self.pipe_prior = KandinskyPriorPipeline.from_pretrained(
                 "kandinsky-community/kandinsky-2-1-prior",
-                torch_dtype=torch.float16
-                if self.params("diffusers", "half_precision_weights")
-                else "auto",
+                torch_dtype=(
+                    torch.float16
+                    if self.params("diffusers", "half_precision_weights")
+                    else "auto"
+                ),
                 cache_dir=cache_dir,
             )
 
@@ -84,9 +91,11 @@ class Model_Diffusers:
 
                 self.t2i_pipe = KandinskyPipeline.from_pretrained(
                     "kandinsky-community/kandinsky-2-1",
-                    torch_dtype=torch.float16
-                    if self.params("diffusers", "half_precision_weights")
-                    else "auto",
+                    torch_dtype=(
+                        torch.float16
+                        if self.params("diffusers", "half_precision_weights")
+                        else "auto"
+                    ),
                     cache_dir=cache_dir,
                 )
                 self.current_pipe = self.t2i_pipe
@@ -98,9 +107,11 @@ class Model_Diffusers:
 
                 self.i2i_pipe = KandinskyImg2ImgPipeline.from_pretrained(
                     "kandinsky-community/kandinsky-2-1",
-                    torch_dtype=torch.float16
-                    if self.params("diffusers", "half_precision_weights")
-                    else "auto",
+                    torch_dtype=(
+                        torch.float16
+                        if self.params("diffusers", "half_precision_weights")
+                        else "auto"
+                    ),
                     cache_dir=cache_dir,
                 )
                 self.current_pipe = self.i2i_pipe
@@ -112,9 +123,11 @@ class Model_Diffusers:
 
                 self.inpaint_pipe = KandinskyInpaintPipeline.from_pretrained(
                     "kandinsky-community/kandinsky-2-1-inpaint",
-                    torch_dtype=torch.float16
-                    if self.params("diffusers", "half_precision_weights")
-                    else "auto",
+                    torch_dtype=(
+                        torch.float16
+                        if self.params("diffusers", "half_precision_weights")
+                        else "auto"
+                    ),
                     cache_dir=cache_dir,
                 )
 
@@ -381,8 +394,16 @@ class Model_Diffusers:
 
         pil_img = image_mask["image"]
         width, height = (
-            pil_img.width if params["infer_size"] else params["w"],
-            pil_img.height if params["infer_size"] else params["h"],
+            (
+                round_to_nearest(pil_img.width, 64)
+                if params["infer_size"]
+                else params["w"]
+            ),
+            (
+                round_to_nearest(pil_img.height, 64)
+                if params["infer_size"]
+                else params["h"]
+            ),
         )
         output_size = (width, height)
         mask = image_mask["mask"]
@@ -402,8 +423,8 @@ class Model_Diffusers:
                 image=image,
                 mask_image=mask,
                 **prior_output,
-                width=params["w"],
-                height=params["h"],
+                width=width,
+                height=height,
                 num_inference_steps=params["num_steps"],
                 guidance_scale=params["guidance_scale"],
                 num_images_per_prompt=params["batch_size"],
@@ -412,6 +433,13 @@ class Model_Diffusers:
                 output_type="pil",
                 return_dict=True,
             ).images
+
+            if inpaint_region == "mask":
+                current_batch_composed = []
+                for inpainted_image in current_batch:
+                    merged_image = composite_images(pil_img, inpainted_image, mask)
+                    current_batch_composed.append(merged_image)
+                current_batch = current_batch_composed
 
             output_dir = params.get(
                 ".output_dir",

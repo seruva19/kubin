@@ -11,7 +11,12 @@ from kandinsky2 import CONFIG_2_1
 from utils.yaml import flatten_yaml
 from utils.file_system import save_output
 from utils.logging import k_log
-from utils.image import create_inpaint_targets, create_outpaint_targets
+from utils.image import (
+    composite_images,
+    create_inpaint_targets,
+    create_outpaint_targets,
+    round_to_nearest,
+)
 
 
 class Model_KD21:
@@ -211,8 +216,16 @@ class Model_KD21:
 
         pil_img = image_mask["image"]
         width, height = (
-            pil_img.width if params["infer_size"] else params["w"],
-            pil_img.height if params["infer_size"] else params["h"],
+            (
+                round_to_nearest(pil_img.width, 64)
+                if params["infer_size"]
+                else params["w"]
+            ),
+            (
+                round_to_nearest(pil_img.height, 64)
+                if params["infer_size"]
+                else params["h"]
+            ),
         )
         output_size = (width, height)
         mask = image_mask["mask"]
@@ -232,14 +245,21 @@ class Model_KD21:
                 num_steps=params["num_steps"],
                 batch_size=params["batch_size"],
                 guidance_scale=params["guidance_scale"],
-                h=params["h"],
-                w=params["w"],
+                h=height,
+                w=width,
                 sampler=params["sampler"],
                 prior_cf_scale=params["prior_cf_scale"],
                 prior_steps=str(params["prior_steps"]),
                 negative_prior_prompt=params["negative_prior_prompt"],
                 negative_decoder_prompt=params["negative_prompt"],
             )
+
+            if inpaint_region == "mask":
+                current_batch_composed = []
+                for inpainted_image in current_batch:
+                    merged_image = composite_images(pil_img, inpainted_image, mask)
+                    current_batch_composed.append(merged_image)
+                current_batch = current_batch_composed
 
             output_dir = params.get(
                 ".output_dir",

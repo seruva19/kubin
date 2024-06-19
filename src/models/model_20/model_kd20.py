@@ -9,6 +9,7 @@ import torch.backends
 
 from params import KubinParams
 from utils.file_system import save_output
+from utils.image import composite_images
 
 
 class Model_KD20:
@@ -156,6 +157,7 @@ class Model_KD20:
         params = self.prepare_model("inpainting").prepare_params(params)
         assert self.kd20_inpaint is not None
 
+        inpaint_region = params["region"]
         output_size = (params["w"], params["h"])
         image_mask = params["image_mask"]
         pil_img = image_mask["image"].resize(output_size, resample=Image.LANCZOS)
@@ -180,6 +182,13 @@ class Model_KD20:
                 sampler=params["sampler"],
                 ddim_eta=0.05,
             )
+
+            if inpaint_region == "mask":
+                current_batch_composed = []
+                for inpainted_image in current_batch:
+                    merged_image = composite_images(pil_img, inpainted_image, mask_arr)
+                    current_batch_composed.append(merged_image)
+                current_batch = current_batch_composed
 
             output_dir = params.get(
                 ".output_dir",

@@ -14,6 +14,10 @@ def image_path_to_pil(image_url):
     return pil_img
 
 
+def round_to_nearest(x, base):
+    return round(x / base) * base
+
+
 def create_inpaint_targets(
     pil_img, image_mask, output_size, inpaint_region, inpaint_target
 ):
@@ -58,3 +62,16 @@ def create_outpaint_targets(image, offset, infer_size, width, height):
 
     mask = 1.0 - mask
     return image, mask, width, height
+
+
+def composite_images(original_img, second_img, mask_array):
+    composited_img = original_img.copy()
+
+    mask_img = Image.fromarray(mask_array).convert("L")
+    transparent = Image.new("RGBA", second_img.size, (0, 0, 0, 0))
+
+    cut_out_mask = Image.eval(mask_img, lambda p: 0 if p == 0 else 255)
+    cut_out_region = Image.composite(second_img, transparent, cut_out_mask)
+    composited_img.paste(cut_out_region, (0, 0), cut_out_region)
+
+    return composited_img

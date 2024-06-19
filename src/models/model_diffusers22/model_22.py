@@ -22,7 +22,12 @@ from models.model_diffusers22.patched.patched_prior_emb2emb import (
 )
 from progress import report_progress
 
-from utils.image import create_inpaint_targets, create_outpaint_targets
+from utils.image import (
+    composite_images,
+    create_inpaint_targets,
+    create_outpaint_targets,
+    round_to_nearest,
+)
 import itertools
 import os
 import secrets
@@ -575,8 +580,16 @@ class Model_Diffusers22:
 
         pil_img = image_mask["image"]
         width, height = (
-            pil_img.width if params["infer_size"] else params["w"],
-            pil_img.height if params["infer_size"] else params["h"],
+            (
+                round_to_nearest(pil_img.width, 64)
+                if params["infer_size"]
+                else params["w"]
+            ),
+            (
+                round_to_nearest(pil_img.height, 64)
+                if params["infer_size"]
+                else params["h"]
+            ),
         )
         output_size = (width, height)
         mask = image_mask["mask"]
@@ -614,8 +627,8 @@ class Model_Diffusers22:
                     if prior_on_cpu
                     else negative_image_embeds
                 ),
-                width=params["w"],
-                height=params["h"],
+                width=width,
+                height=height,
                 num_inference_steps=params["num_steps"],
                 guidance_scale=params["guidance_scale"],
                 num_images_per_prompt=params["batch_size"],
@@ -631,6 +644,13 @@ class Model_Diffusers22:
                 HOOK.BEFORE_BATCH_SAVE,
                 **hook_params,
             )
+
+            if inpaint_region == "mask":
+                current_batch_composed = []
+                for inpainted_image in current_batch:
+                    merged_image = composite_images(pil_img, inpainted_image, mask)
+                    current_batch_composed.append(merged_image)
+                current_batch = current_batch_composed
 
             images += self.create_batch_images(params, task, current_batch)
         k_log("decoder images: done")
@@ -714,11 +734,11 @@ class Model_Diffusers22:
         image = params["image"]
         offset = params["offset"]
         infer_size = params["infer_size"]
-        width = params["w"]
-        height = params["h"]
+        w = params["w"]
+        h = params["h"]
 
         image, mask, width, height = create_outpaint_targets(
-            image, offset, infer_size, width, height
+            image, offset, infer_size, w, h
         )
 
         use_sampler(decoder, params["sampler"], task)
@@ -749,8 +769,8 @@ class Model_Diffusers22:
                     if prior_on_cpu
                     else negative_image_embeds
                 ),
-                width=params["w"],
-                height=params["h"],
+                width=width,
+                height=height,
                 num_inference_steps=params["num_steps"],
                 guidance_scale=params["guidance_scale"],
                 num_images_per_prompt=params["batch_size"],
