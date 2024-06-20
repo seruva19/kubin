@@ -51,6 +51,7 @@ def start(kubin, ui):
         prevent_thread_lock=True,
         show_api=False,
         debug=kubin.params("gradio", "debug"),
+        favicon_path="client/favicon.png",
         show_error=True,
         share=kubin.params("general", "share") == "gradio",
         server_name=kubin.params("gradio", "server_name"),
