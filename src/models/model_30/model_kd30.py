@@ -36,6 +36,7 @@ class Model_KD3:
         self.t2i_pipe: Kandinsky3T2IPipeline | Kandinsky3T2IOptimizedPipeline | None = (
             None
         )
+        self.i2i_pipe: Kandinsky3I2IPipeline | None = None
         self.inpainting_pipe: (
             Kandinsky3InpaintingPipeline | Kandinsky3InpaintingOptimizedPipeline | None
         ) = None

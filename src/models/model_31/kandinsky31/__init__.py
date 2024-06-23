@@ -146,7 +146,8 @@ def get_movq(
         movq.load_state_dict(state_dict)
 
     if environment.kd31_low_vram:
-        movq.eval().to(cast(torch.device, device), torch.float8_e4m3fn)
+        movq.to(device=device, dtype=dtype).eval()
+        # movq.eval().to(cast(torch.device, device), torch.float8_e4m3fn)
     else:
         movq.to(device=device, dtype=dtype).eval()
     return movq

@@ -74,22 +74,23 @@ class Kandinsky3InpaintingLowVRAMPipeline:
         else:
             raise ValueError()
 
+        self.movq = self.movq_loader()
         # with torch.cuda.amp.autocast(dtype=self.dtype_map["movq"]):
-        with torch.autocast("cuda"):
-            with torch.no_grad():
-                report_mem_usage("preparing shared_step movq")
-                self.movq = self.movq_loader()
-                masked_latent = self.movq.encode(masked_latent)
-
-                report_mem_usage("loaded shared_step movq")
-                self.movq.to("cpu")
-                self.movq = None
-                release_vram()
-                report_mem_usage("unloaded shared_step movq")
+        # with torch.autocast("cuda"):
+        #     with torch.no_grad():
+        report_mem_usage("preparing shared_step movq")
+        masked_latent = masked_latent.to(torch.float)
+        masked_latent = self.movq.encode(masked_latent)
 
         mask = torch.nn.functional.interpolate(
             mask, size=(masked_latent.shape[2], masked_latent.shape[3])
         )
+
+        report_mem_usage("loaded shared_step movq")
+        self.movq.to("cpu")
+        self.movq = None
+        release_vram()
+        report_mem_usage("unloaded shared_step movq")
 
         # with torch.cuda.amp.autocast(dtype=self.dtype_map["text_encoder"]):
         report_mem_usage("preparing shared_step t5_encoder")
@@ -185,43 +186,40 @@ class Kandinsky3InpaintingLowVRAMPipeline:
         base_diffusion = BaseDiffusion(betas, percentile=0.95)
         times = list(range(999, 0, -1000 // steps))
 
-        with torch.autocast("cuda"):
-            with torch.no_grad():
-                pil_images = []
-                k, m = images_num // bs, images_num % bs
-                for minibatch in [bs] * k + [m]:
-                    if minibatch == 0:
-                        continue
+        # with torch.autocast("cuda"):
+        #     with torch.no_grad():
+        pil_images = []
+        k, m = images_num // bs, images_num % bs
+        for minibatch in [bs] * k + [m]:
+            if minibatch == 0:
+                continue
 
-                    bs_context = repeat(
-                        processed["context"], "1 n d -> b n d", b=minibatch
-                    )
-                    bs_context_mask = repeat(
-                        processed["context_mask"], "1 n -> b n", b=minibatch
-                    )
+            bs_context = repeat(processed["context"], "1 n d -> b n d", b=minibatch)
+            bs_context_mask = repeat(
+                processed["context_mask"], "1 n -> b n", b=minibatch
+            )
 
-                    if processed["negative_context"] is not None:
-                        bs_negative_context = repeat(
-                            processed["negative_context"], "1 n d -> b n d", b=minibatch
-                        )
-                        bs_negative_context_mask = repeat(
-                            processed["negative_context_mask"],
-                            "1 n -> b n",
-                            b=minibatch,
-                        )
-                    else:
-                        bs_negative_context, bs_negative_context_mask = None, None
+            if processed["negative_context"] is not None:
+                bs_negative_context = repeat(
+                    processed["negative_context"], "1 n d -> b n d", b=minibatch
+                )
+                bs_negative_context_mask = repeat(
+                    processed["negative_context_mask"],
+                    "1 n -> b n",
+                    b=minibatch,
+                )
+            else:
+                bs_negative_context, bs_negative_context_mask = None, None
 
-                    mask = processed["mask"].repeat_interleave(minibatch, dim=0)
-                    masked_latent = processed["masked_latent"].repeat_interleave(
-                        minibatch, dim=0
-                    )
+            mask = processed["mask"].repeat_interleave(minibatch, dim=0)
+            masked_latent = processed["masked_latent"].repeat_interleave(
+                minibatch, dim=0
+            )
 
-                    minibatch = masked_latent.shape[0]
+            minibatch = masked_latent.shape[0]
 
-                    # with torch.cuda.amp.autocast(dtype=self.dtype_map["unet"]):
-                    # with torch.no_grad():
-
+            with torch.cuda.amp.autocast(dtype=self.dtype_map["unet"]):
+                with torch.no_grad():
                     report_mem_usage("preparing unet")
                     self.unet = self.unet_loader()
 
@@ -253,22 +251,22 @@ class Kandinsky3InpaintingLowVRAMPipeline:
                     release_vram()
                     report_mem_usage("unloaded unet")
 
-                    # with torch.cuda.amp.autocast(dtype=self.dtype_map["movq"]):
-                    report_mem_usage("preparing movq")
-                    self.movq = self.movq_loader()
+            with torch.cuda.amp.autocast(dtype=self.dtype_map["movq"]):
+                report_mem_usage("preparing movq")
+                self.movq = self.movq_loader()
 
-                    images = torch.cat(
-                        [self.movq.decode(image) for image in images.chunk(2)]
-                    )
-                    images = torch.clip((images + 1.0) / 2.0, 0.0, 1.0).cpu()
+                images = torch.cat(
+                    [self.movq.decode(image) for image in images.chunk(2)]
+                )
+                images = torch.clip((images + 1.0) / 2.0, 0.0, 1.0).cpu()
 
-                    for images_chunk in images.chunk(1):
-                        pil_images += [self.to_pil(image) for image in images_chunk]
+                for images_chunk in images.chunk(1):
+                    pil_images += [self.to_pil(image) for image in images_chunk]
 
-                    report_mem_usage("loaded movq")
-                    self.movq.to("cpu")
-                    self.movq = None
-                    release_vram()
-                    report_mem_usage("unloaded movq")
+                report_mem_usage("loaded movq")
+                self.movq.to("cpu")
+                self.movq = None
+                release_vram()
+                report_mem_usage("unloaded movq")
 
         return pil_images
