@@ -37,12 +37,16 @@ def create_extensions_info(kubin: Kubin):
                         filter(
                             lambda a: a is not None,
                             [
-                                "tab_ui"
-                                if ext_props.get("tab_ui", None) is not None
-                                else None,
-                                "injectable_ui"
-                                if ext_props.get("inject_ui", None) is not None
-                                else None,
+                                (
+                                    "tab_ui"
+                                    if ext_props.get("tab_ui", None) is not None
+                                    else None
+                                ),
+                                (
+                                    "injectable_ui"
+                                    if ext_props.get("inject_ui", None) is not None
+                                    else None
+                                ),
                             ],
                         )
                     ),
