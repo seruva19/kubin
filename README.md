@@ -34,7 +34,7 @@ Web-GUI for Kandinsky text-to-image diffusion models ([Kandinsky2](https://githu
 | ext. [Animation](https://github.com/seruva19/kubin-extensions)                     |     | 🕒  |  ✔  |    |    |
 | ext. [Video](https://github.com/seruva19/kubin-extensions)                         |     |     |     |  ✔ |    |
 | ext. [Background remover](https://github.com/seruva19/kubin-extensions)            | ✔   | ✔  |  ✔  |  ✔ | ✔  |
-| ext. LLM prompt enhancer                                                           |     |     |     |    | 🕒  |
+| ext. LLM prompt enhancer                                                           | ✔   | ✔  |  ✔  |  ✔ | ✔  |
 | Advanced prompt syntax                                                             |     |     | 🕒  |    |     |
 | Prompt weighting                                                                   |     |     | 🕒  |    |     |
 | ext. Area composition                                                              |     |     | 🕒  |    |     |

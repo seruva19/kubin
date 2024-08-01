@@ -8,7 +8,7 @@ opencv-python==4.8.0.74
 gradio==3.50.2
 psutil==5.9.5
 deepdiff==6.3.1
-torchsde==0.2.5
+torchsde==0.2.6
 compel==2.0.2
 https://github.com/jllllll/bitsandbytes-windows-webui/releases/download/wheels/bitsandbytes-0.41.1-py3-none-win_amd64.whl; platform_system == "Windows"
 bitsandbytes==0.41.1; platform_system != "Windows"
