@@ -42,8 +42,8 @@ class T5TextConditionEncoder(nn.Module):
             low_cpu_mem_usage=low_cpu_mem_usage,
             device_map="auto" if environment.kd31_low_vram else device,
             torch_dtype=dtype,
-            load_in_8bit=load_in_8bit,
-            load_in_4bit=environment.kd31_low_vram,  # load_in_4bit,
+            # load_in_8bit=load_in_8bit,
+            # load_in_4bit=environment.kd31_low_vram,
             cache_dir=cache_dir,
             quantization_config=quantization_config,
         ).encoder

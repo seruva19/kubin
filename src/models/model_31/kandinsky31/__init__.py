@@ -249,7 +249,7 @@ def get_T2I_pipeline(
             dtype=dtype_map["text_encoder"],
             low_cpu_mem_usage=low_cpu_mem_usage,
             load_in_8bit=load_in_8bit,
-            load_in_4bit=load_in_4bit,
+            load_in_4bit=None if load_in_8bit else load_in_4bit,
             is_custom_encoder=text_encoder_path is not None,
         )[1]
 

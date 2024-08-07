@@ -1,8 +1,9 @@
 setuptools==69.5.1
 git+https://github.com/ai-forever/Kandinsky-2.git@33c3176
 git+https://github.com/openai/CLIP.git@a1d0717
-diffusers==0.28.0
-transformers==4.37.0
+diffusers==0.30.0
+transformers==4.44.0
+tokenizers==0.19.1
 accelerate==0.25.0
 opencv-python==4.8.0.74
 gradio==3.50.2

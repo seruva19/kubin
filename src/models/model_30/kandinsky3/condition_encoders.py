@@ -92,7 +92,7 @@ class T5TextConditionEncoder(ConditionEncoder):
             model_names["t5"],
             low_cpu_mem_usage=low_cpu_mem_usage,
             device_map=device_map,
-            load_in_4bit=environment.kd30_low_vram,
+            # load_in_4bit=environment.kd30_low_vram,
             torch_dtype=torch.bfloat16,
             cache_dir=cache_dir,
             quantization_config=quantization_config,
