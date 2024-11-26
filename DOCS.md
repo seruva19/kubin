@@ -12,6 +12,7 @@ Other apps I am aware of that can be used to run Kandinsky locally:
 * biniou https://github.com/Woolverine94/biniou
 * Kandinsky plugin for ComfyUI https://github.com/vsevolod-oparin/comfyui-kandinsky22
 * Kandinsky extension for Automatic1111 https://github.com/MMqd/kandinsky-for-automatic1111
+* NeuroSandboxWebUI https://github.com/Dartvauder/NeuroSandboxWebUI
 * SD.Next https://github.com/vladmandic/automatic
 
 ### Installation and usage (scripts)
