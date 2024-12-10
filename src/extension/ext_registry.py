@@ -82,9 +82,9 @@ class ExtensionRegistry:
 
         for i, extension in enumerate(ext_folders):
             if extension in disabled_exts:
-                kubin.log(f"{i+1}: extension '{extension}' disabled, skipping")
+                kubin.log(f"extension [{i+1}] '{extension}' disabled, skipping")
             else:
-                kubin.log(f"{i+1}: extension '{extension}' found")
+                kubin.log(f"extension [{i+1}] '{extension}' found")
                 extension_reqs_path = f"{self.root}/{extension}/requirements.txt"
                 extension_reqs_no_deps_path = (
                     f"{self.root}/{extension}/requirements_no_deps.txt"
@@ -94,11 +94,11 @@ class ExtensionRegistry:
                 if not self.skip_install and os.path.isfile(extension_reqs_path):
                     if os.path.exists(extension_installed):
                         kubin.log(
-                            f"{i+1}: extension '{extension}' installation integrity verified"
+                            f"extension [{i+1}] '{extension}' installation integrity verified"
                         )
                     else:
                         kubin.log(
-                            f"{i+1}: extension '{extension}' has requirements.txt, installing"
+                            f"extension [{i+1}] '{extension}' has requirements.txt, installing"
                         )
 
                         arguments = []
@@ -113,7 +113,7 @@ class ExtensionRegistry:
                         self.install_pip_reqs(extension_reqs_path, arguments=arguments)
                         if os.path.isfile(extension_reqs_no_deps_path):
                             kubin.log(
-                                f"{i+1}: extension '{extension}' has requirements_no_deps.txt, installing without dependencies"
+                                f"extension [{i+1}]  '{extension}' has requirements_no_deps.txt, installing without dependencies"
                             )
                             self.install_pip_reqs(
                                 extension_reqs_no_deps_path,
@@ -145,10 +145,12 @@ class ExtensionRegistry:
                             extension_info["_path"] = extension_folder
                             self.extensions[extension] = extension_info
 
-                    kubin.log(f"{i+1}: extension '{extension}' successfully registered")
+                    kubin.log(
+                        f"extension [{i+1}] '{extension}' successfully registered"
+                    )
                 else:
                     kubin.log(
-                        f"{i+1}: setup_ext.py not found for '{extension}', extension will not be registered"
+                        f"setup_ext.py not found for extension [{i+1}] '{extension}', extension will not be registered"
                     )
 
         postinstall_reqs_installed = f"{self.root}/.installed"
@@ -226,7 +228,7 @@ class ExtensionRegistry:
                 if os.path.exists(extension_installed):
                     os.remove(extension_installed)
                     k_log(
-                        f"{i+1}: extension '{extension}' will be reinstalled on next run"
+                        f"extension [{i+1}] '{extension}' will be reinstalled on next run"
                     )
 
     def is_installed(self, ext):
