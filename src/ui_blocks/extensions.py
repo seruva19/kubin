@@ -173,7 +173,7 @@ def extensions_ui(kubin: Kubin):
                         scale=0,
                     )
 
-                    clear_ext_install_btn = gr.Button(
+                    remove_ext_btn = gr.Button(
                         value="🗑️ Remove",
                         interactive=False,
                         size="sm",
