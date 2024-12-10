@@ -86,6 +86,9 @@ class ExtensionRegistry:
             else:
                 kubin.log(f"{i+1}: extension '{extension}' found")
                 extension_reqs_path = f"{self.root}/{extension}/requirements.txt"
+                extension_reqs_no_deps_path = (
+                    f"{self.root}/{extension}/requirements_no_deps.txt"
+                )
                 extension_installed = f"{self.root}/{extension}/.installed"
 
                 if not self.skip_install and os.path.isfile(extension_reqs_path):
@@ -108,6 +111,15 @@ class ExtensionRegistry:
                                 arguments = [arguments] if arguments is not None else []
 
                         self.install_pip_reqs(extension_reqs_path, arguments=arguments)
+                        if os.path.isfile(extension_reqs_no_deps_path):
+                            kubin.log(
+                                f"{i+1}: extension '{extension}' has requirements_no_deps.txt, installing without dependencies"
+                            )
+                            self.install_pip_reqs(
+                                extension_reqs_no_deps_path,
+                                arguments=arguments + ["--no-deps"],
+                            )
+
                         open(extension_installed, "a").close()
 
                 extension_py_path = f"{self.root}/{extension}/setup_ext.py"
