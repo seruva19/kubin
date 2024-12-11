@@ -35,7 +35,7 @@ Most activity, until the next version of Kandinsky (if any) is released, will ta
 | ext. [Animation](https://github.com/seruva19/kubin-extensions#kd-animation)                  |     | 🕒  |  ✔  |    |    |
 | ext. [Video](https://github.com/seruva19/kubin-extensions#kd-video)                          |     |     |     |  ✔ |    |
 | ext. [Background remover](https://github.com/seruva19/kubin-extensions#kd-bg-remover)        | ✔   | ✔  |  ✔  |  ✔ | ✔  |
-| ext. LLM prompt enhancer                                                                     | ✔   | ✔  |  ✔  |  ✔ | ✔  |
+| ext. [LLM prompt enhancer](https://github.com/seruva19/kubin-extensions#kd-llm-enhancer)     | ✔   | ✔  |  ✔  |  ✔ | ✔  |
 | Advanced prompt syntax                                                                       |     |     | 🕒  |    |     |
 | Prompt weighting                                                                             |     |     | 🕒  |    |     |
 | ext. Area composition                                                                        |     |     | 🕒  |    |     |
