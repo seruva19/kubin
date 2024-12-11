@@ -3,41 +3,42 @@
 
 ## Description
 
-Web-GUI for Kandinsky text-to-image diffusion models ([Kandinsky2](https://github.com/ai-forever/Kandinsky-2/), [Kandinsky3](https://github.com/ai-forever/Kandinsky-3)).
+Web-GUI for Kandinsky text-to-image diffusion models ([Kandinsky2](https://github.com/ai-forever/Kandinsky-2/), [Kandinsky3](https://github.com/ai-forever/Kandinsky-3)).  
 
 ## Disclaimer
 
-⚠️ THE PROJECT IS STILL ACTIVE ⚠️ HOWEVER, UPDATES MAY BE LESS FREQUENT ⚠️
+The project is not abandoned. However, updates may be less frequent.  
+Most activity, until the next version of Kandinsky (if any) is released, will take place in the [extensions repository](https://github.com/seruva19/kubin-extensions). 
 
 ## Features
 
-| Model                                                                              | 2.0 | 2.1 | 2.2 |3.0  |3.1  |
-| ---------------------------------------------------------------------------------- | --- | --- | --- | --- | --- |
-| Txt2img                                                                            | ✔   | ✔  |  ✔  | ✔  | ✔  |
-| Img2img                                                                            | ✔   | ✔  |  ✔  | ✔  | 🕒 |
-| Mixing                                                                             |     | ✔  |  ✔  | 🕒 | 🕒 |
-| Inpainting                                                                         | ✔   | ✔  |  ✔  | ✔  | ✔  |
-| Outpainting                                                                        |     | ✔  |  ✔  | 🕒 | 🕒  |
-| ControlNet                                                                         |     |     |  ✔  |    | 🕒 |
-| IpAdapter                                                                          |     |     |      |    | 🕒  |
-| Diffusers pipeline                                                                 |     | ✔  |  ✔  |  ✔ | 🕒 |
-| Low-VRAM options                                                                   |     |     |  ✔  |  ✔ | ✔  |
-| ext. [Image browser](https://github.com/seruva19/kubin-extensions)                 | ✔   | ✔  |  ✔  |  ✔ | ✔  |
-| ext. [Image editor](https://github.com/seruva19/kubin-extensions)                  | ✔   | ✔  |  ✔  |  ✔ | ✔  |
-| ext. [Fine-tuning](https://github.com/seruva19/kubin-extensions)                   |     | ✔  |  🕒 |     |    |
-| ext. [LoRA training and inference](https://github.com/seruva19/kubin-extensions)   |     |     |  ✔  |    |   |
-| ext. [Style library](https://github.com/seruva19/kubin-extensions)                 | ✔   | ✔  |  ✔  |  ✔ | ✔  |
-| ext. [Upscaling](https://github.com/seruva19/kubin-extensions)                     | ✔   | ✔  |  ✔  |  ✔ | ✔  |
-| ext. [Img2mesh](https://github.com/seruva19/kubin-extensions)                      | ✔   | ✔  |  ✔  |  ✔ | ✔  |
-| ext. [Interrogation](https://github.com/seruva19/kubin-extensions)                 | ✔   | ✔  |  ✔  |  ✔ | ✔  |
-| ext. [Segmentation](https://github.com/seruva19/kubin-extensions)                  | ✔   | ✔  |  ✔  |  ✔ | ✔  |
-| ext. [Animation](https://github.com/seruva19/kubin-extensions)                     |     | 🕒  |  ✔  |    |    |
-| ext. [Video](https://github.com/seruva19/kubin-extensions)                         |     |     |     |  ✔ |    |
-| ext. [Background remover](https://github.com/seruva19/kubin-extensions)            | ✔   | ✔  |  ✔  |  ✔ | ✔  |
-| ext. LLM prompt enhancer                                                           | ✔   | ✔  |  ✔  |  ✔ | ✔  |
-| Advanced prompt syntax                                                             |     |     | 🕒  |    |     |
-| Prompt weighting                                                                   |     |     | 🕒  |    |     |
-| ext. Area composition                                                              |     |     | 🕒  |    |     |
+| Model                                                                                        | 2.0 | 2.1 | 2.2 |3.0  |3.1  |
+| -------------------------------------------------------------------------------------------- | --- | --- | --- | --- | --- |
+| Txt2img                                                                                      | ✔   | ✔  |  ✔  | ✔  | ✔  |
+| Img2img                                                                                      | ✔   | ✔  |  ✔  | ✔  | 🕒 |
+| Mixing                                                                                       |     | ✔  |  ✔  | 🕒 | 🕒 |
+| Inpainting                                                                                   | ✔   | ✔  |  ✔  | ✔  | ✔  |
+| Outpainting                                                                                  |     | ✔  |  ✔  | 🕒 | 🕒  |
+| ControlNet                                                                                   |     |     |  ✔  |    | 🕒 |
+| IpAdapter                                                                                    |     |     |      |    | 🕒  |
+| Diffusers pipeline                                                                           |     | ✔  |  ✔  |  ✔ | 🕒 |
+| Low-VRAM options                                                                             |     |     |  ✔  |  ✔ | ✔  |
+| ext. [Image browser](https://github.com/seruva19/kubin-extensions#kd-image-browser)          | ✔   | ✔  |  ✔  |  ✔ | ✔  |
+| ext. [Image editor](https://github.com/seruva19/kubin-extensions#kd-image-editor)            | ✔   | ✔  |  ✔  |  ✔ | ✔  |
+| ext. [Fine-tuning](https://github.com/seruva19/kubin-extensions#kd-training)                 |     | ✔  |  🕒 |     |    |
+| ext. [LoRA training and inference](https://github.com/seruva19/kubin-extensions#kd-training) |     |     |  ✔  |    |   |
+| ext. [Style library](https://github.com/seruva19/kubin-extensions#kd-prompt-styles)          | ✔   | ✔  |  ✔  |  ✔ | ✔  |
+| ext. [Upscaling](https://github.com/seruva19/kubin-extensions#kd-upscaler)                   | ✔   | ✔  |  ✔  |  ✔ | ✔  |
+| ext. [Img2mesh](https://github.com/seruva19/kubin-extensions#kd-mesh-gen)                    | ✔   | ✔  |  ✔  |  ✔ | ✔  |
+| ext. [Interrogation](https://github.com/seruva19/kubin-extensions#kd-interrogator)           | ✔   | ✔  |  ✔  |  ✔ | ✔  |
+| ext. [Segmentation](https://github.com/seruva19/kubin-extensions#kd-segmentation)            | ✔   | ✔  |  ✔  |  ✔ | ✔  |
+| ext. [Animation](https://github.com/seruva19/kubin-extensions#kd-animation)                  |     | 🕒  |  ✔  |    |    |
+| ext. [Video](https://github.com/seruva19/kubin-extensions#kd-video)                          |     |     |     |  ✔ |    |
+| ext. [Background remover](https://github.com/seruva19/kubin-extensions#kd-bg-remover)        | ✔   | ✔  |  ✔  |  ✔ | ✔  |
+| ext. LLM prompt enhancer                                                                     | ✔   | ✔  |  ✔  |  ✔ | ✔  |
+| Advanced prompt syntax                                                                       |     |     | 🕒  |    |     |
+| Prompt weighting                                                                             |     |     | 🕒  |    |     |
+| ext. Area composition                                                                        |     |     | 🕒  |    |     |
 
 ## Screenshot
 	
