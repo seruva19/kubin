@@ -11,7 +11,7 @@ The project is not abandoned. However, updates may be less frequent.
 
 ## Features
 
-| Model                                                                                        | 2.0 | 2.1 | 2.2 |3.0  |3.1  |4.0  |
+| Model                                                                                        | 2.0 | 2.1 | 2.2 |3.0  |3.1  |[4.0](https://github.com/seruva19/kubin/issues/181)  |
 | -------------------------------------------------------------------------------------------- | --- | --- | --- | --- | --- | --- |
 | Txt2img                                                                                      | ✔   | ✔  |  ✔  | ✔  | ✔  |      |
 | Img2img                                                                                      | ✔   | ✔  |  ✔  | ✔  | 🕒 |      |

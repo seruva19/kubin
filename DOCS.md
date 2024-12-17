@@ -1,6 +1,6 @@
 ### Disclaimer
 
-There is no comprehensive documentation (yet).
+There is no comprehensive documentation available at the moment. Additionally, existing materials might include topics that are already outdated. I apologize for this, but maintaining accurate documentation requires significant time and effort, which I lack. 
 If you have questions, please feel free to open an issue or start a discussion.
 
 ### Alternative solutions
@@ -92,12 +92,17 @@ There are two options to overcome this:
 
 Perhaps MPS users also might be able to run Kandinsky 3 thanks to unified memory (see https://github.com/huggingface/diffusers/issues/6028), but I haven't been able to try it out and confirm this. 
 
-### Diffusers
+### Kandinsky 4.0
 
-In latest version of the app diffusers pipeline is activated by default.
-To change it, launch app with command argument --pipeline="native" or change pipeline in 'Settings/Options' tab.
+Please refer to the commits in the 'kandinsky-4' branch.
+
+### Models and pipelines
+
+For some Kandinsky models, there are 'native' and 'diffusers' implementations. 'Native' refers to the implementation provided by model developers themselves, while 'diffusers' is from the Diffusers library. To switch between implementations (and models in general), use the 'Settings/Options' tab.
 
 ### System requirements
+
+#### Kandinsky 2.2
 
 At default settings, full 2.2 model does not fit into 8 Gb. If you have a low-end GPU, this is what you can try:
 
@@ -113,23 +118,23 @@ That should decrease VRAM consumption to somewhere around 2 Gb for 512x512 image
 Depending of your computing power, you may try turn on/off specific flags until optimal VRAM/speed ratio will be met. 
 Note that these optimizations are implemented only for 2.2 model, and not applicable to earlier models (2.0 and 2.1) or Kandinsky 3.* (which has its own optimizations, read section above).  
 
+Regarding Kandinsky 3.* requirements, please refer to the information provided earlier.
+
 ### FlashAttention
 
-[FlashAttention](https://github.com/HazyResearch/flash-attention) may only be used for 2.1 'native' pipeline, and won't be used with diffusers. 
-Enabling it should speed up inference. Use:
-```
-./venv/Scripts/Activate.ps1 # for powershell
-call venv\Scripts\activate.bat # for command prompt
-pip install flash-attn
-python src/kubin.py --flash-attention='use'
-```
+#### Kandinsky 2.1
 
-Building flash-attn from source might take a while (20-40 mins) and requires installation of CUDA Toolkit and VS Build Tools. Besides that, it should be as simple as typing `pip wheel flash-attn -w /target_folder` command. 
-In colab precompiled wheel is used.
+[FlashAttention](https://github.com/HazyResearch/flash-attention) can be used with the 2.1 'native' pipeline, though it is disabled by default. Building FlashAttention from source on Windows remains a complex task [even today](https://github.com/Dao-AILab/flash-attention?tab=readme-ov-file#installation-and-features). In Google Colab a precompiled wheel is used, as building it under Linux is straightforward and can be done with a simple `pip wheel flash-attn -w /target_folder` command. 
+
+Enabling FlashAttention can speed up inference, but as far as I know, it does not provide any other advantages. To enable it, use the appropriate flag in the Settings tab or run Kubin with the following command: ```python src/kubin.py --flash-attention='use'```
 
 ### xFormers
 
-I haven't tested it extensively. In theory, `pip install xformers` and turning on 'Enable xformers memory efficient attention' flag in Settings should enable it. But since torch 2.0 is default now and has its own internal optimizations, I don't think using xFormers is justified, even though some [extensions](https://github.com/seruva19/kubin-extensions) use xFormers.
+I haven't tested it extensively. In theory, `pip install xformers` and turning on 'Enable xformers memory efficient attention' flag in Settings should enable it. But since torch 2.0 is default now and has its own internal optimizations, I don't think using xFormers is justified, even though some [extensions](https://github.com/seruva19/kubin-extensions) may use xFormers.
+
+### Gradio 4
+
+I attempted to upgrade Gradio to v4.4.1, but it introduced numerous issues: disrupted UI elements, introduced corruption of CSS styles and created errors that straightforwardly broke some critical methods. For instance, image transmission between tabs ceased working, and I couldn't find a quick replacement. The key consideration is "quick" - since this is my sole project utilizing Gradio as a frontend, I decided investing time in this upgrade wasn't worthwhile. It would make more sense (if at all) to completely redesign the UI (and which currently I'm not planning to do too).
 
 ### Theme
 
@@ -139,7 +144,7 @@ Dark mode can be forced (as in any other gradio app) by launching URL `http://12
 
 ### Developing extensions
 
-A brief tutorial might be published after 1.0 release, but currently there are no plans for writing any kind of docs. API for extensions is not very consistent and is still a subject to change.
+Currently, there are no plans to write any documentation for this. Seriously, it's better to spend your time creating nodes for ComfyUI. API for extensions is not very consistent and is subject to change at any time.
 
 ### Changelog
 
@@ -148,12 +153,14 @@ You may want to check [closed pull requests](https://github.com/seruva19/kubin/i
 
 ### Credits and links
 
+(This is not a complete list; however, I usually try to indicate the usage of third-party libraries and source code either in my code or in commit messages.)
+
 * Web interface: https://gradio.app/
 * Kandinsky model weights: https://huggingface.co/ai-forever, https://huggingface.co/kandinsky-community
 * Default styles list from: https://fusionbrain.ai/, https://github.com/Douleb/SDXL-A1111-Styles
 * Diffusers Kandinsky pipeline: https://huggingface.co/docs/diffusers/main/en/api/pipelines/kandinsky
-* Scripts for t2i, i2i, mix, inpaint, fine-tuning: https://github.com/ai-forever/Kandinsky-2, https://github.com/ai-forever/Kandinsky-3 
-* Upscaling: https://github.com/xinntao/Real-ESRGAN, https://github.com/ai-forever/Real-ESRGAN
+* Scripts for t2i, i2i, mix, inpaint, t2v, i2v, fine-tuning: https://github.com/ai-forever/Kandinsky-2, https://github.com/ai-forever/Kandinsky-3 , https://github.com/ai-forever/Kandinsky-4
+* Upscaling: https://github.com/xinntao/Real-ESRGAN, https://github.com/ai-forever/KandiSuperRes
 * 3D model generation: https://github.com/openai/shap-e
 * Mask extraction: https://github.com/facebookresearch/segment-anything
 * Deforum-Kandinsky: https://github.com/ai-forever/deforum-kandinsky
