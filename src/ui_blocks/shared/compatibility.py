@@ -5,9 +5,7 @@ def negative_prompt_classes():
 
 
 def send_outpaint_btn_classes():
-    return [
-        "unsupported_20",
-    ]
+    return ["unsupported_20"]
 
 
 def send_mix_btn_classes():
@@ -39,6 +37,7 @@ def ckpt_selector20_classes():
         "unsupported_21",
         "unsupported_d21",
         "unsupported_22",
+        "unsupported_40",
     ]
 
 
@@ -47,6 +46,7 @@ def ckpt_selector21_classes():
         "unsupported_20",
         "unsupported_d21",
         "unsupported_22",
+        "unsupported_40",
     ]
 
 
@@ -56,6 +56,7 @@ def ckpt_selector21d_classes():
         "unsupported_21",
         "unsupported_22",
         "unsupported_d22",
+        "unsupported_40",
     ]
 
 
@@ -64,6 +65,7 @@ def ckpt_selector22_classes():
         "unsupported_20",
         "unsupported_21",
         "unsupported_d21",
+        "unsupported_40",
     ]
 
 
@@ -72,6 +74,7 @@ def ext_availability_classes(ext_augment):
     supports_pipeline_model = ext_augment.get(
         "supports",
         [
+            "native-kd40",
             "native-kd31",
             "diffusers-kd30",
             "native-kd30",
@@ -102,6 +105,9 @@ def ext_availability_classes(ext_augment):
     if "diffusers-kd30" not in supports_pipeline_model:
         classes.append("unsupported_d30")
 
+    if "native-kd40" not in supports_pipeline_model:
+        classes.append("unsupported_40")
+
     return classes
 
 
@@ -126,7 +132,8 @@ def generate_rules():
         body[class*="pipeline-diffusers-kd22"] [class*="unsupported_d22"],
         body[class*="pipeline-native-kd30"] [class*="unsupported_30"],
         body[class*="pipeline-diffusers-kd30"] [class*="unsupported_d30"],
-        body[class*="pipeline-native-kd31"] [class*="unsupported_31"] {
+        body[class*="pipeline-native-kd31"] [class*="unsupported_31"],
+        body[class*="pipeline-native-kd40"] [class*="unsupported_40"] {
             display: none;
         }
 
@@ -153,11 +160,30 @@ def generate_rules():
             display: none;
         }
 
+        body[class*="pipeline-native-kd40"] .ui-tabs>.tab-nav>button:nth-child(1),
+        body[class*="pipeline-native-kd40"] .ui-tabs>.tab-nav>button:nth-child(2),
+        body[class*="pipeline-native-kd40"] .ui-tabs>.tab-nav>button:nth-child(3),
+        body[class*="pipeline-native-kd40"] .ui-tabs>.tab-nav>button:nth-child(4),
+        body[class*="pipeline-native-kd40"] .ui-tabs>.tab-nav>button:nth-child(5) {
+            display: none;
+        }
+        
+        body:not([class$="-kd40"]) .ui-tabs>.tab-nav>button:nth-child(6),
+        body:not([class$="-kd40"]) .ui-tabs>.tab-nav>button:nth-child(7),
+        body:not([class$="-kd40"]) .ui-tabs>.tab-nav>button:nth-child(8) {
+            display: none;
+        }
+        
+        .ui-tabs>.tab-nav>button:nth-child(7) {
+            display: none !important;
+        }
+
         body[class*="pipeline-"][class*="-kd20"] .settings-tabs>.tabs>.tab-nav>button:nth-child(2),
         body[class*="pipeline-diffusers-kd21"] .settings-tabs>.tabs>.tab-nav>button:nth-child(2),
         body[class*="pipeline-"][class*="-kd22"] .settings-tabs>.tabs>.tab-nav>button:nth-child(2),
         body[class*="pipeline-"][class*="-kd30"] .settings-tabs>.tabs>.tab-nav>button:nth-child(2),
-        body[class*="pipeline-"][class*="-kd31"] .settings-tabs>.tabs>.tab-nav>button:nth-child(2) {
+        body[class*="pipeline-"][class*="-kd31"] .settings-tabs>.tabs>.tab-nav>button:nth-child(2),
+        body[class*="pipeline-"][class*="-kd40"] .settings-tabs>.tabs>.tab-nav>button:nth-child(2) {
             display: none;
         }
 

@@ -199,7 +199,10 @@
       pipeline = 'diffusers'
     } else if (model_name == 'kd31' && pipeline == 'diffusers') {
       kubin.notify.error('You cannot use a 3.1 model with the diffusers pipeline! Native pipeline will be used')
-      pipeline = 'diffusers'
+      pipeline = 'native'
+    } else if (model_name == 'kd40' && pipeline == 'diffusers') {
+      kubin.notify.error('You cannot use a 4.0 model with the diffusers pipeline! Native pipeline will be used')
+      pipeline = 'native'
     }
 
     document.body.classList.add(`pipeline-${pipeline}-${model_name}`)

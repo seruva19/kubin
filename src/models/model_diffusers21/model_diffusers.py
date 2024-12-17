@@ -27,7 +27,7 @@ class Model_Diffusers:
             KandinskyInpaintPipeline,
         )
 
-        print("activating pipeline: diffusers (2.1)")
+        print("using pipeline: diffusers (2.1)")
         self.params = params
 
         self.pipe_prior: KandinskyPriorPipeline | None = None

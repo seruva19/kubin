@@ -17,7 +17,7 @@ from utils.logging import k_log
 class Model_Mock:
     def __init__(self, params: KubinParams):
         self.params = params
-        k_log("activating pipeline: mock")
+        k_log("using pipeline: mock")
 
         self.prior = type("obj", (object,), {"model": "prior"})
         self.decoder = type("obj", (object,), {"model": "decoder"})

@@ -27,7 +27,15 @@ def update_info():
 
         xformers_info = f"xformers: {xformers.__version__}\n"
     except:
-        pass
+        xformers_info = f"xformers: not installed\n"
+
+    flash_attn_info = ""
+    try:
+        import flash_attn
+
+        flash_attn_info = f"flash_attn: {flash_attn.__version__}\n"
+    except:
+        flash_attn_info = f"flash_attn: not installed\n"
 
     diffusers_info = ""
     try:
@@ -35,7 +43,7 @@ def update_info():
 
         diffusers_info = f"diffusers: {diffusers.__version__}\n"
     except:
-        pass
+        diffusers_info = f"diffusers: not installed\n"
 
     transformers_info = ""
     try:
@@ -43,7 +51,7 @@ def update_info():
 
         transformers_info = f"transformers: {transformers.__version__}\n"
     except:
-        pass
+        transformers_info = f"transformers: not installed\n"
 
     accelerate_info = ""
     try:
@@ -51,7 +59,7 @@ def update_info():
 
         accelerate_info = f"accelerate: {accelerate.__version__}\n"
     except:
-        pass
+        accelerate_info = f"accelerate: not installed\n"
 
     vmem = psutil.virtual_memory()
     ram_total = vmem.total
@@ -73,6 +81,7 @@ def update_info():
         f"VRAM (free): {torch_free_mb}\n"
         f"gradio: {gr.__version__}\n"
         f"{xformers_info}"
+        f"{flash_attn_info}"
         f"{diffusers_info}"
         f"{transformers_info}"
         f"{accelerate_info}"

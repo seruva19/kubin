@@ -24,7 +24,7 @@ from model_utils.diffusers_samplers import use_sampler
 
 class Model_Diffusers3:
     def __init__(self, params: KubinParams):
-        k_log("activating pipeline: diffusers (3.0)")
+        k_log("activating using: diffusers (3.0)")
         self.params = params
 
         self.auto_t2i_pipe: AutoPipelineForText2Image | None = None

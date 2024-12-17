@@ -23,7 +23,7 @@ class Model_KD21:
     def __init__(self, params: KubinParams):
         from kandinsky2 import Kandinsky2_1
 
-        k_log("activating pipeline: native (2.1)")
+        k_log("using pipeline: native (2.1)")
         self.params = params
 
         self.kd21: Kandinsky2_1 | None = None
@@ -41,7 +41,12 @@ class Model_KD21:
 
         cache_dir = self.params("general", "cache_dir")
         device = self.params("general", "device")
-        use_flash_attention = self.params("native", "flash_attention")
+
+        # use_flash_attention = self.params("native", "flash_attention")
+        use_flash_attention = "kd21_flash_attention" in [
+            value.strip()
+            for value in self.params("native", "optimization_flags").split(";")
+        ]
 
         if task == "text2img" or task == "img2img" or task == "mix":
             if self.kd21 is None:

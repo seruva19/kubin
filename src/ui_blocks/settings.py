@@ -3,7 +3,7 @@ import gradio as gr
 import torch
 import psutil
 import platform
-from kandinsky2 import CONFIG_2_1
+
 from env import Kubin
 from utils.yaml import flatten_yaml
 from .settings_options import options_ui

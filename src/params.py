@@ -36,6 +36,9 @@ class KubinParams:
     def to_json(self):
         return json.dumps(flatten_yaml(OmegaConf.to_container(self.conf)))
 
+    def default_config_value(self, *keys):
+        return self.get_conf_item(self._default, keys)
+
     def load_config(self):
         default_config = "configs/kubin.default.yaml"
         user_config = "configs/kubin.yaml"
@@ -147,8 +150,10 @@ class KubinParams:
         if self.args.mock is not None:
             self.conf["general"]["mock"] = self.args.mock == "use"
 
-        if self.args.flash_attention is not None:
-            self.conf["native"]["flash_attention"] = self.args.flash_attention == "use"
+        if self.args.flash_attention is not None and self.args.flash_attention == "use":
+            self.conf["native"]["optimization_flags"] += (
+                self.conf["native"]["optimization_flags"] + ";kd21_flash_attention"
+            )
 
         if self.args.skip_install is not None:
             self.conf["general"]["skip_install"] = self.args.skip_install == "use"

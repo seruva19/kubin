@@ -110,17 +110,22 @@ class ExtensionRegistry:
                                 arguments = ext_conf.get("pip_args", None)
                                 arguments = [arguments] if arguments is not None else []
 
-                        self.install_pip_reqs(extension_reqs_path, arguments=arguments)
+                        install_main_res_success = self.install_pip_reqs(
+                            extension_reqs_path, arguments=arguments
+                        )
                         if os.path.isfile(extension_reqs_no_deps_path):
                             kubin.log(
                                 f"extension [{i+1}]  '{extension}' has requirements_no_deps.txt, installing without dependencies"
                             )
-                            self.install_pip_reqs(
+                            install_nodeps_res_success = self.install_pip_reqs(
                                 extension_reqs_no_deps_path,
                                 arguments=arguments + ["--no-deps"],
                             )
+                        else:
+                            install_nodeps_res_success = True
 
-                        open(extension_installed, "a").close()
+                        if install_main_res_success and install_nodeps_res_success:
+                            open(extension_installed, "a").close()
 
                 extension_py_path = f"{self.root}/{extension}/setup_ext.py"
                 if os.path.exists(extension_py_path):
@@ -163,9 +168,12 @@ class ExtensionRegistry:
 
             root_reqs = f"{self.root}/requirements.txt"
             if os.path.exists(root_reqs):
-                self.install_pip_reqs(root_reqs)
+                post_install_reqs_success = self.install_pip_reqs(root_reqs)
+            else:
+                post_install_reqs_success = True
 
-            open(postinstall_reqs_installed, "a").close()
+            if post_install_reqs_success:
+                open(postinstall_reqs_installed, "a").close()
 
     def install_pip_reqs(self, reqs_path, arguments=[]):
         current_platform = platform.system()
@@ -184,23 +192,35 @@ class ExtensionRegistry:
             reqs_path,
         ] + arguments
 
-        if os.path.exists(venv_activation_path):
-            if current_platform == "Windows":
-                activation_cmd = [
-                    "cmd.exe",
-                    "/C",
-                    venv_activation_path + " && " + " ".join(pip_install_cmd),
-                ]
-                subprocess.check_call(activation_cmd)
+        try:
+            if os.path.exists(venv_activation_path):
+                if current_platform == "Windows":
+                    activation_cmd = [
+                        "cmd.exe",
+                        "/C",
+                        venv_activation_path + " && " + " ".join(pip_install_cmd),
+                    ]
+                    subprocess.check_call(activation_cmd)
+                else:
+                    activation_cmd = [
+                        "sh",
+                        "-c",
+                        f". {venv_activation_path} && {' '.join(pip_install_cmd)}",
+                    ]
+                    subprocess.check_call(activation_cmd)
             else:
-                activation_cmd = [
-                    "sh",
-                    "-c",
-                    f". {venv_activation_path} && {' '.join(pip_install_cmd)}",
-                ]
-                subprocess.check_call(activation_cmd)
-        else:
-            subprocess.check_call(pip_install_cmd)
+                subprocess.check_call(pip_install_cmd)
+
+            print(f"packages required by '{reqs_path}' installed successfully.")
+            return True
+        except subprocess.CalledProcessError as e:
+            print(f"Error during pip install -r '{reqs_path}': {e}")
+            return False
+        except Exception as e:
+            print(
+                f"An unexpected error occurred during pip install -r '{reqs_path}': {e}"
+            )
+            return False
 
     def standalone(self):
         return list(

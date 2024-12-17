@@ -23,11 +23,11 @@ from utils.logging import k_log
 
 class Model_KD31:
     def __init__(self, params: KubinParams):
-        k_log("activating pipeline: native (3.1)")
+        k_log("using pipeline: native (3.1)")
 
         self.params = params
 
-        self.use_flash_pipeline = self.params("native", "use_kandinsky_flash")
+        self.use_flash_pipeline = self.params("native", "use_kandinsky31_flash")
         self.t2i_pipe: Kandinsky3T2IPipeline | Kandinsky3T2ILowVRAMPipeline | None = (
             None
         )
@@ -41,7 +41,7 @@ class Model_KD31:
         device = self.params("general", "device")
 
         use_flash_pipeline_before = self.use_flash_pipeline
-        self.use_flash_pipeline = self.params("native", "use_kandinsky_flash")
+        self.use_flash_pipeline = self.params("native", "use_kandinsky31_flash")
 
         text_encoder_path = self.params("native", "text_encoder")
         if text_encoder_path == "default":

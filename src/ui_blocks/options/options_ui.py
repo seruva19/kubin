@@ -37,6 +37,12 @@ def options_tab_ui(kubin: Kubin):
             label="Show help text if present",
         )
 
+        restore_params_on_launch = gr.Checkbox(
+            value=lambda: kubin.params("ui", "restore_params_on_launch"),
+            label="Restore recent parameters after launch",
+            interactive=False,
+        )
+
     allow_params_panel_resize.change(
         fn=None,
         _js=on_change,

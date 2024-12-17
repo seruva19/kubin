@@ -30,7 +30,7 @@ from model_utils.diffusers_samplers import use_sampler
 
 class Model_KD3:
     def __init__(self, params: KubinParams):
-        k_log("activating pipeline: native (3.0)")
+        k_log("using pipeline: native (3.0)")
 
         self.params = params
         self.t2i_pipe: Kandinsky3T2IPipeline | Kandinsky3T2IOptimizedPipeline | None = (

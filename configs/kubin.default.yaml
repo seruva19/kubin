@@ -1,9 +1,9 @@
 general:
   device: cuda
   cache_dir: models
-  model_name: kd22
+  model_name: kd40
   output_dir: output
-  pipeline: diffusers
+  pipeline: native
   mock: false
   profiler: none
   extensions_path: extensions
@@ -42,12 +42,15 @@ ui:
   side_tabs: true
   show_help_text: false
   progress_poll_interval: 2
-
+  mix_image_count: 2
+  restore_params_on_launch: false
+  
 native:
-  flash_attention: false
+  available_text_encoders: default;google/flan-ul2;pszemraj/flan-ul2-text-encoder;JulesGo/t5-v1_1-xxl-fp8
   text_encoder: pszemraj/flan-ul2-text-encoder
-  use_kandinsky_flash: false
-  optimization_flags: kd30_low_vram;kd31_low_vram
+  use_kandinsky31_flash: false
+  available_optimization_flags: kd21_flash_attention;kd30_low_vram;kd31_low_vram;kd40_flash_attention;kd40_sage_attention;kd40_fp8_tenc_ao_quantization;kd40_fp8_vae_ao_quantization;kd40_fp8_dit_ao_quantization;kd40_vae_tiling;kd40_vae_slicing;kd40_model_offload
+  optimization_flags: kd30_low_vram;kd31_low_vram;kd40_flash_attention;kd40_fp8_tenc_ao_quantization;kd40_fp8_vae_ao_quantization;kd40_fp8_dit_ao_quantization;kd40_vae_tiling;kd40_vae_slicing
 
 diffusers:
   half_precision_weights: true

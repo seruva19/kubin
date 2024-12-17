@@ -16,7 +16,7 @@ class Model_KD20:
     def __init__(self, params: KubinParams):
         from kandinsky2 import Kandinsky2
 
-        print("activating pipeline: native (2.0)")
+        print("using pipeline: native (2.0)")
         self.params = params
 
         self.kd20: Kandinsky2 | None = None

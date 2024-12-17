@@ -54,10 +54,29 @@ body.unselectable * {
   display: block !important;
 }
 
-.options-info {
-  margin: 10px 0;
-  height: 30px;
-  display: block;
+.options-optimizations {
+  margin-top: 20px !important;
+}
+
+#options-optimizations-text {
+  line-height: 0 !important;
+}
+
+#options-optimizations-text textarea {
+  resize: none !important;
+  font-family: monospace !important;
+  font-size: 11px !important;
+}
+
+.options-optimizations>div.wrap {
+  display: block !important;
+  margin-left: -13px !important;
+}
+
+.options-optimizations>div.wrap>label {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .block-resizable-anchor {

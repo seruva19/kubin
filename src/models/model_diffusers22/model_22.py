@@ -63,7 +63,7 @@ from hooks.hooks import HOOK
 
 class Model_Diffusers22:
     def __init__(self, params: KubinParams):
-        k_log("activating pipeline: diffusers (2.2)")
+        k_log("using pipeline: diffusers (2.2)")
         self.params = params
 
         self.prior_transformer: PriorTransformer | None = None
