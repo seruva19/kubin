@@ -19,12 +19,13 @@ def t2v_ui(generate_fn, shared: SharedUI, tabs, session):
             augmentations["ui_before_prompt"]()
 
             with gr.Row():
-                text = gr.TextArea(
+                prompt = gr.TextArea(
                     "A closeshot of beautiful blonde woman standing under the sun at the beach. Soft waves lapping at her feet and vibrant palm trees lining the distant coastline under a clear blue sky.",
                     label="Text",
                     placeholder="",
                     lines=4,
                 )
+            augmentations["ui_before_params"]()
 
             with gr.Row():
                 with gr.Column():
@@ -336,7 +337,7 @@ def t2v_ui(generate_fn, shared: SharedUI, tabs, session):
                 fn=generate,
                 inputs=[
                     session,
-                    text,
+                    prompt,
                     render_resolution,
                     time_length,
                     generate_image,
