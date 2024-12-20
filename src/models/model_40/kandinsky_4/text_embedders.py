@@ -12,6 +12,7 @@ import sys
 import os
 
 from .utils import freeze
+from compel import Compel
 
 
 class BaseEmbedder:
@@ -56,7 +57,6 @@ class EmbedderWithTokenizer(BaseEmbedder):
 
 
 class T5TextEmbedder(EmbedderWithTokenizer):
-
     def __init__(self, conf):
         from transformers import T5EncoderModel, T5Tokenizer
 
@@ -66,6 +66,8 @@ class T5TextEmbedder(EmbedderWithTokenizer):
         self.tokenizer = T5Tokenizer.from_pretrained(
             self.tokenizer_path, clean_up_tokenization_spaces=False
         )
+
+        # self.compel = Compel(tokenizer= self.tokenizer, text_encoder= self.llm)
 
 
 def get_text_embedder(conf):

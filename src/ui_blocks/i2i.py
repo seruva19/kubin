@@ -1,3 +1,4 @@
+import asyncio
 import gradio as gr
 from ui_blocks.shared.compatibility import batch_size_classes, prior_block_classes
 from ui_blocks.shared.samplers import samplers_controls
@@ -7,13 +8,22 @@ from utils.logging import k_log
 import os
 from PIL import Image
 
+from utils.storage import get_value
+from utils.text import generate_prompt_from_wildcard
+
+block = "i2i"
+
 
 def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
     augmentations = shared.create_ext_augment_blocks("i2i")
+    value = lambda name, def_value: get_value(shared.storage, block, name, def_value)
 
     with gr.Row() as i2i_block:
         i2i_block.elem_classes = ["i2i_block"]
         with gr.Column(scale=2) as i2i_params:
+            with gr.Accordion("PRESETS", open=False, visible=False):
+                pass
+
             augmentations["ui_before_prompt"]()
 
             with gr.Tabs():
@@ -23,12 +33,15 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
                             shared.input_i2i_image.render()
                         with gr.Column(scale=1):
                             prompt = gr.TextArea(
-                                "", placeholder="", label="Prompt", lines=2
+                                value=lambda: value("prompt", ""),
+                                placeholder="",
+                                label="Prompt",
+                                lines=2,
                             )
                             strength = gr.Slider(
-                                0,
-                                1,
-                                0.3,
+                                minimum=0,
+                                maximum=1,
+                                value=lambda: value("strength", 0.3),
                                 step=0.05,
                                 label="Transformation strength",
                                 info=shared.info(
@@ -40,20 +53,24 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
 
                     with gr.Accordion("ControlNet", open=False) as i2i_cnet:
                         cnet_enable = gr.Checkbox(
-                            False, label="Enable", elem_classes=["cnet-enable"]
+                            value=lambda: value("cnet_enable", False),
+                            label="Enable",
+                            elem_classes=["cnet-enable"],
                         )
 
                         with gr.Row():
                             with gr.Column():
                                 cnet_img_reuse = gr.Checkbox(
-                                    True,
+                                    value=lambda: value("cnet_img_reuse", True),
                                     label="Reuse input image for ControlNet condition",
                                 )
                                 shared.input_cnet_i2i_image.render()
                                 with gr.Row():
                                     cnet_condition = gr.Radio(
                                         choices=["depth-map"],
-                                        value="depth-map",
+                                        value=lambda: value(
+                                            "cnet_condition", "depth-map"
+                                        ),
                                         label="Condition",
                                     )
                                     cnet_depth_estimator = gr.Dropdown(
@@ -61,7 +78,9 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
                                             "Intel/dpt-hybrid-midas",
                                             "Intel/dpt-large",
                                         ],
-                                        value="Intel/dpt-large",
+                                        value=lambda: value(
+                                            "cnet_depth_estimator", "Intel/dpt-large"
+                                        ),
                                         label="Depth estimator",
                                     )
 
@@ -73,21 +92,29 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
 
                             with gr.Column():
                                 cnet_emb_transform_strength = gr.Slider(
-                                    0, 1, 0.85, step=0.05, label="Embedding strength"
+                                    minimum=0,
+                                    maximum=1,
+                                    value=lambda: value(
+                                        "cnet_emb_transform_strength", 0.85
+                                    ),
+                                    step=0.05,
+                                    label="Embedding strength",
                                 )
 
                                 cnet_neg_emb_transform_strength = gr.Slider(
-                                    0,
-                                    1,
-                                    1,
+                                    minimum=0,
+                                    maximum=1,
+                                    value=lambda: value(
+                                        "cnet_neg_emb_transform_strength", 1
+                                    ),
                                     step=0.05,
                                     label="Negative prior embedding strength",
                                 )
 
                                 cnet_img_strength = gr.Slider(
-                                    0,
-                                    1,
-                                    0.5,
+                                    minimum=0,
+                                    maximum=1,
+                                    value=lambda: value("cnet_img_strength", 0.5),
                                     step=0.05,
                                     label="Image strength",
                                 )
@@ -141,34 +168,38 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
             ) as i2i_advanced_params:
                 with gr.Row():
                     steps = gr.Slider(
-                        1,
-                        200,
-                        shared.ui_params("decoder_steps_default"),
+                        minimum=1,
+                        maximum=200,
+                        value=lambda: value(
+                            "num_steps", shared.ui_params("decoder_steps_default")
+                        ),
                         step=1,
                         label="Steps",
                         elem_classes=["inline-flex"],
                     )
                     guidance_scale = gr.Slider(
-                        1,
-                        30,
-                        4,
+                        minimum=1,
+                        maximum=30,
+                        value=lambda: value("guidance_scale", 4),
                         step=1,
                         label="Guidance scale",
                         elem_classes=["inline-flex"],
                     )
                     batch_count = gr.Slider(
-                        1,
-                        shared.ui_params("max_batch_count"),
-                        4,
+                        minimum=1,
+                        maximum=shared.ui_params("max_batch_count"),
+                        value=lambda: value("batch_count", 4),
                         step=1,
                         label="Batch count",
                     )
 
                 with gr.Row():
                     width = gr.Slider(
-                        shared.ui_params("image_width_min"),
-                        shared.ui_params("image_width_max"),
-                        shared.ui_params("image_width_default"),
+                        minimum=shared.ui_params("image_width_min"),
+                        maximum=shared.ui_params("image_width_max"),
+                        value=lambda: value(
+                            "w", shared.ui_params("image_width_default")
+                        ),
                         step=shared.ui_params("image_width_step"),
                         label="Width",
                         elem_id="i2i-width",
@@ -176,9 +207,11 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
                     )
                     width.elem_classes = ["inline-flex"]
                     height = gr.Slider(
-                        shared.ui_params("image_height_min"),
-                        shared.ui_params("image_height_max"),
-                        shared.ui_params("image_height_default"),
+                        minimum=shared.ui_params("image_height_min"),
+                        maximum=shared.ui_params("image_height_max"),
+                        value=lambda: value(
+                            "h", shared.ui_params("image_height_default")
+                        ),
                         step=shared.ui_params("image_height_step"),
                         label="Height",
                         elem_id="i2i-height",
@@ -219,30 +252,45 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
                         sampler_20,
                         sampler_21_native,
                         sampler_diffusers,
-                    ) = samplers_controls()
-                    seed = gr.Number(-1, label="Seed", precision=0)
-                    batch_size = gr.Slider(1, 16, 1, step=1, label="Batch size")
+                    ) = samplers_controls(
+                        [
+                            value("_sampler20", "p_sampler"),
+                            value("_sampler21", "p_sampler"),
+                            value("_sampler_diffusers", "DDPM"),
+                        ]
+                    )
+
+                    seed = gr.Number(
+                        value=lambda: value("input_seed", -1), label="Seed", precision=0
+                    )
+                    batch_size = gr.Slider(
+                        minimum=1,
+                        maximum=16,
+                        value=lambda: value("batch_size", 1),
+                        step=1,
+                        label="Batch size",
+                    )
                     batch_size.elem_classes = batch_size_classes() + ["inline-flex"]
 
                 with gr.Row() as prior_block:
                     prior_scale = gr.Slider(
-                        1,
-                        30,
-                        4,
+                        minimum=1,
+                        maximum=30,
+                        value=lambda: value("prior_cf_scale", 4),
                         step=1,
                         label="Prior guidance scale",
                         elem_classes=["inline-flex"],
                     )
                     prior_steps = gr.Slider(
-                        2,
-                        100,
-                        25,
+                        minimum=2,
+                        maximum=100,
+                        value=lambda: value("prior_steps", 25),
                         step=1,
                         label="Prior steps",
                         elem_classes=["inline-flex"],
                     )
                     negative_prior_prompt = gr.TextArea(
-                        "",
+                        value=lambda: value("negative_prior_prompt", ""),
                         label="Negative prior prompt",
                         elem_classes=["inline-flex"],
                         lines=2,
@@ -274,7 +322,7 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
 
             augmentations["ui_after_generate"]()
 
-            def generate(
+            async def generate(
                 session,
                 image,
                 prompt,
@@ -302,47 +350,59 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
                 cnet_img_strength,
                 *injections,
             ):
-                sampler = shared.select_sampler(
-                    sampler_20, sampler_21_native, sampler_diffusers
-                )
+                while True:
+                    sampler = shared.select_sampler(
+                        sampler_20, sampler_21_native, sampler_diffusers
+                    )
 
-                cnet_target_image = image
-                if cnet_enable:
-                    if not cnet_img_reuse and cnet_image is None:
-                        k_log(
-                            "No image selected for ControlNet input, using original image instead"
-                        )
-                    elif not cnet_img_reuse:
-                        cnet_target_image = cnet_image
+                    cnet_target_image = image
+                    if cnet_enable:
+                        if not cnet_img_reuse and cnet_image is None:
+                            k_log(
+                                "No image selected for ControlNet input, using original image instead"
+                            )
+                        elif not cnet_img_reuse:
+                            cnet_target_image = cnet_image
 
-                params = {
-                    ".session": session,
-                    "init_image": image,
-                    "prompt": prompt,
-                    "negative_prior_prompt": negative_prior_prompt,
-                    "strength": strength,
-                    "num_steps": steps,
-                    "batch_count": batch_count,
-                    "batch_size": batch_size,
-                    "guidance_scale": guidance_scale,
-                    "w": width,
-                    "h": height,
-                    "sampler": sampler,
-                    "prior_cf_scale": prior_scale,
-                    "prior_steps": prior_steps,
-                    "input_seed": seed,
-                    "cnet_enable": cnet_enable,
-                    "cnet_image": cnet_target_image,
-                    "cnet_condition": cnet_condition,
-                    "cnet_depth_estimator": cnet_depth_estimator,
-                    "cnet_emb_transform_strength": cnet_emb_transform_strength,
-                    "cnet_neg_emb_transform_strength": cnet_neg_emb_transform_strength,
-                    "cnet_img_strength": cnet_img_strength,
-                    "negative_prompt": "",
-                }
+                    prompt = generate_prompt_from_wildcard(prompt)
 
-                params = augmentations["exec"](params, injections)
-                return generate_fn(params)
+                    params = {
+                        ".session": session,
+                        "init_image": image,
+                        "prompt": prompt,
+                        "negative_prior_prompt": negative_prior_prompt,
+                        "strength": strength,
+                        "num_steps": steps,
+                        "batch_count": batch_count,
+                        "batch_size": batch_size,
+                        "guidance_scale": guidance_scale,
+                        "w": width,
+                        "h": height,
+                        "sampler": sampler,
+                        "_sampler20": sampler_20,
+                        "_sampler21": sampler_21_native,
+                        "_sampler_diffusers": sampler_diffusers,
+                        "prior_cf_scale": prior_scale,
+                        "prior_steps": prior_steps,
+                        "input_seed": seed,
+                        "cnet_enable": cnet_enable,
+                        "cnet_image": cnet_target_image,
+                        "cnet_condition": cnet_condition,
+                        "cnet_depth_estimator": cnet_depth_estimator,
+                        "cnet_emb_transform_strength": cnet_emb_transform_strength,
+                        "cnet_neg_emb_transform_strength": cnet_neg_emb_transform_strength,
+                        "cnet_img_strength": cnet_img_strength,
+                        "negative_prompt": "",
+                    }
+
+                    shared.storage.save(block, params)
+                    params = augmentations["exec"](params, injections)
+
+                    yield generate_fn(params)
+                    await asyncio.sleep(1)
+
+                    if not shared.check("LOOP_I2I", False):
+                        break
 
             click_and_disable(
                 element=generate_i2i,

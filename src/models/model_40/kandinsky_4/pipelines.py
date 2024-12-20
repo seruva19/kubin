@@ -12,7 +12,11 @@ from typing import Optional, Union
 import torch
 from omegaconf import OmegaConf
 
-from models.model_40.model_kd40_env import Model_KD40_Environment
+from models.model_40.model_kd40_env import (
+    Model_KD40_Environment,
+    quantize_with_optimum_quanto,
+    quantize_with_torch_ao,
+)
 from utils.logging import k_log
 from .dit import get_dit, parallelize
 from .text_embedders import get_text_embedder
@@ -23,15 +27,6 @@ from huggingface_hub import hf_hub_download, snapshot_download
 from .t2v_pipeline import Kandinsky4T2VPipeline
 
 from torch.distributed.device_mesh import DeviceMesh, init_device_mesh
-
-from torchao.quantization import (
-    quantize_,
-    int8_weight_only,
-    int4_weight_only,
-    int8_dynamic_activation_int8_weight,
-)
-
-quantization = int8_weight_only
 
 
 def get_T2V_pipeline(
@@ -127,8 +122,29 @@ def get_T2V_pipeline(
     # dit = dit.to(dtype=torch.float8_e4m3fn, device=device_map["dit"])
 
     if environment.use_dit_fp8_quantization:
-        k_log("quantizing DiT [torchao-int8]...")
-        quantize_(dit, quantization())
+        path, ext = os.path.splitext(conf.dit.checkpoint_path)
+        if environment.use_torchao_quantization:
+            k_log("quantizing DiT [torchao-int8]...")
+            dit = quantize_with_torch_ao(
+                dit,
+                True,
+                (
+                    f"{path}.q8_tao{ext}"
+                    if environment.use_save_quantized_weights
+                    else None
+                ),
+            )
+        else:
+            k_log("quantizing DiT [optimum-quanto]...")
+            dit = quantize_with_optimum_quanto(
+                dit,
+                True,
+                (
+                    f"{path}.q8_oq{ext}"
+                    if environment.use_save_quantized_weights
+                    else None
+                ),
+            )
 
     noise_scheduler = CogVideoXDDIMScheduler.from_pretrained(conf.dit.scheduler)
 
@@ -138,10 +154,32 @@ def get_T2V_pipeline(
     k_log("loading text embedder...")
     text_embedder = get_text_embedder(conf)
 
-    text_embedder = text_embedder.freeze()
     if environment.use_textencoder_fp8_quantization:
-        k_log("quantizing text embedder [torchao-int8]...")
-        quantize_(text_embedder.llm, quantization())
+        path, ext = os.path.splitext(conf.text_embedder.params.checkpoint_path)
+        if environment.use_torchao_quantization:
+            k_log("quantizing embedder [torchao-int8]...")
+            text_embedder.llm = quantize_with_torch_ao(
+                text_embedder.llm,
+                True,
+                (
+                    f"{path}.q8_tao{ext}"
+                    if environment.use_save_quantized_weights
+                    else None
+                ),
+            )
+        else:
+            k_log("quantizing embedder [optimum-quanto]...")
+            text_embedder.llm = quantize_with_optimum_quanto(
+                text_embedder.llm,
+                True,
+                (
+                    f"{path}.q8_oq{ext}"
+                    if environment.use_save_quantized_weights
+                    else None
+                ),
+            )
+    else:
+        text_embedder = text_embedder.freeze()
 
     if local_rank == 0:
         text_embedder = text_embedder.to(
@@ -169,8 +207,29 @@ def get_T2V_pipeline(
         vae = vae.to(device_map["vae"], dtype=torch.bfloat16)
 
     if environment.use_vae_fp8_quantization:
-        k_log("quantizing vae [torchao-int8]...")
-        quantize_(vae, quantization())
+        path, ext = os.path.splitext(conf.vae.checkpoint_path)
+        if environment.use_torchao_quantization:
+            k_log("quantizing vae [torchao-int8]...")
+            vae = quantize_with_torch_ao(
+                vae,
+                True,
+                (
+                    f"{path}.q8_tao{ext}"
+                    if environment.use_save_quantized_weights
+                    else None
+                ),
+            )
+        else:
+            k_log("quantizing vae [optimum-quanto]...")
+            vae = quantize_with_optimum_quanto(
+                vae,
+                True,
+                (
+                    f"{path}.q8_oq{ext}"
+                    if environment.use_save_quantized_weights
+                    else None
+                ),
+            )
 
     return Kandinsky4T2VPipeline(
         environment=environment,

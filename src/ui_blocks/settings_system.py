@@ -91,7 +91,7 @@ def update_info():
 def system_ui(kubin: Kubin):
     with gr.Row() as system_block:
         system_log = gr.Textbox(
-            update_info,
+            value=update_info,
             lines=15,
             max_lines=15,
             label="System info",

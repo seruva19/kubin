@@ -1,3 +1,4 @@
+import asyncio
 import gradio as gr
 from ui_blocks.shared.compatibility import (
     batch_size_classes,
@@ -7,20 +8,31 @@ from ui_blocks.shared.compatibility import (
 from ui_blocks.shared.samplers import samplers_controls
 from ui_blocks.shared.ui_shared import SharedUI
 from utils.gradio_ui import click_and_disable
+from utils.storage import get_value
+from utils.text import generate_prompt_from_wildcard
+
+block = "t2v"
 
 
 def t2v_ui(generate_fn, shared: SharedUI, tabs, session):
     augmentations = shared.create_ext_augment_blocks("t2v")
+    value = lambda name, def_value: get_value(shared.storage, block, name, def_value)
 
     with gr.Row() as t2v_block:
         t2v_block.elem_classes = ["t2v_block"]
 
         with gr.Column(scale=2) as t2v_params:
+            with gr.Accordion("PRESETS", open=False, visible=False):
+                pass
+
             augmentations["ui_before_prompt"]()
 
             with gr.Row():
                 prompt = gr.TextArea(
-                    "A closeshot of beautiful blonde woman standing under the sun at the beach. Soft waves lapping at her feet and vibrant palm trees lining the distant coastline under a clear blue sky.",
+                    value=lambda: value(
+                        "prompt",
+                        "A closeshot of beautiful blonde woman standing under the sun at the beach. Soft waves lapping at her feet and vibrant palm trees lining the distant coastline under a clear blue sky.",
+                    ),
                     label="Text",
                     placeholder="",
                     lines=4,
@@ -39,29 +51,32 @@ def t2v_ui(generate_fn, shared: SharedUI, tabs, session):
                             "3:4 [480x544]",
                             "4:3 [544x480]",
                         ],
-                        value="1:1 [512x512]",
+                        value=lambda: value("resolution", "1:1 [512x512]"),
                         label="Resolution",
                     )
                     use_flash = gr.Checkbox(
-                        True,
+                        value=lambda: value("pipeline_args.use_flash", True),
                         label="Use flash pipeline",
                         interactive=False,
                         elem_classes=["cnet-enable"],
                     )
                 with gr.Column():
                     time_length = gr.Slider(
-                        1,
-                        20,
-                        12,
+                        minimum=1,
+                        maximum=20,
+                        value=lambda: value("time_length", 12),
                         step=1,
                         label="Length",
                     )
 
                     generate_image = gr.Checkbox(
-                        False, label="Generate image instead of video"
+                        value=lambda: value("generate_image", False),
+                        label="Generate image instead of video",
                     )
 
-                seed = gr.Number(-1, label="Seed", precision=0)
+                seed = gr.Number(
+                    value=lambda: value("seed", -1), label="Seed", precision=0
+                )
 
             with gr.Column():
                 with gr.Accordion("INITIALIZATION PARAMETERS", open=True):
@@ -85,63 +100,93 @@ def t2v_ui(generate_fn, shared: SharedUI, tabs, session):
                             k_attention_type = gr.Dropdown(
                                 interactive=True,
                                 label="Attention Type",
-                                value=mh_attention_type,
+                                value=lambda: value(
+                                    "pipeline_args.kd40_conf.dit.params.k_attention_type",
+                                    mh_attention_type,
+                                ),
                                 choices=["none", "flash", "sage"],
                             )
                             in_visual_dim = gr.Number(
                                 interactive=True,
                                 label="Input Visual Dimension",
                                 precision=0,
-                                value=16,
+                                value=lambda: value(
+                                    "pipeline_args.kd40_conf.dit.params.in_visual_dim",
+                                    16,
+                                ),
                             )
                             in_text_dim = gr.Number(
                                 interactive=True,
                                 precision=0,
                                 label="Input Text Dimension",
-                                value=4096,
+                                value=lambda: value(
+                                    "pipeline_args.kd40_conf.dit.params.in_text_dim",
+                                    4096,
+                                ),
                             )
                             out_visual_dim = gr.Number(
                                 interactive=True,
                                 precision=0,
                                 label="Output Visual Dimension",
-                                value=16,
+                                value=lambda: value(
+                                    "pipeline_args.kd40_conf.dit.params.out_visual_dim",
+                                    16,
+                                ),
                             )
                         with gr.Row():
                             time_dim = gr.Number(
                                 interactive=True,
                                 label="Time Dimension",
-                                value=512,
+                                value=lambda: value(
+                                    "pipeline_args.kd40_conf.dit.params.time_dim",
+                                    512,
+                                ),
                                 precision=0,
                             )
                             patch_size = gr.Textbox(
                                 interactive=True,
                                 max_lines=1,
                                 label="Patch Size",
-                                value="[1, 2, 2]",
+                                value=lambda: value(
+                                    "pipeline_args.kd40_conf._dit.patch_size",
+                                    "[1, 2, 2]",
+                                ),
                             )
                             model_dim = gr.Number(
                                 precision=0,
                                 interactive=True,
                                 label="Model Dimension",
-                                value=3072,
+                                value=lambda: value(
+                                    "pipeline_args.kd40_conf.dit.params.model_dim",
+                                    3072,
+                                ),
                             )
                             ff_dim = gr.Number(
                                 interactive=True,
                                 precision=0,
                                 label="Feed Forward Dimension",
-                                value=12288,
+                                value=lambda: value(
+                                    "pipeline_args.kd40_conf.dit.params.ff_dim",
+                                    12288,
+                                ),
                             )
                             num_blocks = gr.Number(
                                 precision=0,
                                 interactive=True,
                                 label="Number of Blocks",
-                                value=21,
+                                value=lambda: value(
+                                    "pipeline_args.kd40_conf.dit.params.num_blocks",
+                                    21,
+                                ),
                             )
                             axes_dims = gr.Textbox(
                                 interactive=True,
                                 max_lines=1,
                                 label="Axes Dimensions",
-                                value="[16, 24, 24]",
+                                value=lambda: value(
+                                    "pipeline_args.kd40_conf._dit.axes_dims",
+                                    "[16, 24, 24]",
+                                ),
                             )
 
                     with gr.Accordion("Configuration", open=True):
@@ -150,49 +195,73 @@ def t2v_ui(generate_fn, shared: SharedUI, tabs, session):
                                 interactive=True,
                                 max_lines=1,
                                 label="VAE Checkpoint Path",
-                                value="",
+                                value=lambda: value(
+                                    "pipeline_args.kd40_conf.vae.checkpoint_path",
+                                    "",
+                                ),
                             )
                             tokenizer_path = gr.Textbox(
                                 interactive=True,
                                 max_lines=1,
                                 label="Tokenizer Path",
-                                value="",
+                                value=lambda: value(
+                                    "pipeline_args.kd40_conf.text_embedder.params.tokenizer_path",
+                                    "",
+                                ),
                             )
                         with gr.Row():
                             text_emb_size = gr.Number(
                                 precision=0,
                                 interactive=True,
-                                label="Text Embedder Size",
-                                value=4096,
+                                label="Text Embedder Embedding Size",
+                                value=lambda: value(
+                                    "pipeline_args.kd40_conf.text_embedder.emb_size",
+                                    4096,
+                                ),
                             )
                             text_tokens_length = gr.Number(
                                 precision=0,
                                 interactive=True,
                                 label="Text Tokens Length",
-                                value=224,
+                                value=lambda: value(
+                                    "pipeline_args.kd40_conf.text_embedder.tokens_length",
+                                    224,
+                                ),
                             )
                             text_encoder_checkpoint = gr.Textbox(
                                 interactive=True,
                                 max_lines=1,
                                 label="Text Encoder Checkpoint Path",
-                                value="",
+                                value=lambda: value(
+                                    "pipeline_args.kd40_conf.text_embedder.checkpoint_path",
+                                    "",
+                                ),
                             )
                         with gr.Row():
                             dit_scheduler = gr.Textbox(
                                 interactive=True,
                                 max_lines=1,
                                 label="DiT Scheduler Path",
-                                value="",
+                                value=lambda: value(
+                                    "pipeline_args.kd40_conf.dit.scheduler",
+                                    "",
+                                ),
                             )
                             dit_checkpoint = gr.Textbox(
                                 interactive=True,
                                 max_lines=1,
                                 label="DiT Checkpoint Path",
-                                value="",
+                                value=lambda: value(
+                                    "pipeline_args.kd40_conf.dit.dit_checkpoint",
+                                    "",
+                                    # "models/kandinsky-4/kandinsky4_distil_512-bf16.safetensors",
+                                ),
                             )
                             resolution = gr.Number(
                                 label="Resolution",
-                                value=512,
+                                value=lambda: value(
+                                    "pipeline_args.kd40_conf.resolution", 512
+                                ),
                                 precision=0,
                             )
                     with gr.Column():
@@ -219,7 +288,10 @@ def t2v_ui(generate_fn, shared: SharedUI, tabs, session):
 
             generate_t2v = gr.Button("Generate", variant="primary")
 
-            with gr.Column(visible=True) as t2v_video_block:
+            print()
+            with gr.Column(
+                visible=not value("generate_image", "false")
+            ) as t2v_video_block:
                 t2v_output = gr.Video(
                     label="Video output",
                     elem_classes=["t2v-output-video"],
@@ -227,7 +299,7 @@ def t2v_ui(generate_fn, shared: SharedUI, tabs, session):
                     show_share_button=True,
                 )
 
-            with gr.Column(visible=False) as t2v_image_block:
+            with gr.Column(visible=value("generate_image", "false")) as t2v_image_block:
                 with gr.Column():
                     t2v_image_output = gr.Gallery(
                         label="Image output",
@@ -261,7 +333,7 @@ def t2v_ui(generate_fn, shared: SharedUI, tabs, session):
                 outputs=[t2v_video_block, t2v_image_block, time_length],
             )
 
-            def generate(
+            async def generate(
                 session,
                 text,
                 render_resolution,
@@ -289,48 +361,61 @@ def t2v_ui(generate_fn, shared: SharedUI, tabs, session):
                 resolution,
                 *injections,
             ):
-                params = {
-                    ".session": session,
-                    "pipeline_args": {
-                        "use_flash": use_flash,
-                        "kd40_conf": {
-                            "vae": {"checkpoint_path": vae_checkpoint},
-                            "text_embedder": {
-                                "emb_size": text_emb_size,
-                                "tokens_length": text_tokens_length,
-                                "params": {
-                                    "checkpoint_path": text_encoder_checkpoint,
-                                    "tokenizer_path": tokenizer_path,
-                                },
-                            },
-                            "dit": {
-                                "scheduler": dit_scheduler,
-                                "checkpoint_path": dit_checkpoint,
-                                "params": {
-                                    "k_attention_type": k_attention_type,
-                                    "in_visual_dim": in_visual_dim,
-                                    "in_text_dim": in_text_dim,
-                                    "out_visual_dim": out_visual_dim,
-                                    "time_dim": time_dim,
-                                    "patch_size": eval(patch_size),
-                                    "model_dim": model_dim,
-                                    "ff_dim": ff_dim,
-                                    "num_blocks": num_blocks,
-                                    "axes_dims": eval(axes_dims),
-                                },
-                            },
-                            "resolution": resolution,
-                        },
-                    },
-                    "prompt": text,
-                    "time_length": length,
-                    "resolution": render_resolution,
-                    "generate_image": generate_image_instead_video,
-                    "seed": seed,
-                }
+                text = generate_prompt_from_wildcard(text)
 
-                params = augmentations["exec"](params, injections)
-                return generate_fn(params)
+                while True:
+                    params = {
+                        ".session": session,
+                        "pipeline_args": {
+                            "use_flash": use_flash,
+                            "kd40_conf": {
+                                "vae": {"checkpoint_path": vae_checkpoint},
+                                "text_embedder": {
+                                    "emb_size": text_emb_size,
+                                    "tokens_length": text_tokens_length,
+                                    "params": {
+                                        "checkpoint_path": text_encoder_checkpoint,
+                                        "tokenizer_path": tokenizer_path,
+                                    },
+                                },
+                                "dit": {
+                                    "scheduler": dit_scheduler,
+                                    "checkpoint_path": dit_checkpoint,
+                                    "params": {
+                                        "k_attention_type": k_attention_type,
+                                        "in_visual_dim": in_visual_dim,
+                                        "in_text_dim": in_text_dim,
+                                        "out_visual_dim": out_visual_dim,
+                                        "time_dim": time_dim,
+                                        "patch_size": eval(patch_size),
+                                        "model_dim": model_dim,
+                                        "ff_dim": ff_dim,
+                                        "num_blocks": num_blocks,
+                                        "axes_dims": eval(axes_dims),
+                                    },
+                                },
+                                "_dit": {
+                                    "patch_size": patch_size,
+                                    "axes_dims": axes_dims,
+                                },
+                                "resolution": resolution,
+                            },
+                        },
+                        "prompt": text,
+                        "time_length": length,
+                        "resolution": render_resolution,
+                        "generate_image": generate_image_instead_video,
+                        "seed": seed,
+                    }
+
+                    shared.storage.save(block, params)
+
+                    params = augmentations["exec"](params, injections)
+                    yield generate_fn(params)
+                    await asyncio.sleep(1)
+
+                    if not shared.check("LOOP_T2V", False):
+                        break
 
             click_and_disable(
                 element=generate_t2v,

@@ -86,7 +86,7 @@ class Kubin:
             self.model = Model_KD20(self.params)
 
         else:
-            raise Exception("No suitable model found!")
+            k_log("no suitable model found! please select another option")
 
         if not torch.cuda.is_available():
             k_log(

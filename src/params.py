@@ -14,6 +14,14 @@ class KubinParams:
         self.hook_store = HookStore(self)
         self.checkpoint = KandinskyCheckpoint()
 
+        self._store = {}
+
+    def store(self, key, default=None):
+        return self._store.get(key, default)
+
+    def set_store(self, key, value):
+        self._store[key] = value
+
     def get_conf_item(self, conf, keys):
         if isinstance(keys, tuple):
             value = conf

@@ -16,6 +16,7 @@ toolz==1.0.0
 psutil==5.9.5
 deepdiff==8.0.1
 torchsde==0.2.6
+dynamicprompts==0.31.0
 compel==2.0.3
 huggingface-hub==0.25.2
 https://github.com/jllllll/bitsandbytes-windows-webui/releases/download/wheels/bitsandbytes-0.41.2.post2-py3-none-win_amd64.whl; platform_system == "Windows"

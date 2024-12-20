@@ -7,41 +7,49 @@ from ui_blocks.shared.compatibility import (
 )
 
 
-def samplers_controls():
+def samplers_controls(default_samplers=["p_sampler", "p_sampler", "DDPM"]):
+    default_sampler_20, default_sampler_21_native, default_sampler_diffusers = (
+        default_samplers
+    )
+
+    samplers_20 = ["ddim_sampler", "p_sampler"]
     sampler_20 = gr.Radio(
-        ["ddim_sampler", "p_sampler"],
-        value="p_sampler",
+        choices=samplers_20,
+        value=default_sampler_20,
         label="Sampler",
         interactive=True,
     )
     sampler_20.elem_classes = sampler20_classes() + ["t2i_sampler"]
 
+    samplers_21 = ["ddim_sampler", "p_sampler", "plms_sampler"]
     sampler_21_native = gr.Radio(
-        ["ddim_sampler", "p_sampler", "plms_sampler"],
-        value="p_sampler",
+        choices=samplers_21,
+        value=default_sampler_21_native,
         label="Sampler",
         interactive=True,
     )
     sampler_21_native.elem_classes = sampler21_classes() + ["t2i_sampler"]
 
+    samplers_diffusers = [
+        "DDPM",
+        "DDIM",
+        "DPMSM",
+        "DEISM",
+        "DPMSSDE",
+        "DPMSS",
+        "Euler",
+        "EulerA",
+        "Heun",
+        "LMS",
+        "KDPM2",
+        "KDPM2A",
+        "PNDM",
+        "UniPC",
+    ]
+
     sampler_diffusers = gr.Dropdown(
-        [
-            "DDPM",
-            "DDIM",
-            "DPMSM",
-            "DEISM",
-            "DPMSSDE",
-            "DPMSS",
-            "Euler",
-            "EulerA",
-            "Heun",
-            "LMS",
-            "KDPM2",
-            "KDPM2A",
-            "PNDM",
-            "UniPC",
-        ],
-        value="DDPM",
+        choices=samplers_diffusers,
+        value=default_sampler_diffusers,
         label="Sampler",
         interactive=True,
     )

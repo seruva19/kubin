@@ -8,10 +8,14 @@ from utils.image import image_path_to_pil
 import gradio as gr
 from collections.abc import Iterable
 
+from utils.storage import KubinStorage
+
 
 class SharedUI:
     def __init__(self, kubin: Kubin, extension_targets, injected_exts):
         self._kubin = kubin
+        self.check = lambda v, df: kubin.params.store(v, df)
+        self.storage = KubinStorage()
 
         self.native_params = lambda a: kubin.params("native", a)
         self.general_params = lambda a: kubin.params("general", a)
@@ -39,10 +43,6 @@ class SharedUI:
             gr.Image(type="pil", elem_classes=["mix_4_image", "full-height"]),
             gr.Image(type="pil", elem_classes=["mix_5_image", "full-height"]),
             gr.Image(type="pil", elem_classes=["mix_6_image", "full-height"]),
-            gr.Image(type="pil", elem_classes=["mix_7_image", "full-height"]),
-            gr.Image(type="pil", elem_classes=["mix_8_image", "full-height"]),
-            gr.Image(type="pil", elem_classes=["mix_9_image", "full-height"]),
-            gr.Image(type="pil", elem_classes=["mix_10_image", "full-height"]),
         ]
 
         self.input_cnet_mix_image = gr.Image(

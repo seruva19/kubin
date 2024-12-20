@@ -1,3 +1,4 @@
+import asyncio
 import gradio as gr
 from ui_blocks.shared.compatibility import (
     batch_size_classes,
@@ -7,19 +8,32 @@ from ui_blocks.shared.compatibility import (
 from ui_blocks.shared.samplers import samplers_controls
 from ui_blocks.shared.ui_shared import SharedUI
 from utils.gradio_ui import click_and_disable
+from utils.storage import get_value
+from utils.text import generate_prompt_from_wildcard
+
+block = "t2i"
 
 
 def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
-    augmentations = shared.create_ext_augment_blocks("t2i")
+    augmentations = shared.create_ext_augment_blocks(block)
+    value = lambda name, def_value: get_value(shared.storage, block, name, def_value)
 
     with gr.Row() as t2i_block:
         t2i_block.elem_classes = ["t2i_block"]
         with gr.Column(scale=2) as t2i_params:
+            with gr.Accordion("PRESETS", open=False, visible=False):
+                pass
+
             augmentations["ui_before_prompt"]()
 
-            prompt = gr.TextArea("", label="Prompt", placeholder="", lines=2)
+            prompt = gr.TextArea(
+                value=lambda: value("prompt", ""),
+                label="Prompt",
+                placeholder="",
+                lines=2,
+            )
             negative_prompt = gr.TextArea(
-                "",
+                value=lambda: value("negative_prompt", ""),
                 placeholder="",
                 label="Negative prompt",
                 lines=2,
@@ -30,44 +44,54 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
 
             with gr.Accordion("ControlNet", open=False) as t2i_cnet:
                 cnet_enable = gr.Checkbox(
-                    False, label="Enable", elem_classes=["cnet-enable"]
+                    value=lambda: value("cnet_enable", False),
+                    label="Enable",
+                    elem_classes=["cnet-enable"],
                 )
 
                 with gr.Row():
                     shared.input_cnet_t2i_image.render()
                     with gr.Column():
                         cnet_pipeline = gr.Dropdown(
+                            value=lambda: value(
+                                "cnet_pipeline", "ControlNetImg2ImgPipeline"
+                            ),
                             choices=["ControlNetPipeline", "ControlNetImg2ImgPipeline"],
-                            value="ControlNetImg2ImgPipeline",
                             type="value",
                             label="Processing pipeline",
                             allow_custom_value=False,
                         )
                         with gr.Row():
                             cnet_condition = gr.Radio(
+                                value=lambda: value("cnet_condition", "depth-map"),
                                 choices=["depth-map"],
-                                value="depth-map",
                                 label="Condition",
                             )
                             cnet_depth_estimator = gr.Dropdown(
+                                value=lambda: value(
+                                    "cnet_depth_estimator", "Intel/dpt-large"
+                                ),
                                 choices=["Intel/dpt-hybrid-midas", "Intel/dpt-large"],
-                                value="Intel/dpt-large",
                                 label="Depth estimator",
                             )
                         with gr.Column(visible=True) as cnet_i2i_params:
                             cnet_emb_transform_strength = gr.Slider(
-                                0,
-                                1,
-                                0.85,
+                                value=lambda: value(
+                                    "cnet_emb_transform_strength", 0.85
+                                ),
+                                minimum=0,
+                                maximum=1,
                                 step=0.05,
                                 label="Embedding strength",
                                 info=shared.info("Strength of reference embedding"),
                             )
 
                             cnet_neg_emb_transform_strength = gr.Slider(
-                                0,
-                                1,
-                                1,
+                                value=lambda: value(
+                                    "cnet_neg_emb_transform_strength", 1
+                                ),
+                                minimum=0,
+                                maximum=1,
                                 step=0.05,
                                 label="Negative embedding strength",
                                 info=shared.info(
@@ -76,9 +100,9 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
                             )
 
                             cnet_img_strength = gr.Slider(
-                                0,
-                                1,
-                                0.5,
+                                value=lambda: value("cnet_img_strength", 0.5),
+                                minimum=0,
+                                maximum=1,
                                 step=0.05,
                                 label="Image strength",
                                 info=shared.info("Strength of reference image"),
@@ -104,25 +128,35 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
             ) as t2i_advanced_params:
                 with gr.Row():
                     steps = gr.Slider(
-                        1,
-                        200,
-                        shared.ui_params("decoder_steps_default"),
+                        minimum=1,
+                        maximum=200,
+                        value=lambda: value(
+                            "num_steps", shared.ui_params("decoder_steps_default")
+                        ),
                         step=1,
                         label="Steps",
                     )
-                    guidance_scale = gr.Slider(1, 30, 4, step=1, label="Guidance scale")
+                    guidance_scale = gr.Slider(
+                        minimum=1,
+                        maximum=30,
+                        value=lambda: value("guidance_scale", 4),
+                        step=1,
+                        label="Guidance scale",
+                    )
                     batch_count = gr.Slider(
-                        1,
-                        shared.ui_params("max_batch_count"),
-                        4,
+                        minimum=1,
+                        maximum=shared.ui_params("max_batch_count"),
+                        value=lambda: value("batch_count", 1),
                         step=1,
                         label="Batch count",
                     )
                 with gr.Row():
                     width = gr.Slider(
-                        shared.ui_params("image_width_min"),
-                        shared.ui_params("image_width_max"),
-                        shared.ui_params("image_width_default"),
+                        minimum=shared.ui_params("image_width_min"),
+                        maximum=shared.ui_params("image_width_max"),
+                        value=lambda: value(
+                            "w", shared.ui_params("image_width_default")
+                        ),
                         step=shared.ui_params("image_width_step"),
                         label="Width",
                         elem_id="t2i-width",
@@ -130,9 +164,11 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
                     )
                     width.elem_classes = ["inline-flex"]
                     height = gr.Slider(
-                        shared.ui_params("image_height_min"),
-                        shared.ui_params("image_height_max"),
-                        shared.ui_params("image_height_default"),
+                        minimum=shared.ui_params("image_height_min"),
+                        maximum=shared.ui_params("image_height_max"),
+                        value=lambda: value(
+                            "h", shared.ui_params("image_height_default")
+                        ),
                         step=shared.ui_params("image_height_step"),
                         label="Height",
                         elem_id="t2i-height",
@@ -174,30 +210,45 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
                         sampler_20,
                         sampler_21_native,
                         sampler_diffusers,
-                    ) = samplers_controls()
-                    seed = gr.Number(-1, label="Seed", precision=0)
-                    batch_size = gr.Slider(1, 16, 1, step=1, label="Batch size")
+                    ) = samplers_controls(
+                        [
+                            value("_sampler20", "p_sampler"),
+                            value("_sampler21", "p_sampler"),
+                            value("_sampler_diffusers", "DDPM"),
+                        ]
+                    )
+
+                    seed = gr.Number(
+                        value=lambda: value("input_seed", -1), label="Seed", precision=0
+                    )
+                    batch_size = gr.Slider(
+                        minimum=1,
+                        maximum=16,
+                        value=lambda: value("batch_size", 1),
+                        step=1,
+                        label="Batch size",
+                    )
                     batch_size.elem_classes = batch_size_classes() + ["inline-flex"]
 
                 with gr.Row() as prior_block:
                     prior_scale = gr.Slider(
-                        1,
-                        30,
-                        4,
+                        minimum=1,
+                        maximum=30,
+                        value=lambda: value("prior_cf_scale", 4),
                         step=1,
                         label="Prior guidance scale",
                         elem_classes=["inline-flex"],
                     )
                     prior_steps = gr.Slider(
-                        2,
-                        100,
-                        25,
+                        minimum=2,
+                        maximum=100,
+                        value=lambda: value("prior_steps", 25),
                         step=1,
                         label="Prior steps",
                         elem_classes=["inline-flex"],
                     )
                     negative_prior_prompt = gr.TextArea(
-                        "",
+                        value=lambda: value("negative_prior_prompt", ""),
                         label="Negative prior prompt",
                         elem_classes=["inline-flex"],
                         lines=2,
@@ -235,7 +286,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
 
             augmentations["ui_after_generate"]()
 
-            def generate(
+            async def generate(
                 session,
                 prompt,
                 negative_prompt,
@@ -262,38 +313,50 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
                 cnet_img_strength,
                 *injections,
             ):
-                sampler = shared.select_sampler(
-                    sampler_20, sampler_21_native, sampler_diffusers
-                )
+                while True:
+                    sampler = shared.select_sampler(
+                        sampler_20, sampler_21_native, sampler_diffusers
+                    )
 
-                params = {
-                    ".session": session,
-                    "prompt": prompt,
-                    "negative_prompt": negative_prompt,
-                    "num_steps": num_steps,
-                    "batch_count": batch_count,
-                    "batch_size": batch_size,
-                    "guidance_scale": guidance_scale,
-                    "w": w,
-                    "h": h,
-                    "sampler": sampler,
-                    "prior_cf_scale": prior_cf_scale,
-                    "prior_steps": prior_steps,
-                    "negative_prior_prompt": negative_prior_prompt,
-                    "input_seed": input_seed,
-                    "cnet_enable": cnet_enable,
-                    "cnet_image": cnet_image,
-                    "cnet_pipeline": cnet_pipeline,
-                    "cnet_condition": cnet_condition,
-                    "cnet_depth_estimator": cnet_depth_estimator,
-                    "cnet_emb_transform_strength": cnet_emb_transform_strength,
-                    "cnet_neg_emb_transform_strength": cnet_neg_emb_transform_strength,
-                    "cnet_img_strength": cnet_img_strength,
-                    "init_image": None,
-                }
+                    prompt = generate_prompt_from_wildcard(prompt)
 
-                params = augmentations["exec"](params, injections)
-                return generate_fn(params)
+                    params = {
+                        ".session": session,
+                        "prompt": prompt,
+                        "negative_prompt": negative_prompt,
+                        "num_steps": num_steps,
+                        "batch_count": batch_count,
+                        "batch_size": batch_size,
+                        "guidance_scale": guidance_scale,
+                        "w": w,
+                        "h": h,
+                        "sampler": sampler,
+                        "_sampler20": sampler_20,
+                        "_sampler21": sampler_21_native,
+                        "_sampler_diffusers": sampler_diffusers,
+                        "prior_cf_scale": prior_cf_scale,
+                        "prior_steps": prior_steps,
+                        "negative_prior_prompt": negative_prior_prompt,
+                        "input_seed": input_seed,
+                        "cnet_enable": cnet_enable,
+                        "cnet_image": cnet_image,
+                        "cnet_pipeline": cnet_pipeline,
+                        "cnet_condition": cnet_condition,
+                        "cnet_depth_estimator": cnet_depth_estimator,
+                        "cnet_emb_transform_strength": cnet_emb_transform_strength,
+                        "cnet_neg_emb_transform_strength": cnet_neg_emb_transform_strength,
+                        "cnet_img_strength": cnet_img_strength,
+                        "init_image": None,
+                    }
+
+                    shared.storage.save(block, params)
+                    params = augmentations["exec"](params, injections)
+
+                    yield generate_fn(params)
+                    await asyncio.sleep(1)
+
+                    if not shared.check("LOOP_T2I", False):
+                        break
 
             click_and_disable(
                 element=generate_t2i,

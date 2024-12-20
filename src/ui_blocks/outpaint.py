@@ -1,3 +1,4 @@
+import asyncio
 from io import BytesIO
 import gradio as gr
 from ui_blocks.shared.compatibility import (
@@ -8,14 +9,22 @@ from ui_blocks.shared.compatibility import (
 from ui_blocks.shared.samplers import samplers_controls
 from ui_blocks.shared.ui_shared import SharedUI
 from utils.gradio_ui import click_and_disable
+from utils.storage import get_value
+from utils.text import generate_prompt_from_wildcard
+
+block = "outpaint"
 
 
 def outpaint_ui(generate_fn, shared: SharedUI, tabs, session):
     augmentations = shared.create_ext_augment_blocks("outpaint")
+    value = lambda name, def_value: get_value(shared.storage, block, name, def_value)
 
     with gr.Row() as outpaint_block:
         outpaint_block.elem_classes = ["outpaint_block"]
         with gr.Column(scale=2) as outpaint_params:
+            with gr.Accordion("PRESETS", open=False, visible=False):
+                pass
+
             augmentations["ui_before_prompt"]()
 
             with gr.Row():
@@ -25,34 +34,34 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs, session):
                 with gr.Column(scale=1):
                     manual_control = gr.Checkbox(True, label="Outpaint area offset")
                     offset_top = gr.Slider(
-                        0,
-                        1024,
-                        0,
+                        minimum=0,
+                        maximum=1024,
+                        value=lambda: value("offset", [0, 0, 0, 0])[0],
                         step=shared.ui_params("image_height_step"),
                         label="Top",
                         interactive=True,
                     )
                     with gr.Row():
                         offset_left = gr.Slider(
-                            0,
-                            1024,
-                            0,
+                            minimum=0,
+                            maximum=1024,
+                            value=lambda: value("offset", [0, 0, 0, 0])[3],
                             step=shared.ui_params("image_width_step"),
                             label="Left",
                             interactive=True,
                         )
                         offset_right = gr.Slider(
-                            0,
-                            1024,
-                            0,
+                            minimum=0,
+                            maximum=1024,
+                            value=lambda: value("offset", [0, 0, 0, 0])[1],
                             step=shared.ui_params("image_width_step"),
                             label="Right",
                             interactive=True,
                         )
                     offset_bottom = gr.Slider(
-                        0,
-                        1024,
-                        0,
+                        minimum=0,
+                        maximum=1024,
+                        value=lambda: value("offset", [0, 0, 0, 0])[2],
                         step=shared.ui_params("image_height_step"),
                         label="Bottom",
                         interactive=True,
@@ -70,9 +79,17 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs, session):
                     )
 
             with gr.Column():
-                prompt = gr.TextArea("", placeholder="", label="Prompt", lines=2)
+                prompt = gr.TextArea(
+                    value=lambda: value("prompt", ""),
+                    placeholder="",
+                    label="Prompt",
+                    lines=2,
+                )
                 negative_prompt = gr.TextArea(
-                    "", placeholder="", label="Negative prompt", lines=2
+                    value=lambda: value("negative_prompt", ""),
+                    placeholder="",
+                    label="Negative prompt",
+                    lines=2,
                 )
                 negative_prompt.elem_classes = negative_prompt_classes()
 
@@ -84,26 +101,36 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs, session):
             ) as outpaint_advanced_params:
                 with gr.Row():
                     steps = gr.Slider(
-                        1,
-                        200,
-                        shared.ui_params("decoder_steps_default"),
+                        minimum=1,
+                        maximum=200,
+                        value=lambda: value(
+                            "num_steps", shared.ui_params("decoder_steps_default")
+                        ),
                         step=1,
                         label="Steps",
                     )
-                    guidance_scale = gr.Slider(1, 30, 4, step=1, label="Guidance scale")
+                    guidance_scale = gr.Slider(
+                        minimum=1,
+                        maximum=30,
+                        value=lambda: value("guidance_scale", 4),
+                        step=1,
+                        label="Guidance scale",
+                    )
                     batch_count = gr.Slider(
-                        1,
-                        shared.ui_params("max_batch_count"),
-                        4,
+                        minimum=1,
+                        maximum=shared.ui_params("max_batch_count"),
+                        value=lambda: value("batch_count", 4),
                         step=1,
                         label="Batch count",
                     )
 
                 with gr.Row():
                     width = gr.Slider(
-                        shared.ui_params("image_width_min"),
-                        shared.ui_params("image_width_max"),
-                        shared.ui_params("image_width_default"),
+                        minimum=shared.ui_params("image_width_min"),
+                        maximum=shared.ui_params("image_width_max"),
+                        value=lambda: value(
+                            "w", shared.ui_params("image_width_default")
+                        ),
                         step=shared.ui_params("image_width_step"),
                         label="Width",
                         elem_id="outpaint-width",
@@ -111,9 +138,11 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs, session):
                         interactive=False,
                     )
                     height = gr.Slider(
-                        shared.ui_params("image_height_min"),
-                        shared.ui_params("image_height_max"),
-                        shared.ui_params("image_height_default"),
+                        minimum=shared.ui_params("image_height_min"),
+                        maximum=shared.ui_params("image_height_max"),
+                        value=lambda: value(
+                            "h", shared.ui_params("image_height_default")
+                        ),
                         step=shared.ui_params("image_height_step"),
                         label="Height",
                         elem_id="outpaint-height",
@@ -122,7 +151,7 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs, session):
                     )
                     with gr.Column():
                         infer_size = gr.Checkbox(
-                            True,
+                            value=lambda: value("infer_size", True),
                             label="Infer image size from mask input",
                             elem_classes=["inline-flex"],
                         )
@@ -161,31 +190,47 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs, session):
                         sampler_20,
                         sampler_21_native,
                         sampler_diffusers,
-                    ) = samplers_controls()
-                    seed = gr.Number(-1, label="Seed", precision=0)
+                    ) = samplers_controls(
+                        [
+                            value("_sampler20", "p_sampler"),
+                            value("_sampler21", "p_sampler"),
+                            value("_sampler_diffusers", "DDPM"),
+                        ]
+                    )
+                    seed = gr.Number(
+                        value=lambda: value("input_seed", -1), label="Seed", precision=0
+                    )
 
-                    batch_size = gr.Slider(1, 16, 1, step=1, label="Batch size")
+                    batch_size = gr.Slider(
+                        minimum=1,
+                        maximum=16,
+                        value=lambda: value("batch_size", 1),
+                        step=1,
+                        label="Batch size",
+                    )
                     batch_size.elem_classes = batch_size_classes() + ["inline-flex"]
 
                 with gr.Row() as prior_block:
                     prior_scale = gr.Slider(
-                        1,
-                        100,
-                        4,
+                        minimum=1,
+                        maximum=30,
+                        value=lambda: value("prior_cf_scale", 4),
                         step=1,
                         label="Prior guidance scale",
                         elem_classes=["inline-flex"],
                     )
                     prior_steps = gr.Slider(
-                        2,
-                        100,
-                        5,
+                        minimum=2,
+                        maximum=100,
+                        value=lambda: value("prior_steps", 5),
                         step=1,
                         label="Prior steps",
                         elem_classes=["inline-flex"],
                     )
                     negative_prior_prompt = gr.TextArea(
-                        "", label="Negative prior prompt", lines=2
+                        value=lambda: value("negative_prior_prompt", ""),
+                        label="Negative prior prompt",
+                        lines=2,
                     )
                 prior_block.elem_classes = prior_block_classes()
 
@@ -224,7 +269,7 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs, session):
 
             augmentations["ui_after_generate"]()
 
-            def generate(
+            async def generate(
                 session,
                 image,
                 prompt,
@@ -250,36 +295,48 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs, session):
                 infer_size,
                 *injections,
             ):
-                sampler = shared.select_sampler(
-                    sampler_20, sampler_21_native, sampler_diffusers
-                )
+                while True:
+                    sampler = shared.select_sampler(
+                        sampler_20, sampler_21_native, sampler_diffusers
+                    )
 
-                params = {
-                    ".session": session,
-                    "image": image,
-                    "prompt": prompt,
-                    "negative_prompt": negative_prompt,
-                    "num_steps": steps,
-                    "batch_count": batch_count,
-                    "batch_size": batch_size,
-                    "guidance_scale": guidance_scale,
-                    "w": w,
-                    "h": h,
-                    "sampler": sampler,
-                    "prior_cf_scale": prior_cf_scale,
-                    "prior_steps": prior_steps,
-                    "negative_prior_prompt": negative_prior_prompt,
-                    "input_seed": input_seed,
-                    "offset": (
-                        None
-                        if not manual_size
-                        else (offset_top, offset_right, offset_bottom, offset_left)
-                    ),
-                    "infer_size": infer_size,
-                }
+                    prompt = generate_prompt_from_wildcard(prompt)
 
-                params = augmentations["exec"](params, injections)
-                return generate_fn(params)
+                    params = {
+                        ".session": session,
+                        "image": image,
+                        "prompt": prompt,
+                        "negative_prompt": negative_prompt,
+                        "num_steps": steps,
+                        "batch_count": batch_count,
+                        "batch_size": batch_size,
+                        "guidance_scale": guidance_scale,
+                        "w": w,
+                        "h": h,
+                        "sampler": sampler,
+                        "_sampler20": sampler_20,
+                        "_sampler21": sampler_21_native,
+                        "_sampler_diffusers": sampler_diffusers,
+                        "prior_cf_scale": prior_cf_scale,
+                        "prior_steps": prior_steps,
+                        "negative_prior_prompt": negative_prior_prompt,
+                        "input_seed": input_seed,
+                        "offset": (
+                            None
+                            if not manual_size
+                            else (offset_top, offset_right, offset_bottom, offset_left)
+                        ),
+                        "infer_size": infer_size,
+                    }
+
+                    shared.storage.save(block, params)
+                    params = augmentations["exec"](params, injections)
+
+                    yield generate_fn(params)
+                    await asyncio.sleep(1)
+
+                    if not shared.check("LOOP_OUTPAINT", False):
+                        break
 
         click_and_disable(
             element=generate_outpaint,

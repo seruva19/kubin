@@ -11,40 +11,60 @@ The project is not abandoned. However, updates may be less frequent.
 
 ## Features
 
-| Model                                                                                        | 2.0 | 2.1 | 2.2 |3.0  |3.1  |[4.0](https://github.com/seruva19/kubin/issues/181)  |
+| Model                                                                                        | 2.0 | 2.1 | 2.2 |3.0  |3.1  |4.0  |
 | -------------------------------------------------------------------------------------------- | --- | --- | --- | --- | --- | --- |
 | Txt2img                                                                                      | ✔   | ✔  |  ✔  | ✔  | ✔  |      |
 | Img2img                                                                                      | ✔   | ✔  |  ✔  | ✔  | 🕒 |      |
-| Txt2Video                                                                                    |     |     |      |    |    | 🕒   |
+| Txt2Video                                                                                    |     |     |      |    |    | ✔    |
 | Img2Video                                                                                    |     |     |      |    |    | 🕒   |
 | Video2Audio                                                                                  |     |     |      |    |    | 🕒   |
 | Mixing                                                                                       |     | ✔  |  ✔  | 🕒 | 🕒 |       |
 | Inpainting                                                                                   | ✔   | ✔  |  ✔  | ✔  | ✔  |      |
 | Outpainting                                                                                  |     | ✔  |  ✔  | 🕒 | 🕒  |      |
 | ControlNet                                                                                   |     |     |  ✔  |    | 🕒  |      |
-| IpAdapter                                                                                    |     |     |      |    | 🕒  |      |
+| IpAdapter                                                                                    |     |     |      |    | 🕒 |     |
 | Diffusers pipeline                                                                           |     | ✔  |  ✔  |  ✔ | 🕒  |      |
-| Low-VRAM options                                                                             |     |     |  ✔  |  ✔ | ✔  |      |
+| Low-VRAM options                                                                             |     |     |  ✔  |  ✔ | ✔  |  ✔  |
 | ext. [Image browser](https://github.com/seruva19/kubin-extensions#kd-image-browser)          | ✔   | ✔  |  ✔  |  ✔ | ✔  |      |
 | ext. [Image editor](https://github.com/seruva19/kubin-extensions#kd-image-editor)            | ✔   | ✔  |  ✔  |  ✔ | ✔  |      |
 | ext. [Fine-tuning](https://github.com/seruva19/kubin-extensions#kd-training)                 |     | ✔  |  🕒 |     |    |      |
-| ext. [LoRA training and inference](https://github.com/seruva19/kubin-extensions#kd-training) |     |     |  ✔  |     |    |      |
+| ext. [LoRA training and inference](https://github.com/seruva19/kubin-extensions#kd-training) |     |     |  ✔  |     |    |  🕒 |
 | ext. [Style library](https://github.com/seruva19/kubin-extensions#kd-prompt-styles)          | ✔   | ✔  |  ✔  |  ✔ | ✔  |      |
-| ext. [Upscaling](https://github.com/seruva19/kubin-extensions#kd-upscaler)                   | ✔   | ✔  |  ✔  |  ✔ | ✔  |      |
+| ext. [Image upscaling](https://github.com/seruva19/kubin-extensions#kd-upscaler)             | ✔   | ✔  |  ✔  |  ✔ | ✔  |      |
+| ext. Video upscaling                                                                       |     |     |     |     |    |  🕒  |
 | ext. [Img2mesh](https://github.com/seruva19/kubin-extensions#kd-mesh-gen)                    | ✔   | ✔  |  ✔  |  ✔ | ✔  |      |
 | ext. [Interrogation](https://github.com/seruva19/kubin-extensions#kd-interrogator)           | ✔   | ✔  |  ✔  |  ✔ | ✔  |      |
 | ext. [Segmentation](https://github.com/seruva19/kubin-extensions#kd-segmentation)            | ✔   | ✔  |  ✔  |  ✔ | ✔  |      |
 | ext. [Animation](https://github.com/seruva19/kubin-extensions#kd-animation)                  |     | 🕒  |  ✔  |    |    |      |
-| ext. [Video](https://github.com/seruva19/kubin-extensions#kd-video)                          |     |     |     |  ✔ |    |      |
+| ext. [Video](https://github.com/seruva19/kubin-extensions#kd-video)                          |     |     |     |  ✔ |  ✔ |      |
 | ext. [Background remover](https://github.com/seruva19/kubin-extensions#kd-bg-remover)        | ✔   | ✔  |  ✔  |  ✔ | ✔  |      |
-| ext. [LLM prompt enhancer](https://github.com/seruva19/kubin-extensions#kd-llm-enhancer)     | ✔   | ✔  |  ✔  |  ✔ | ✔  |      |
+| ext. [LLM prompt enhancer](https://github.com/seruva19/kubin-extensions#kd-llm-enhancer)     | ✔   | ✔  |  ✔  |  ✔ | ✔  |  ✔   |
 | Advanced prompt syntax                                                                       |     |     | 🕒  |    |     |      |
 | Prompt weighting                                                                             |     |     | 🕒  |    |     |      |
 | ext. Area composition                                                                        |     |     | 🕒  |    |     |      |
 
-## Screenshot
-	
+## Screenshots
+
+<details>
+    <summary>Toggle</summary>
+
+### Kandinsky 2.0
+
+### Kandinsky 2.1
+
+### Kandinsky 2.2
+
+### Kandinsky 3.0
+
 ![img](/sshots/screenshot.png)
+
+### Kandinsky 3.1
+
+
+
+### Kandinsky 4.0
+
+</details>
 
 ## Google Colab
 
