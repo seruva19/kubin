@@ -94,7 +94,7 @@ Perhaps MPS users also might be able to run Kandinsky 3 thanks to unified memory
 
 ### Kandinsky 4.0
 
-Please refer to the commits in the 'kandinsky-4' branch.
+Kandinsky 4.0 is currently the default model for new installations. To switch to Kandinsky-4 from old installations, go to "Settings" and select "kd40"/"native" pipeline. All required optimizations required to fit into 24 Gb are turned on by default.
 
 ### Models and pipelines
 
