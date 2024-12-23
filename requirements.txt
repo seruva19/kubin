@@ -11,6 +11,7 @@ tokenizers==0.20.1
 accelerate==1.0.1
 safetensors==0.4.5
 opencv-python==4.8.0.74
+git+https://github.com/facebookresearch/pytorchvideo@ae9cfc6
 gradio==3.50.2
 toolz==1.0.0
 psutil==5.9.5
@@ -19,5 +20,9 @@ torchsde==0.2.6
 dynamicprompts==0.31.0
 compel==2.0.3
 huggingface-hub==0.25.2
-https://github.com/jllllll/bitsandbytes-windows-webui/releases/download/wheels/bitsandbytes-0.41.2.post2-py3-none-win_amd64.whl; platform_system == "Windows"
-bitsandbytes==0.41.1; platform_system != "Windows"
+bitsandbytes==0.43.3
+https://github.com/woct0rdho/triton/releases/download/v3.0.0-windows.post1/triton-3.0.0-cp310-cp310-win_amd64.whl; platform_system == "Windows"
+triton==3.0.0; platform_system != "Windows"
+flash_attn==2.7.0; platform_system != "Windows"
+#https://github.com/jllllll/bitsandbytes-windows-webui/releases/download/wheels/bitsandbytes-0.41.2.post2-py3-none-win_amd64.whl; platform_system == "Windows"
+#bitsandbytes==0.41.1; platform_system != "Windows"
