@@ -2,7 +2,9 @@
 .idea
 .local
 /venv
+main.*
 **/__pycache__
+**/__triton__
 **/.installed
 /flagged
 /configs/*.yaml

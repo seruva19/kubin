@@ -23,11 +23,19 @@ def update_info():
 
     xformers_info = ""
     try:
-        import xformers
+        import xformers  # type: ignore
 
         xformers_info = f"xformers: {xformers.__version__}\n"
     except:
         xformers_info = f"xformers: not installed\n"
+
+    triton_info = ""
+    try:
+        import triton
+
+        triton_info = f"triton: {triton.__version__}\n"
+    except:
+        triton_info = f"triton: not installed\n"
 
     flash_attn_info = ""
     try:
@@ -81,6 +89,7 @@ def update_info():
         f"VRAM (free): {torch_free_mb}\n"
         f"gradio: {gr.__version__}\n"
         f"{xformers_info}"
+        f"{triton_info}"
         f"{flash_attn_info}"
         f"{diffusers_info}"
         f"{transformers_info}"

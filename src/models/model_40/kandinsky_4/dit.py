@@ -148,7 +148,6 @@ def parallelize(model, tp_mesh):
 
 
 class TransformerBlock(nn.Module):
-
     def __init__(self, model_dim, time_dim, ff_dim, attention_type, head_dim=64):
         super().__init__()
         self.visual_modulation = Modulation(time_dim, model_dim)

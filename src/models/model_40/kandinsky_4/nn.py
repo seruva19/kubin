@@ -433,7 +433,6 @@ class MultiheadSelfAttentionTP(nn.Module):
 
 
 class FeedForward(nn.Module):
-
     def __init__(self, dim, ff_dim):
         super().__init__()
         self.in_layer = nn.Linear(dim, ff_dim, bias=True)
@@ -445,7 +444,6 @@ class FeedForward(nn.Module):
 
 
 class OutLayer(nn.Module):
-
     def __init__(self, model_dim, time_dim, visual_dim, patch_size):
         super().__init__()
         self.patch_size = patch_size

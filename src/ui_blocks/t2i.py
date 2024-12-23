@@ -353,7 +353,7 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
                     params = augmentations["exec"](params, injections)
 
                     yield generate_fn(params)
-                    await asyncio.sleep(1)
+                    # await asyncio.sleep(1)
 
                     if not shared.check("LOOP_T2I", False):
                         break

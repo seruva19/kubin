@@ -2,6 +2,8 @@ import json
 import os
 from typing import Any, Dict
 
+from utils.logging import k_log
+
 
 class KubinStorage:
     def __init__(self, base_dir: str = "configs"):
@@ -28,6 +30,7 @@ class KubinStorage:
             with open(filepath, "r") as f:
                 settings = json.load(f)
                 self._settings_cache[block_name] = settings
+                k_log(f"loaded ui settings for {block_name} from {filepath}")
                 return settings
         except (json.JSONDecodeError, IOError):
             return {}

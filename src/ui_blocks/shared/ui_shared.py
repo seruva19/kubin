@@ -56,6 +56,12 @@ class SharedUI:
         self.input_outpaint_image = gr.ImageMask(
             type="pil", tool="editor", elem_classes=["outpaint_image"]
         )
+        self.input_video_to_audio = gr.Video(
+            value=None,
+            autoplay=False,
+            source="upload",
+            label="Input video",
+        )
 
         self.extensions_images_targets = extension_targets
         self.extensions_augment = injected_exts
@@ -81,6 +87,9 @@ class SharedUI:
 
         img = image_path_to_pil(image_url)
         return gr.update(value=img)
+
+    def send_video_to_another_tab(self, video):
+        return gr.update(value=video)
 
     def create_base_send_targets(self, output, sender, tabs):
         with gr.Row() as base_targets:

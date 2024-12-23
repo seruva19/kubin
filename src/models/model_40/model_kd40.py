@@ -1,8 +1,12 @@
 import gc
+import random
 import re
+import numpy as np
 import torch
+import torchvision
 import torch.backends
 import torch
+from torch.functional import F
 import os
 
 from params import KubinParams
@@ -12,6 +16,9 @@ from utils.logging import k_log
 from models.model_40.kandinsky_4.pipelines import get_T2V_pipeline
 from models.model_40.kandinsky_4.t2v_pipeline import Kandinsky4T2VPipeline
 from models.model_40.model_kd40_env import Model_KD40_Environment
+from models.model_40.kandinsky_4_va.video2audio_pipe import Video2AudioPipeline
+from models.model_40.kandinsky_4_va.utils import load_video, create_video
+
 from utils.file_system import save_output
 
 
@@ -25,13 +32,15 @@ class Model_KD40:
         self.t2v_pipe: Kandinsky4T2VPipeline | None = None
 
         self.i2v_pipe = None
-        self.v2a_pipe = None
+        self.v2a_pipe: Video2AudioPipeline | None = None
 
     def prepare_model(self, task, use_t2v_flash, kd40_conf):
         k_log(f"task queued: {task}")
-        assert task in ["text2video"]
+        assert task in ["text2video", "video2audio", "image2video"]
 
-        cache_dir = os.path.join(self.kparams("general", "cache_dir"), "kandinsky-4")
+        shared_cache_dir = self.kparams("general", "cache_dir")
+        cache_dir = os.path.join(shared_cache_dir, "kandinsky-4")
+
         device = self.kparams("general", "device")
 
         use_flash_t4v_pipeline_before = self.use_flash_t2v_pipeline
@@ -72,6 +81,19 @@ class Model_KD40:
                         conf_path=None,
                         environment=environment,
                     )
+        elif task == "video2audio":
+            if self.v2a_pipe is None:
+                self.flush(task)
+
+                self.v2a_pipe = Video2AudioPipeline(
+                    cache_dir=cache_dir,
+                    mm_cache_dir=shared_cache_dir,
+                    path_to_model="ai-forever/kandinsky-4-v2a",
+                    # torch_dtype=torch.float16,
+                    torch_dtype=torch.bfloat16,
+                    device=device,
+                    environment=environment,
+                )
 
     def t2v(self, params):
         task = "text2video"
@@ -128,7 +150,138 @@ class Model_KD40:
 
     def v2a(self, params):
         task = "video2audio"
-        return None
+
+        video = params["input_video"]
+
+        prompt = params["prompt"]
+        negative_prompt = params["prompt"]
+        guidance_scale = params["guidance_scale"]
+        num_steps = params["steps"]
+        height = 512  # params["height"]
+
+        video, _, fps = torchvision.io.read_video(video)
+        video_input, video_complete, duration_sec = load_video(
+            video, fps["video_fps"], num_frames=96, max_duration_sec=12
+        )
+
+        seed = (
+            random.randint(0, np.iinfo(np.int32).max)
+            if params["seed"] == -1
+            else params["seed"]
+        )
+        generate_sound = params["generate_only_sound"]
+
+        self.prepare_model(task=task, use_t2v_flash=False, kd40_conf={})
+
+        save_sound_path = None
+
+        index = 1
+        folder = params.get(
+            ".output_dir", os.path.join(self.kparams("general", "output_dir"), task)
+        )
+        while True:
+            save_video_path = os.path.join(
+                folder, f"v2a_{str(index)}_{'_'.join(prompt.split()[:5])}.mp4"
+            )
+
+            if not os.path.exists(save_video_path):
+                break
+            index += 1
+
+        device = self.kparams("general", "device")
+        video_input = video_input.to(device)
+
+        os.makedirs(os.path.dirname(save_video_path), exist_ok=True)
+
+        import torch
+        import torch.nn as nn
+
+        k_log("patching nn.functional.linear 'forward' method")
+        _forward = nn.Linear.forward
+        k_log("patching nn.Conv2d 'forward' method")
+        _conv_forward = nn.Conv2d.forward
+        k_log("patching nn.GroupNorm 'forward' method")
+        _groupnorm_forward = nn.GroupNorm.forward
+        k_log("patching nn.LayerNorm 'forward' method")
+        _layernorm_forward = nn.LayerNorm.forward
+
+        def new_forward(self, input: torch.Tensor) -> torch.Tensor:
+            if self.weight.device != input.device:
+                # print(f"(linear) casting weight to {input.device}")
+                self.weight.data = self.weight.data.to(input.device)
+                if self.bias is not None:
+                    self.bias.data = self.bias.data.to(input.device)
+            return nn.functional.linear(input, self.weight, self.bias)
+
+        def new_conv_forward(self, input: torch.Tensor) -> torch.Tensor:
+            if self.weight.device != input.device:
+                # print(f"(conv) casting weight to {input.device}")
+                self.weight.data = self.weight.data.to(input.device)
+                if self.bias is not None:
+                    self.bias.data = self.bias.data.to(input.device)
+            return self._conv_forward(input, self.weight, self.bias)
+
+        def new_groupnorm_forward(self, input: torch.Tensor) -> torch.Tensor:
+            if self.weight.device != input.device:
+                # print(f"(groupnorm) casting weight to {input.device}")
+                self.weight.data = self.weight.data.to(input.device)
+                if self.bias is not None:
+                    self.bias.data = self.bias.data.to(input.device)
+            return nn.functional.group_norm(
+                input, self.num_groups, self.weight, self.bias, self.eps
+            )
+
+        def new_layernorm_forward(self, input: torch.Tensor) -> torch.Tensor:
+            if self.weight.device != input.device:
+                # print(f"(layernorm) casting weight to {input.device}")
+                self.weight.data = self.weight.data.to(input.device)
+                if self.bias is not None:
+                    self.bias.data = self.bias.data.to(input.device)
+            return nn.functional.layer_norm(
+                input, self.normalized_shape, self.weight, self.bias, self.eps
+            )
+
+        nn.Linear.forward = new_forward
+        nn.Conv2d.forward = new_conv_forward
+        nn.GroupNorm.forward = new_groupnorm_forward
+        nn.LayerNorm.forward = new_layernorm_forward
+
+        try:
+            spectrogram = self.v2a_pipe(
+                images=video_input,
+                prompt=prompt,
+                negative_prompt=negative_prompt,
+                height=height,
+                duration_sec=duration_sec,
+                num_inference_steps=num_steps,
+                guidance_scale=guidance_scale,
+                generator=torch.Generator().manual_seed(seed),
+                latents=None,
+                output_type="pil",
+            )[0]
+        finally:
+            k_log("original nn.functional.linear 'forward' method restored")
+            nn.Linear.forward = _forward
+            k_log("original nn.Conv2d 'forward' method restored")
+            nn.Conv2d.forward = _conv_forward
+            k_log("original nn.GroupNorm 'forward' method restored")
+            nn.GroupNorm.forward = _groupnorm_forward
+            k_log("original nn.LayerNorm 'forward' method restored")
+            nn.LayerNorm.forward = _layernorm_forward
+
+        create_video(
+            spectrogram,
+            video_complete,
+            display_video=False,
+            save_path=save_video_path,
+            device=device,
+        )
+
+        if generate_sound:
+            save_sound_path = None
+
+        k_log("image2video  task: done")
+        return save_video_path, save_sound_path
 
     def flush(self, task=None):
         cleared = False

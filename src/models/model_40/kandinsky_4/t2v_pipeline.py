@@ -156,6 +156,22 @@ class Kandinsky4T2VPipeline:
             ],
         }
 
+        self.progress_fn = lambda progress, desc: None
+
+    def register_progress_bar(self, progress_fn=None):
+        self.progress_fn = progress_fn if progress_fn is not None else self.progress_fn
+
+    def update_progress(self, step, total_steps):
+        if hasattr(self, "progress_fn"):
+            try:
+                self.progress_fn(
+                    step / total_steps, desc=f"Generating {step}/{total_steps}"
+                )
+            except:
+                self.progress_fn(step, total_steps)
+        else:
+            pass
+
     def __call__(
         self,
         text: str,

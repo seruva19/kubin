@@ -1,26 +1,13 @@
+from patches import patch
+
+patch()
+
 from arguments import parse_arguments
 from env import Kubin
 from utils.platform import is_windows
 from web_gui import gradio_ui
 from pathlib import Path
-import os
 
-os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
-import gradio.analytics
-
-check_executed = False
-
-
-def custom_version_check():
-    global check_executed
-    if not check_executed:
-        check_executed = True
-        print(
-            "fyi: kubin uses an old version of Gradio (3.50.2), which is now considered deprecated for security reasons.\nhowever, the author is too stubborn to upgrade (https://github.com/seruva19/kubin/blob/main/DOCS.md#gradio-4)."
-        )
-
-
-gradio.analytics.version_check = custom_version_check
 
 kubin = Kubin()
 args = parse_arguments()

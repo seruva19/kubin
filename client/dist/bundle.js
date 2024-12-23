@@ -323,7 +323,7 @@
           return `
             <span style='font-weight: bold'>${key}</span>
             <span>was successfully changed to</span>
-            <span style='font-weight: bold'>${value}</span>
+            <span style='font-weight: bold; word-wrap: break-word;'>${value}</span>
             <span style='color: red'>${requiresRestart ? ' restart required' : ''}</span>
           `
         }).join('<br>')

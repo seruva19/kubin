@@ -33,7 +33,7 @@ def t2v_ui(generate_fn, shared: SharedUI, tabs, session):
                         "prompt",
                         "A closeshot of beautiful blonde woman standing under the sun at the beach. Soft waves lapping at her feet and vibrant palm trees lining the distant coastline under a clear blue sky.",
                     ),
-                    label="Text",
+                    label="Prompt",
                     placeholder="",
                     lines=4,
                 )
@@ -288,16 +288,30 @@ def t2v_ui(generate_fn, shared: SharedUI, tabs, session):
 
             generate_t2v = gr.Button("Generate", variant="primary")
 
-            print()
             with gr.Column(
                 visible=not value("generate_image", "false")
             ) as t2v_video_block:
-                t2v_output = gr.Video(
-                    label="Video output",
-                    elem_classes=["t2v-output-video"],
-                    autoplay=True,
-                    show_share_button=True,
-                )
+                with gr.Column():
+                    t2v_output = gr.Video(
+                        label="Video output",
+                        elem_classes=["t2v-output-video"],
+                        autoplay=True,
+                        show_share_button=True,
+                    )
+                    send_v2a_btn = gr.Button(
+                        "🔉 Send to Video2Audio", variant="secondary", size="sm"
+                    )
+
+                    send_v2a_btn.click(
+                        fn=shared.open_another_tab,
+                        inputs=[gr.State(7)],
+                        outputs=tabs,
+                        queue=False,
+                    ).then(
+                        fn=shared.send_video_to_another_tab,
+                        inputs=[t2v_output],
+                        outputs=[shared.input_video_to_audio],
+                    )
 
             with gr.Column(visible=value("generate_image", "false")) as t2v_image_block:
                 with gr.Column():
@@ -360,6 +374,7 @@ def t2v_ui(generate_fn, shared: SharedUI, tabs, session):
                 tokenizer_path,
                 resolution,
                 *injections,
+                # progress=gr.Progress(),
             ):
                 text = generate_prompt_from_wildcard(text)
 
@@ -412,7 +427,6 @@ def t2v_ui(generate_fn, shared: SharedUI, tabs, session):
 
                     params = augmentations["exec"](params, injections)
                     yield generate_fn(params)
-                    await asyncio.sleep(1)
 
                     if not shared.check("LOOP_T2V", False):
                         break
@@ -447,8 +461,7 @@ def t2v_ui(generate_fn, shared: SharedUI, tabs, session):
                     tokenizer_path,
                     resolution,
                 ]
-                + augmentations["injections"]
-                + [seed],
+                + augmentations["injections"],
                 outputs=[t2v_output, t2v_image_output],
                 js=[
                     "args => kubin.UI.taskStarted('Text To Video')",

@@ -1,0 +1,80 @@
+import os
+
+check_executed = False
+
+
+def patch():
+    os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
+    os.environ["TRITON_CACHE_DIR"] = os.path.join(os.getcwd(), "__triton__")
+    import gradio.analytics
+
+    def custom_version_check():
+        global check_executed
+        if not check_executed:
+            check_executed = True
+            print(
+                "fyi: kubin uses an old version of Gradio (3.50.2), which is now considered deprecated for security reasons.\nhowever, the author is too stubborn to upgrade (https://github.com/seruva19/kubin/blob/main/DOCS.md#gradio-4)."
+            )
+
+    gradio.analytics.version_check = custom_version_check
+
+    try:
+        pytorchvideo_file_path = os.path.join(
+            os.getcwd(),
+            "venv",
+            "Lib",
+            "site-packages",
+            "pytorchvideo",
+            "transforms",
+            "augmentations.py",
+        )
+
+        old_import = "import torchvision.transforms.functional_tensor as F_t"
+        new_import = "import torchvision.transforms._functional_tensor as F_t"
+
+        with open(pytorchvideo_file_path, "r") as f:
+            content = f.read()
+
+        if "import torchvision.transforms.functional_tensor as F_t" in content:
+            replace_in_file(pytorchvideo_file_path, old_import, new_import)
+            print(
+                "patched 'torchvision.transforms.functional_tensor' import in pytorchvideo"
+            )
+    except:
+        print("cannot patch pytorchvideo, v2a might be not functional")
+
+    try:
+        transformers_file_path = os.path.join(
+            os.getcwd(),
+            "venv",
+            "Lib",
+            "site-packages",
+            "transformers",
+            "generation",
+            "utils.py",
+        )
+
+        old_line = "def _extract_past_from_model_output(self, outputs: ModelOutput):"
+        new_line = "def _extract_past_from_model_output(self, outputs: ModelOutput, standardize_cache_format=None):"
+
+        with open(transformers_file_path, "r") as f:
+            content = f.read()
+
+        if (
+            "def _extract_past_from_model_output(self, outputs: ModelOutput):"
+            in content
+        ):
+            replace_in_file(transformers_file_path, old_line, new_line)
+            print("patched '_extract_past_from_model_output' signature in transformers")
+    except:
+        print("cannot patch transformers, some modules might be not functional")
+
+
+def replace_in_file(file_path, old_text, new_text):
+    with open(file_path, "r") as f:
+        content = f.read()
+
+    new_content = content.replace(old_text, new_text)
+
+    with open(file_path, "w") as f:
+        f.write(new_content)
