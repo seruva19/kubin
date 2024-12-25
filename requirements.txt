@@ -24,5 +24,3 @@ bitsandbytes==0.43.3
 https://github.com/woct0rdho/triton/releases/download/v3.0.0-windows.post1/triton-3.0.0-cp310-cp310-win_amd64.whl; platform_system == "Windows"
 triton==3.0.0; platform_system != "Windows"
 flash_attn==2.7.0; platform_system != "Windows"
-#https://github.com/jllllll/bitsandbytes-windows-webui/releases/download/wheels/bitsandbytes-0.41.2.post2-py3-none-win_amd64.whl; platform_system == "Windows"
-#bitsandbytes==0.41.1; platform_system != "Windows"
