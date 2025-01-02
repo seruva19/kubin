@@ -349,7 +349,13 @@ def t2i_ui(generate_fn, shared: SharedUI, tabs, session):
                         "init_image": None,
                     }
 
-                    shared.storage.save(block, params)
+                    saved_params = {
+                        k: v
+                        for k, v in params.items()
+                        if k not in ["cnet_image", "init_image"]
+                    }
+                    shared.storage.save(block, saved_params)
+
                     params = augmentations["exec"](params, injections)
 
                     yield generate_fn(params)

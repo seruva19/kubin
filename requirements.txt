@@ -3,11 +3,11 @@ setuptools==69.5.1
 git+https://github.com/ai-forever/Kandinsky-2.git@33c3176
 git+https://github.com/openai/CLIP.git@a1d0717
 diffusers==0.30.3
-git+https://github.com/huggingface/transformers@6544271  
+transformers==4.44.0
 torchao==0.7.0
 optimum-quanto==0.2.6
 mmgp==1.2.0
-tokenizers==0.20.1
+tokenizers==0.19.1
 accelerate==1.0.1
 safetensors==0.4.5
 opencv-python==4.8.0.74

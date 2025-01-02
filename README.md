@@ -43,7 +43,7 @@ Web-GUI for Kandinsky generative AI models ([Kandinsky2](https://github.com/ai-f
 ## Screenshots
 
 <details>
-    <summary>Toggle</summary>
+<summary>Toggle</summary>
 
 ### Kandinsky 2.0
 
@@ -67,7 +67,7 @@ Web-GUI for Kandinsky generative AI models ([Kandinsky2](https://github.com/ai-f
 
 ### Kandinsky 4.0
 
-![img](/sshots/video_40.png)
+![img](/sshots/screenshot_40.gif)
 
 </details>
 

@@ -41,9 +41,17 @@ def update_info():
     try:
         import flash_attn
 
-        flash_attn_info = f"flash_attn: {flash_attn.__version__}\n"
+        flash_attn_info = f"flashattn: {flash_attn.__version__}\n"
     except:
-        flash_attn_info = f"flash_attn: not installed\n"
+        flash_attn_info = f"flashattn: not installed\n"
+
+    sageattn_info = ""
+    try:
+        from sageattention import sageattn
+
+        sageattn_info = f"sageattn: {sageattention.__version__}\n"
+    except:
+        sageattn_info = f"sageattn: not installed\n"
 
     diffusers_info = ""
     try:
