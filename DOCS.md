@@ -81,7 +81,7 @@ pip install -r requirements.txt
 ```
 Running on Metal GPUs (Apple) [instructions here](https://github.com/seruva19/kubin/pull/62)
 
-### Kandinsky 3.*
+### Kandinsky 3.x
 
 Its [text encoder](https://huggingface.co/google/flan-ul2) is large, so "out-of-the-box" inference without CUDA OOM error is not possible even for GPUs with 24 Gb of VRAM.
 
@@ -94,7 +94,7 @@ Perhaps MPS users also might be able to run Kandinsky 3 thanks to unified memory
 
 ### Kandinsky 4.0
 
-Kandinsky 4.0 is currently the default model for new installations. To switch to Kandinsky-4 from old installations, go to "Settings" and select "kd40"/"native" pipeline. All required optimizations required to fit into 24 Gb are turned on by default.
+Kandinsky 4.0 is currently the default model for new installations. To switch to Kandinsky-4 from old installations, go to "Settings" and select "kd40"/"native" pipeline. 
 
 ### Models and pipelines
 
@@ -118,7 +118,14 @@ That should decrease VRAM consumption to somewhere around 2 Gb for 512x512 image
 Depending of your computing power, you may try turn on/off specific flags until optimal VRAM/speed ratio will be met. 
 Note that these optimizations are implemented only for 2.2 model, and not applicable to earlier models (2.0 and 2.1) or Kandinsky 3.* (which has its own optimizations, read section above).  
 
-Regarding Kandinsky 3.* requirements, please refer to the information provided earlier.
+#### Kandinsky 3.x
+
+Please refer to the information provided [earlier](https://github.com/seruva19/kubin/blob/main/DOCS.md#kandinsky-3).
+
+#### Kandinsky 4.0
+
+All optimizations required to fit pipeline into 24Gb VRAM are turned on by default.  
+Options to use K4.0 on 16Gb (and, possibly, 12Gb) cards are currently under research.
 
 ### FlashAttention
 
