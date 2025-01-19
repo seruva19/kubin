@@ -6,8 +6,7 @@ diffusers==0.30.3
 transformers==4.45.0
 torchao==0.7.0
 optimum-quanto==0.2.6
-mmgp==1.2.0
-tokenizers==0.19.1
+tokenizers==0.20.0
 accelerate==1.0.1
 safetensors==0.4.5
 opencv-python==4.8.0.74
