@@ -3,6 +3,7 @@ import os
 import torch
 from extension.ext_registry import ExtensionRegistry
 from params import KubinParams
+from utils.env_data import load_custom_env
 from utils.logging import k_error, k_log
 
 
@@ -31,6 +32,10 @@ class Kubin:
         )
 
         self.params.register_change_callback(self.ext_registry.propagate_params_changes)
+
+    def with_envvars(self):
+        yaml_path = "kubin.env.yaml"
+        load_custom_env(yaml_path)
 
     def with_pipeline(self):
         use_mock = self.params("general", "mock")

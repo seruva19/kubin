@@ -15,6 +15,7 @@ args = parse_arguments()
 
 def init_kubin(kubin: Kubin):
     kubin.with_args(args)
+    kubin.with_envvars()
     kubin.with_utils()
     kubin.with_extensions()
     kubin.with_hooks()
