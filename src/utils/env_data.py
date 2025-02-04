@@ -43,7 +43,9 @@ def clear(model_names: Optional[Union[str, List[str]]] = None):
 
 
 def load_env_value(key, default_value):
-    return os.environ.get(key, default_value)
+    value = os.environ.get(key, default_value)
+    k_log(f"env key: {key}, value: {value}")
+    return value
 
 
 def load_custom_env(file_path):
