@@ -447,7 +447,22 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
                         "cnet_img_strength": cnet_img_strength,
                     }
 
-                    shared.storage.save(block, params)
+                    saved_params = {
+                        k: v
+                        for k, v in params.items()
+                        if k
+                        not in [
+                            "image_1",
+                            "image_2",
+                            "image_3",
+                            "image_4",
+                            "image_5",
+                            "image_6",
+                            "cnet_image",
+                        ]
+                    }
+
+                    shared.storage.save(block, saved_params)
                     params = augmentations["exec"](params, injections)
 
                     yield generate_fn(params)
