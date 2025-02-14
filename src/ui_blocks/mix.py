@@ -403,8 +403,6 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
                         sampler_20, sampler_21_native, sampler_diffusers
                     )
 
-                    prompt = generate_prompt_from_wildcard(prompt)
-
                     params = {
                         ".session": session,
                         "mix_image_count": mix_image_count,
