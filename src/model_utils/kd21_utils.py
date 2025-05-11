@@ -1,6 +1,6 @@
 from dataclasses import dataclass, fields
 import os
-from huggingface_hub import hf_hub_url, cached_download
+from huggingface_hub import hf_hub_url, hf_hub_download
 from copy import deepcopy
 from omegaconf.dictconfig import DictConfig
 
@@ -87,7 +87,7 @@ def get_checkpoint(
             config_file_url = hf_hub_url(
                 repo_id="sberbank-ai/Kandinsky_2.1", filename=model_name
             )
-            cached_download(
+            hf_hub_download(
                 config_file_url,
                 cache_dir=cache_dir,
                 force_filename=model_name,
@@ -111,7 +111,7 @@ def get_checkpoint(
                 repo_id="sberbank-ai/Kandinsky_2.1", filename=model_name
             )
 
-            cached_download(
+            hf_hub_download(
                 config_file_url,
                 cache_dir=cache_dir,
                 force_filename=model_name,
@@ -133,7 +133,7 @@ def get_checkpoint(
         config_file_url = hf_hub_url(
             repo_id="sberbank-ai/Kandinsky_2.1", filename=prior_name
         )
-        cached_download(
+        hf_hub_download(
             config_file_url,
             cache_dir=cache_dir,
             force_filename=prior_name,
@@ -159,7 +159,7 @@ def get_checkpoint(
         config_file_url = hf_hub_url(
             repo_id="sberbank-ai/Kandinsky_2.1", filename=f"text_encoder/{name}"
         )
-        cached_download(
+        hf_hub_download(
             config_file_url,
             cache_dir=cache_dir_text_en,
             force_filename=name,
@@ -169,7 +169,7 @@ def get_checkpoint(
     config_file_url = hf_hub_url(
         repo_id="sberbank-ai/Kandinsky_2.1", filename="movq_final.ckpt"
     )
-    cached_download(
+    hf_hub_download(
         config_file_url,
         cache_dir=cache_dir,
         force_filename="movq_final.ckpt",
@@ -179,7 +179,7 @@ def get_checkpoint(
     config_file_url = hf_hub_url(
         repo_id="sberbank-ai/Kandinsky_2.1", filename="ViT-L-14_stats.th"
     )
-    cached_download(
+    hf_hub_download(
         config_file_url,
         cache_dir=cache_dir,
         force_filename="ViT-L-14_stats.th",

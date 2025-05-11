@@ -19,6 +19,29 @@ def patch():
     gradio.analytics.version_check = custom_version_check
 
     try:
+        kandinsky21_file_path = os.path.join(
+            os.getcwd(), "venv", "Lib", "site-packages", "kandinsky2", "__init__.py"
+        )
+
+        with open(kandinsky21_file_path, "r") as f:
+            content = f.read()
+
+        if "cached_download" in content:
+            modified_content = content.replace("cached_download", "hf_hub_download")
+
+            with open(kandinsky21_file_path, "w") as f:
+                f.write(modified_content)
+
+            print(
+                "successfully replaced all occurrences of 'cached_download' with 'hf_hub_download' in kandinsky2/__init__.py"
+            )
+    except Exception as e:
+        print(f"Cannot patch kandinsky2: {str(e)}")
+        print(
+            "You should manually replace all calls to 'cached_download' with 'hf_hub_download'"
+        )
+
+    try:
         pytorchvideo_file_path = os.path.join(
             os.getcwd(),
             "venv",
