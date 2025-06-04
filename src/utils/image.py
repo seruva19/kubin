@@ -1,10 +1,7 @@
 import numpy as np
 import requests
-from gradio.processing_utils import decode_base64_to_image
-import base64
 from PIL import Image, ImageOps
 from io import BytesIO
-import cv2
 
 
 def image_path_to_pil(image_url):

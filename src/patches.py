@@ -3,6 +3,12 @@ import os
 check_executed = False
 
 
+def get_current_env_packages():
+    import sysconfig
+
+    return sysconfig.get_path("purelib")
+
+
 def patch():
     os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
     os.environ["TRITON_CACHE_DIR"] = os.path.join(os.getcwd(), "__triton__")
@@ -20,7 +26,7 @@ def patch():
 
     try:
         kandinsky21_file_path = os.path.join(
-            os.getcwd(), "venv", "Lib", "site-packages", "kandinsky2", "__init__.py"
+            get_current_env_packages(), "kandinsky2", "__init__.py"
         )
 
         with open(kandinsky21_file_path, "r") as f:
@@ -43,10 +49,7 @@ def patch():
 
     try:
         pytorchvideo_file_path = os.path.join(
-            os.getcwd(),
-            "venv",
-            "Lib",
-            "site-packages",
+            get_current_env_packages(),
             "pytorchvideo",
             "transforms",
             "augmentations.py",
@@ -68,10 +71,7 @@ def patch():
 
     try:
         transformers_file_path = os.path.join(
-            os.getcwd(),
-            "venv",
-            "Lib",
-            "site-packages",
+            get_current_env_packages(),
             "transformers",
             "generation",
             "utils.py",
