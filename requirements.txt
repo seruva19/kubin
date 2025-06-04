@@ -23,4 +23,4 @@ huggingface-hub==0.30.2
 bitsandbytes==0.45.5
 triton-windows==3.2.0.post18; platform_system == "Windows"
 triton==3.2.0; platform_system != "Windows"
-flash_attn==2.7.0.post2; platform_system != "Windows"
+#flash_attn==2.7.0.post2; platform_system != "Windows"
