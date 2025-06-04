@@ -84,11 +84,9 @@ def get_checkpoint(
         if checkpoint_info.is_base_decoder():
             print("loading default decoder model")
             cache_model_name = os.path.join(cache_dir, model_name)
-            config_file_url = hf_hub_url(
-                repo_id="sberbank-ai/Kandinsky_2.1", filename=model_name
-            )
             hf_hub_download(
-                config_file_url,
+                repo_id="ai-forever/Kandinsky_2.1",
+                filename=model_name,
                 cache_dir=cache_dir,
                 force_filename=model_name,
                 use_auth_token=use_auth_token,
@@ -107,12 +105,9 @@ def get_checkpoint(
         if checkpoint_info.is_base_inpaint():
             print("loading default inpaint decoder model")
             cache_model_name = os.path.join(cache_dir, model_name)
-            config_file_url = hf_hub_url(
-                repo_id="sberbank-ai/Kandinsky_2.1", filename=model_name
-            )
-
             hf_hub_download(
-                config_file_url,
+                repo_id="ai-forever/Kandinsky_2.1",
+                filename=model_name,
                 cache_dir=cache_dir,
                 force_filename=model_name,
                 use_auth_token=use_auth_token,
@@ -130,11 +125,9 @@ def get_checkpoint(
     if checkpoint_info.is_base_prior():
         print("loading default prior model")
         cache_prior_name = os.path.join(cache_dir, prior_name)
-        config_file_url = hf_hub_url(
-            repo_id="sberbank-ai/Kandinsky_2.1", filename=prior_name
-        )
         hf_hub_download(
-            config_file_url,
+            repo_id="ai-forever/Kandinsky_2.1",
+            filename=prior_name,
             cache_dir=cache_dir,
             force_filename=prior_name,
             use_auth_token=use_auth_token,
@@ -156,31 +149,25 @@ def get_checkpoint(
         "tokenizer.json",
         "tokenizer_config.json",
     ]:
-        config_file_url = hf_hub_url(
-            repo_id="sberbank-ai/Kandinsky_2.1", filename=f"text_encoder/{name}"
-        )
         hf_hub_download(
-            config_file_url,
+            repo_id="ai-forever/Kandinsky_2.1",
+            filename=f"text_encoder/{name}",
             cache_dir=cache_dir_text_en,
             force_filename=name,
             use_auth_token=use_auth_token,
         )
 
-    config_file_url = hf_hub_url(
-        repo_id="sberbank-ai/Kandinsky_2.1", filename="movq_final.ckpt"
-    )
     hf_hub_download(
-        config_file_url,
+        repo_id="ai-forever/Kandinsky_2.1",
+        filename="movq_final.ckpt",
         cache_dir=cache_dir,
         force_filename="movq_final.ckpt",
         use_auth_token=use_auth_token,
     )
 
-    config_file_url = hf_hub_url(
-        repo_id="sberbank-ai/Kandinsky_2.1", filename="ViT-L-14_stats.th"
-    )
     hf_hub_download(
-        config_file_url,
+        repo_id="ai-forever/Kandinsky_2.1",
+        filename="ViT-L-14_stats.th",
         cache_dir=cache_dir,
         force_filename="ViT-L-14_stats.th",
         use_auth_token=use_auth_token,
