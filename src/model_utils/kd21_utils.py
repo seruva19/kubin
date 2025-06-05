@@ -64,7 +64,7 @@ class KandinskyCheckpoint:
 def get_checkpoint(
     device,
     task_type="text2img",
-    cache_dir="/tmp/kandinsky2",
+    default_cache_dir="/tmp/kandinsky2",
     use_auth_token=None,
     use_flash_attention=False,
     checkpoint_info=KandinskyCheckpoint(),
@@ -73,7 +73,7 @@ def get_checkpoint(
     from kandinsky2.kandinsky2_model import Kandinsky2
     from kandinsky2.kandinsky2_1_model import Kandinsky2_1
 
-    cache_dir = os.path.join(cache_dir, "2_1")
+    cache_dir = os.path.join(default_cache_dir, "2_1")
 
     config = DictConfig(deepcopy(CONFIG_2_1))
     config["model_config"]["use_flash_attention"] = use_flash_attention
@@ -87,7 +87,7 @@ def get_checkpoint(
             hf_hub_download(
                 repo_id="ai-forever/Kandinsky_2.1",
                 filename=model_name,
-                cache_dir=cache_dir,
+                local_dir=cache_dir,
                 force_filename=model_name,
                 use_auth_token=use_auth_token,
             )
@@ -108,7 +108,7 @@ def get_checkpoint(
             hf_hub_download(
                 repo_id="ai-forever/Kandinsky_2.1",
                 filename=model_name,
-                cache_dir=cache_dir,
+                local_dir=cache_dir,
                 force_filename=model_name,
                 use_auth_token=use_auth_token,
             )
@@ -128,7 +128,7 @@ def get_checkpoint(
         hf_hub_download(
             repo_id="ai-forever/Kandinsky_2.1",
             filename=prior_name,
-            cache_dir=cache_dir,
+            local_dir=cache_dir,
             force_filename=prior_name,
             use_auth_token=use_auth_token,
         )
@@ -140,7 +140,7 @@ def get_checkpoint(
             checkpoint_info.prior_model_dir, checkpoint_info.prior_model_name
         )
 
-    cache_dir_text_en = os.path.join(cache_dir, "text_encoder")
+    # cache_dir_text_enc = os.path.join(cache_dir, "text_encoder")
     for name in [
         "config.json",
         "pytorch_model.bin",
@@ -152,7 +152,7 @@ def get_checkpoint(
         hf_hub_download(
             repo_id="ai-forever/Kandinsky_2.1",
             filename=f"text_encoder/{name}",
-            cache_dir=cache_dir_text_en,
+            local_dir=cache_dir,
             force_filename=name,
             use_auth_token=use_auth_token,
         )
@@ -160,7 +160,7 @@ def get_checkpoint(
     hf_hub_download(
         repo_id="ai-forever/Kandinsky_2.1",
         filename="movq_final.ckpt",
-        cache_dir=cache_dir,
+        local_dir=cache_dir,
         force_filename="movq_final.ckpt",
         use_auth_token=use_auth_token,
     )
@@ -168,13 +168,13 @@ def get_checkpoint(
     hf_hub_download(
         repo_id="ai-forever/Kandinsky_2.1",
         filename="ViT-L-14_stats.th",
-        cache_dir=cache_dir,
+        local_dir=cache_dir,
         force_filename="ViT-L-14_stats.th",
         use_auth_token=use_auth_token,
     )
 
-    config["tokenizer_name"] = cache_dir_text_en
-    config["text_enc_params"]["model_path"] = cache_dir_text_en
+    config["tokenizer_name"] = os.path.join(cache_dir, "text_encoder")
+    config["text_enc_params"]["model_path"] = os.path.join(cache_dir, "text_encoder")
     config["prior"]["clip_mean_std_path"] = os.path.join(cache_dir, "ViT-L-14_stats.th")
     config["image_enc_params"]["ckpt_path"] = os.path.join(cache_dir, "movq_final.ckpt")
 

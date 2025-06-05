@@ -57,7 +57,7 @@ class Model_KD21:
                     device,
                     use_auth_token=None,
                     task_type="text2img",
-                    cache_dir=cache_dir,
+                    default_cache_dir=cache_dir,
                     use_flash_attention=use_flash_attention,
                     checkpoint_info=self.params.checkpoint,
                 )
@@ -74,7 +74,7 @@ class Model_KD21:
                     device,
                     use_auth_token=None,
                     task_type="inpainting",
-                    cache_dir=cache_dir,
+                    default_cache_dir=cache_dir,
                     use_flash_attention=use_flash_attention,
                     checkpoint_info=self.params.checkpoint,
                 )
