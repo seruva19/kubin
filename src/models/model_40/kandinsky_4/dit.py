@@ -66,7 +66,6 @@ def parallelize(model, tp_mesh):
                     transformer_block.self_attention
                 )
                 plan = {
-                    # text modulation
                     "text_modulation": PrepareModuleInput(
                         input_layouts=(None, None),
                         desired_input_layouts=(Replicate(), None),
@@ -74,7 +73,6 @@ def parallelize(model, tp_mesh):
                     "text_modulation.out_layer": ColwiseParallel(
                         output_layouts=Replicate(),
                     ),
-                    # visual modulation
                     "visual_modulation": PrepareModuleInput(
                         input_layouts=(None, None),
                         desired_input_layouts=(Replicate(), None),
@@ -82,11 +80,9 @@ def parallelize(model, tp_mesh):
                     "visual_modulation.out_layer": ColwiseParallel(
                         output_layouts=Replicate(), use_local_output=True
                     ),
-                    # self_attention_norm
                     "self_attention_norm": SequenceParallel(
                         sequence_dim=0, use_local_output=True
-                    ),  # TODO надо ли вообще это??? если у нас смешанный ввод нескольких видосом может быть
-                    # self_attention
+                    ),
                     "self_attention.to_query": ColwiseParallel(
                         input_layouts=Replicate(),
                     ),
@@ -106,11 +102,9 @@ def parallelize(model, tp_mesh):
                         # input_layouts=(Shard(0), ),
                         output_layouts=Replicate(),
                     ),
-                    # feed_forward_norm
                     "feed_forward_norm": SequenceParallel(
                         sequence_dim=0, use_local_output=True
                     ),
-                    # feed_forward
                     "feed_forward.in_layer": ColwiseParallel(),
                     "feed_forward.out_layer": RowwiseParallel(),
                 }

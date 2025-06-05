@@ -185,7 +185,6 @@ class Kandinsky4T2VPipeline:
     ):
         num_steps = 4
 
-        # SEED
         if seed is None:
             if self.local_dit_rank == 0:
                 seed = torch.randint(2**63 - 1, (1,)).to(self.local_dit_rank)
@@ -212,13 +211,11 @@ class Kandinsky4T2VPipeline:
                 f"In the distilled version number of steps have to be strictly equal to 4"
             )
 
-        # PREPARATION
         num_frames = 1 if time_length == 0 else time_length * 8 // 4 + 1
 
         num_groups = (1, 1, 1) if self.resolution == 512 else (1, 2, 2)
         scale_factor = (1.0, 1.0, 1.0) if self.resolution == 512 else (1.0, 2.0, 2.0)
 
-        # TEXT EMBEDDER
         if self.local_dit_rank == 0:
             with torch.no_grad():
                 text_embed = (
@@ -245,7 +242,6 @@ class Kandinsky4T2VPipeline:
         bs_text_embed = text_embed.repeat(bs, 1).to(self.device_map["dit"])
         shape = (bs * num_frames, height // 8, width // 8, 16)
 
-        # DIT
         with torch.no_grad():
             with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
                 images = diffusion_generate_renoise(
@@ -265,7 +261,6 @@ class Kandinsky4T2VPipeline:
 
         torch.cuda.empty_cache()
 
-        # VAE
         if self.local_dit_rank == 0:
             self.vae.num_latent_frames_batch_size = 1 if time_length == 0 else 2
             with torch.no_grad():
@@ -287,7 +282,6 @@ class Kandinsky4T2VPipeline:
         torch.cuda.empty_cache()
 
         if self.local_dit_rank == 0:
-            # RESULTS
             if time_length == 0:
                 return_images = []
                 for i, image in enumerate(images.squeeze(2).cpu()):

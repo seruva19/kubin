@@ -22,9 +22,6 @@ try:
     from flash_attn import flash_attn_varlen_qkvpacked_func
 except:
     flash_attn_not_available = True
-    k_log(
-        "warning: kandinsky-4 cannot be used without flash_attn, which is not installed"
-    )
 
 from .utils import (
     exist,
