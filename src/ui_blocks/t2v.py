@@ -93,7 +93,7 @@ def t2v_ui(generate_fn, shared: SharedUI, tabs, session):
                         elif "kd40_sage_attention" in optimization_flags:
                             mh_attention_type = "sage"
                         else:
-                            mh_attention_type = "none"
+                            mh_attention_type = "sdpa"
 
                     with gr.Accordion("DiT Parameters", open=True):
                         with gr.Row():
@@ -104,7 +104,7 @@ def t2v_ui(generate_fn, shared: SharedUI, tabs, session):
                                     "pipeline_args.kd40_conf.dit.params.k_attention_type",
                                     mh_attention_type,
                                 ),
-                                choices=["none", "flash", "sage"],
+                                choices=["flash", "sage", "sdpa"],
                             )
                             in_visual_dim = gr.Number(
                                 interactive=True,

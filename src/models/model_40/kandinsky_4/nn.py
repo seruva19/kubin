@@ -14,8 +14,10 @@ from torch import nn
 import torch.nn.functional as F
 
 from utils.logging import k_log
+from .attention import standard_flash_attn_varlen_qkvpacked_func_replacement
 
 flash_attn_not_available = False
+
 try:
     from flash_attn import flash_attn_varlen_qkvpacked_func
 except:
@@ -175,60 +177,58 @@ class MultiheadSelfAttention(nn.Module):
         attention_type,
         return_attn_probs=False,
     ):
-        if self.attention_type == "none":
-            raise NotImplementedError(
-                "scaled_dot_product_attention is not implemented for attention_type=none"
-            )
-
-        elif self.attention_type == "sage":
+        if self.attention_type == "sage":
             raise NotImplementedError(
                 "scaled_dot_product_attention is not implemented for attention_type=sage"
             )
 
-        elif self.attention_type == "flash":
-            visual_shape, text_len = (
-                visual_query_key_value.shape[:3],
-                text_cu_seqlens[1],
-            )
-            visual_query_key_value, visual_cu_seqlens = to_1dimension(
-                visual_query_key_value,
-                visual_cu_seqlens,
-                visual_shape,
-                num_groups,
-                attention_type,
-            )
-            text_query_key_value = text_query_key_value.unsqueeze(0).expand(
-                math.prod(num_groups), *text_query_key_value.size()
-            )
-            query_key_value = cat_interleave(
-                visual_query_key_value,
-                text_query_key_value,
-                visual_cu_seqlens,
-                text_cu_seqlens,
-            )
-            cu_seqlens = visual_cu_seqlens + text_cu_seqlens
+        visual_shape, text_len = (
+            visual_query_key_value.shape[:3],
+            text_cu_seqlens[1],
+        )
+        visual_query_key_value, visual_cu_seqlens = to_1dimension(
+            visual_query_key_value,
+            visual_cu_seqlens,
+            visual_shape,
+            num_groups,
+            attention_type,
+        )
+        text_query_key_value = text_query_key_value.unsqueeze(0).expand(
+            math.prod(num_groups), *text_query_key_value.size()
+        )
+        query_key_value = cat_interleave(
+            visual_query_key_value,
+            text_query_key_value,
+            visual_cu_seqlens,
+            text_cu_seqlens,
+        )
+        cu_seqlens = visual_cu_seqlens + text_cu_seqlens
 
-            max_seqlen = torch.diff(cu_seqlens).max()
-            query_key_value = query_key_value.flatten(0, 1)
-            large_cu_seqlens = torch.cat(
-                [cu_seqlens + i * cu_seqlens[-1] for i in range(math.prod(num_groups))]
-            )
+        max_seqlen = torch.diff(cu_seqlens).max()
+        query_key_value = query_key_value.flatten(0, 1)
+        large_cu_seqlens = torch.cat(
+            [cu_seqlens + i * cu_seqlens[-1] for i in range(math.prod(num_groups))]
+        )
 
+        if self.attention_type == "flash":
             out, softmax_lse, _ = flash_attn_varlen_qkvpacked_func(
                 query_key_value,
                 large_cu_seqlens,
                 max_seqlen,
                 return_attn_probs=True,
             )
-            out = out.reshape(math.prod(num_groups), -1, *out.shape[1:]).flatten(-2, -1)
-
-            visual_out, text_out = split_interleave(out, cu_seqlens, text_len)
-            visual_out = to_3dimension(
-                visual_out, visual_shape, num_groups, attention_type
+        elif self.attention_type == "sdpa":
+            out, softmax_lse, _ = standard_flash_attn_varlen_qkvpacked_func_replacement(
+                query_key_value, large_cu_seqlens, max_seqlen, return_attn_probs=True
             )
-            if return_attn_probs:
-                return (visual_out, text_out), softmax_lse, None
-            return visual_out, text_out
+
+        out = out.reshape(math.prod(num_groups), -1, *out.shape[1:]).flatten(-2, -1)
+
+        visual_out, text_out = split_interleave(out, cu_seqlens, text_len)
+        visual_out = to_3dimension(visual_out, visual_shape, num_groups, attention_type)
+        if return_attn_probs:
+            return (visual_out, text_out), softmax_lse, None
+        return visual_out, text_out
 
     def forward(
         self,
@@ -323,56 +323,56 @@ class MultiheadSelfAttentionTP(nn.Module):
         attention_type,
         return_attn_probs=False,
     ):
-        if self.attention_type == "none":
-            raise NotImplementedError(
-                "scaled_dot_product_attention is not implemented for attention_type=none"
-            )
-
-        elif self.attention_type == "sage":
+        if self.attention_type == "sage":
             raise NotImplementedError(
                 "scaled_dot_product_attention is not implemented for attention_type=sage"
             )
 
-        elif self.attention_type == "flash":
-            visual_shape, text_len = (
-                visual_query_key_value.shape[:3],
-                text_cu_seqlens[1],
-            )
-            visual_query_key_value, visual_cu_seqlens = to_1dimension(
-                visual_query_key_value,
-                visual_cu_seqlens,
-                visual_shape,
-                num_groups,
-                attention_type,
-            )
-            text_query_key_value = text_query_key_value.unsqueeze(0).expand(
-                math.prod(num_groups), *text_query_key_value.size()
-            )
-            query_key_value = cat_interleave(
-                visual_query_key_value,
-                text_query_key_value,
-                visual_cu_seqlens,
-                text_cu_seqlens,
-            )
-            cu_seqlens = visual_cu_seqlens + text_cu_seqlens
+        visual_shape, text_len = (
+            visual_query_key_value.shape[:3],
+            text_cu_seqlens[1],
+        )
+        visual_query_key_value, visual_cu_seqlens = to_1dimension(
+            visual_query_key_value,
+            visual_cu_seqlens,
+            visual_shape,
+            num_groups,
+            attention_type,
+        )
+        text_query_key_value = text_query_key_value.unsqueeze(0).expand(
+            math.prod(num_groups), *text_query_key_value.size()
+        )
+        query_key_value = cat_interleave(
+            visual_query_key_value,
+            text_query_key_value,
+            visual_cu_seqlens,
+            text_cu_seqlens,
+        )
+        cu_seqlens = visual_cu_seqlens + text_cu_seqlens
 
-            max_seqlen = torch.diff(cu_seqlens).max()
-            query_key_value = query_key_value.flatten(0, 1)
-            large_cu_seqlens = torch.cat(
-                [cu_seqlens + i * cu_seqlens[-1] for i in range(math.prod(num_groups))]
-            )
+        max_seqlen = torch.diff(cu_seqlens).max()
+        query_key_value = query_key_value.flatten(0, 1)
+        large_cu_seqlens = torch.cat(
+            [cu_seqlens + i * cu_seqlens[-1] for i in range(math.prod(num_groups))]
+        )
+
+        if self.attention_type == "flash":
             out, softmax_lse, _ = flash_attn_varlen_qkvpacked_func(
                 query_key_value, large_cu_seqlens, max_seqlen, return_attn_probs=True
             )
-            out = out.reshape(math.prod(num_groups), -1, *out.shape[1:]).flatten(-2, -1)
 
-            visual_out, text_out = split_interleave(out, cu_seqlens, text_len)
-            visual_out = to_3dimension(
-                visual_out, visual_shape, num_groups, attention_type
+        elif self.attention_type == "sdpa":
+            out, softmax_lse, _ = standard_flash_attn_varlen_qkvpacked_func_replacement(
+                query_key_value, large_cu_seqlens, max_seqlen, return_attn_probs=True
             )
-            if return_attn_probs:
-                return (visual_out, text_out), softmax_lse, None
-            return visual_out, text_out
+
+        out = out.reshape(math.prod(num_groups), -1, *out.shape[1:]).flatten(-2, -1)
+
+        visual_out, text_out = split_interleave(out, cu_seqlens, text_len)
+        visual_out = to_3dimension(visual_out, visual_shape, num_groups, attention_type)
+        if return_attn_probs:
+            return (visual_out, text_out), softmax_lse, None
+        return visual_out, text_out
 
     def forward(
         self,
