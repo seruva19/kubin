@@ -19,6 +19,17 @@ def update(image):
     )
 
 
+def update_mix_rows_visibility(mix_count):
+    return [
+        gr.update(visible=mix_count >= 3),
+        gr.update(visible=mix_count >= 3),
+        gr.update(visible=mix_count >= 4),
+        gr.update(visible=mix_count >= 5),
+        gr.update(visible=mix_count >= 5),
+        gr.update(visible=mix_count >= 6),
+    ]
+
+
 def mix_ui(generate_fn, shared: SharedUI, tabs, session):
     augmentations = shared.create_ext_augment_blocks("mix")
     value = lambda name, def_value: get_value(shared.storage, block, name, def_value)
@@ -31,7 +42,7 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
 
             augmentations["ui_before_prompt"]()
 
-            with gr.Row(visible=False):
+            with gr.Row(visible=True):
                 mix_image_count = gr.Slider(
                     minimum=2,
                     maximum=6,
@@ -80,8 +91,8 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
                         label="Weight 2",
                     )
 
-            with gr.Row(visible=False):
-                with gr.Column(scale=1):
+            with gr.Row(visible=False) as row_3_4:
+                with gr.Column(scale=1, visible=True) as col_3:
                     shared.input_mix_images[2].render()
                     text_3 = gr.TextArea(
                         value=lambda: value("text_3", ""),
@@ -99,7 +110,7 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
                         step=0.05,
                         label="Weight 3",
                     )
-                with gr.Column(scale=1):
+                with gr.Column(scale=1, visible=False) as col_4:
                     shared.input_mix_images[3].render()
                     text_4 = gr.TextArea(
                         value=lambda: value("text_4", ""),
@@ -108,7 +119,7 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
                         lines=2,
                     )
                     shared.input_mix_images[3].change(
-                        fn=update, inputs=shared.input_mix_images[3], outputs=text_2
+                        fn=update, inputs=shared.input_mix_images[3], outputs=text_4
                     )
                     weight_4 = gr.Slider(
                         minimum=0,
@@ -118,8 +129,8 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
                         label="Weight 4",
                     )
 
-            with gr.Row(visible=False):
-                with gr.Column(scale=1):
+            with gr.Row(visible=False) as row_5_6:
+                with gr.Column(scale=1, visible=True) as col_5:
                     shared.input_mix_images[4].render()
                     text_5 = gr.TextArea(
                         value=lambda: value("text_5", ""),
@@ -137,8 +148,7 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
                         step=0.05,
                         label="Weight 5",
                     )
-
-                with gr.Column(scale=1):
+                with gr.Column(scale=1, visible=False) as col_6:
                     shared.input_mix_images[5].render()
                     text_6 = gr.TextArea(
                         value=lambda: value("text_6", ""),
@@ -156,6 +166,13 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
                         step=0.05,
                         label="Weight 6",
                     )
+
+            mix_image_count.release(
+                fn=update_mix_rows_visibility,
+                inputs=[mix_image_count],
+                outputs=[row_3_4, col_3, col_4, row_5_6, col_5, col_6],
+                show_progress=False,
+            )
 
             negative_prompt = gr.TextArea(
                 value=lambda: value("negative_prompt", ""),
@@ -399,6 +416,15 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
                 *injections,
             ):
                 while True:
+                    if mix_image_count < 3:
+                        image_3, text_3, weight_3 = None, None, None
+                    if mix_image_count < 4:
+                        image_4, text_4, weight_4 = None, None, None
+                    if mix_image_count < 5:
+                        image_5, text_5, weight_5 = None, None, None
+                    if mix_image_count < 6:
+                        image_6, text_6, weight_6 = None, None, None
+
                     sampler = shared.select_sampler(
                         sampler_20, sampler_21_native, sampler_diffusers
                     )
@@ -413,7 +439,6 @@ def mix_ui(generate_fn, shared: SharedUI, tabs, session):
                         "image_5": image_5,
                         "image_6": image_6,
                         "text_1": text_1,
-                        "text_2": text_2,
                         "text_2": text_2,
                         "text_3": text_3,
                         "text_4": text_4,

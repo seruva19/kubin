@@ -15,6 +15,7 @@ from utils.image import (
     composite_images,
     create_inpaint_targets,
     create_outpaint_targets,
+    images_or_texts,
     round_to_nearest,
 )
 
@@ -180,21 +181,24 @@ class Model_KD21:
         params = self.prepare_model("mix").prepare_params(params)
         assert self.kd21 is not None
 
-        def images_or_texts(images, texts):
-            images_texts = []
-            for i in range(len(images)):
-                images_texts.append(texts[i] if images[i] is None else images[i])
+        mix_image_count = params.get("mix_image_count", 2)
 
-            return images_texts
+        images_list = []
+        texts_list = []
+        weights_list = []
+
+        for i in range(1, mix_image_count + 1):
+            images_list.append(params.get(f"image_{i}"))
+            texts_list.append(params.get(f"text_{i}", ""))
+            weights_list.append(params.get(f"weight_{i}", 0.5))
 
         images = []
         for _ in itertools.repeat(None, params["batch_count"]):
+            images_texts = images_or_texts(images_list, texts_list)
+
             current_batch = self.kd21.mix_images(
-                images_texts=images_or_texts(
-                    [params["image_1"], params["image_2"]],
-                    [params["text_1"], params["text_2"]],
-                ),
-                weights=[params["weight_1"], params["weight_2"]],
+                images_texts=images_texts,
+                weights=weights_list,
                 num_steps=params["num_steps"],
                 batch_size=params["batch_size"],
                 guidance_scale=params["guidance_scale"],

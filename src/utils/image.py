@@ -72,3 +72,13 @@ def composite_images(original_img, second_img, mask_array):
     composited_img.paste(cut_out_region, (0, 0), cut_out_region)
 
     return composited_img
+
+
+def images_or_texts(images, texts):
+    images_texts = []
+    for i in range(len(images)):
+        entity = texts[i] if images[i] is None else images[i]
+        if entity is None:
+            continue
+        images_texts.append(entity)
+    return images_texts

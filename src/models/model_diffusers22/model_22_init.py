@@ -432,14 +432,6 @@ def type_of_weights(k_params):
     return torch.float16 if k_params("diffusers", "half_precision_weights") else "auto"
 
 
-def images_or_texts(images, texts):
-    images_texts = []
-    for i in range(len(images)):
-        images_texts.append(texts[i] if images[i] is None else images[i])
-
-    return images_texts
-
-
 def execute_forced_hooks(hook_stage, params, hook_params):
     for hook in params.get(hook_stage, [lambda **hp: None]):
         hook(**hook_params)

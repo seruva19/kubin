@@ -26,6 +26,7 @@ from utils.image import (
     composite_images,
     create_inpaint_targets,
     create_outpaint_targets,
+    images_or_texts,
     round_to_nearest,
 )
 import itertools
@@ -40,7 +41,6 @@ from models.model_diffusers22.model_22_cnet import generate_hint
 from models.model_diffusers22.model_22_init import (
     flush_if_required,
     prepare_weights_for_task,
-    images_or_texts,
     clear_pipe_info,
     execute_forced_hooks,
 )
@@ -426,11 +426,19 @@ class Model_Diffusers22:
 
         params, prior_generator, decoder_generator = self.prepare_params(params)
 
-        images_texts = images_or_texts(
-            [params["image_1"], params["image_2"]],
-            [params["text_1"], params["text_2"]],
-        )
-        weights = [params["weight_1"], params["weight_2"]]
+        mix_image_count = params.get("mix_image_count", 2)
+
+        images_list = []
+        texts_list = []
+        weights_list = []
+
+        for i in range(1, mix_image_count + 1):
+            images_list.append(params.get(f"image_{i}"))
+            texts_list.append(params.get(f"text_{i}", ""))
+            weights_list.append(params.get(f"weight_{i}", 0.5))
+
+        images_texts = images_or_texts(images_list, texts_list)
+        weights = weights_list
 
         hook_params["prior_generator"] = prior_generator
         hook_params["decoder_generator"] = decoder_generator
@@ -1099,16 +1107,25 @@ class Model_Diffusers22:
         mix_cnet_depth_estimator = params["cnet_depth_estimator"]
         mix_cnet_img_strength = params["cnet_img_strength"]
 
-        images_texts = images_or_texts(
-            [params["image_1"], params["image_2"]],
-            [params["text_1"], params["text_2"]],
-        )
-        weights = [params["weight_1"], params["weight_2"]]
+        mix_image_count = params.get("mix_image_count", 2)
+
+        images_list = []
+        texts_list = []
+        weights_list = []
+
+        for i in range(1, mix_image_count + 1):
+            images_list.append(params.get(f"image_{i}"))
+            texts_list.append(params.get(f"text_{i}", ""))
+            weights_list.append(params.get(f"weight_{i}", 0.5))
+
+        images_texts = images_or_texts(images_list, texts_list)
+        weights = weights_list
 
         hook_params["prior_generator"] = prior_generator
         hook_params["decoder_generator"] = decoder_generator
         hook_params["images_texts"] = images_texts
         hook_params["weights"] = weights
+
         execute_forced_hooks(HOOK.BEFORE_PREPARE_EMBEDS, params, hook_params)
         self.params.hook_store.call(
             HOOK.BEFORE_PREPARE_EMBEDS,
