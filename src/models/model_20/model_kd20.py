@@ -10,6 +10,7 @@ import torch.backends
 from params import KubinParams
 from utils.file_system import save_output
 from utils.image import composite_images
+from utils.env_data import load_env_value
 
 
 class Model_KD20:
@@ -23,7 +24,7 @@ class Model_KD20:
         self.kd20_inpaint: Kandinsky2 | None = None
 
     def prepare_model(self, task):
-        from kandinsky2 import get_kandinsky2_0
+        from model_utils.kd20_utils import get_kandinsky2_0
 
         print(f"task queued: {task}")
         assert task in ["text2img", "img2img", "inpainting"]
@@ -31,6 +32,8 @@ class Model_KD20:
         clear_vram_on_switch = True
 
         cache_dir = self.params("general", "cache_dir")
+        cache_dir = load_env_value("KD20_CACHE_DIR", cache_dir)
+
         device = self.params("general", "device")
 
         if task == "text2img" or task == "img2img":
