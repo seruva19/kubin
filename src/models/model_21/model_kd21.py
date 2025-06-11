@@ -8,6 +8,7 @@ import torch
 import torch.backends
 from params import KubinParams
 from kandinsky2 import CONFIG_2_1
+from utils.env_data import load_env_value
 from utils.yaml import flatten_yaml
 from utils.file_system import save_output
 from utils.logging import k_log
@@ -41,6 +42,8 @@ class Model_KD21:
         clear_vram_on_switch = True
 
         cache_dir = self.params("general", "cache_dir")
+        cache_dir = load_env_value("KD21_CACHE_DIR", cache_dir)
+
         device = self.params("general", "device")
 
         # use_flash_attention = self.params("native", "flash_attention")
@@ -242,7 +245,11 @@ class Model_KD21:
         inpaint_target = params["target"]
 
         image, mask = create_inpaint_targets(
-            pil_img, mask, output_size, inpaint_region, inpaint_target
+            pil_img,
+            mask,
+            output_size,
+            inpaint_region,
+            invert_mask=inpaint_target == "all but mask",
         )
 
         images = []

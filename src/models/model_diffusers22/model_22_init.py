@@ -16,6 +16,7 @@ from models.model_diffusers22.patched.patched_prior import (
 from models.model_diffusers22.patched.patched_prior_emb2emb import (
     KandinskyV22PriorEmb2EmbPipelinePatched,
 )
+from utils.env_data import load_env_value
 from utils.logging import k_log
 import os
 
@@ -38,6 +39,8 @@ def prepare_weights_for_task(model, task):
     applied_optimizations = []
 
     cache_dir = model.params("general", "cache_dir")
+    cache_dir = load_env_value("KD22_CACHE_DIR", cache_dir)
+
     half_weights = model.params("diffusers", "half_precision_weights")
     run_prior_on_cpu = model.params("diffusers", "run_prior_on_cpu")
     device = model.params("general", "device")

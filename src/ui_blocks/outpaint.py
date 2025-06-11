@@ -329,7 +329,11 @@ def outpaint_ui(generate_fn, shared: SharedUI, tabs, session):
                         "infer_size": infer_size,
                     }
 
-                    shared.storage.save(block, params)
+                    saved_params = {
+                        k: v for k, v in params.items() if k not in ["image"]
+                    }
+
+                    shared.storage.save(block, saved_params)
                     params = augmentations["exec"](params, injections)
 
                     yield generate_fn(params)

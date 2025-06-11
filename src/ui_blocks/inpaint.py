@@ -283,8 +283,25 @@ def inpaint_ui(generate_fn, shared: SharedUI, tabs, session):
                         "infer_size": infer_size,
                     }
 
-                    shared.storage.save(block, params)
+                    saved_params = {
+                        k: v for k, v in params.items() if k not in ["image_mask"]
+                    }
+
+                    shared.storage.save(block, saved_params)
                     params = augmentations["exec"](params, injections)
+
+                    if (
+                        shared.general_params("model_name") == "kd21"
+                        or shared.general_params("model_name") == "kd20"
+                        or (
+                            shared.general_params("model_name") == "kd22"
+                            and shared.general_params("pipeline") == "native"
+                        )
+                    ):
+                        if params["target"] == "only mask":
+                            params["target"] = "all but mask"
+                        elif params["target"] == "all but mask":
+                            params["target"] = "only mask"
 
                     yield generate_fn(params)
 

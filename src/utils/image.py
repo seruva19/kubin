@@ -16,7 +16,7 @@ def round_to_nearest(x, base):
 
 
 def create_inpaint_targets(
-    pil_img, image_mask, output_size, inpaint_region, inpaint_target
+    pil_img, image_mask, output_size, inpaint_region, invert_mask=False
 ):
     pil_img = pil_img.resize(output_size, resample=Image.LANCZOS)
     pil_img = pil_img.convert("RGB")
@@ -28,13 +28,19 @@ def create_inpaint_targets(
 
     image_mask = np.array(image_mask).astype(np.float32) / 255.0
 
-    if inpaint_target == "only mask":
+    if invert_mask:
         image_mask = 1.0 - image_mask
 
     return pil_img, image_mask
 
 
-def create_outpaint_targets(image, offset, infer_size, width, height):
+def round_to_multiple_of(value, round_to):
+    return int(round(value / round_to) * round_to)
+
+
+def create_outpaint_targets(
+    image, offset, infer_size, width, height, invert_mask=False, round_to=64
+):
     image_w, image_h = image.size
 
     if offset is not None:
@@ -57,7 +63,12 @@ def create_outpaint_targets(image, offset, infer_size, width, height):
     if infer_size:
         height, width = mask.shape[:2]
 
-    mask = 1.0 - mask
+    width = round_to_multiple_of(width, round_to)
+    height = round_to_multiple_of(height, round_to)
+
+    if invert_mask:
+        mask = 1.0 - mask
+
     return image, mask, width, height
 
 

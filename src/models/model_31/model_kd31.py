@@ -171,7 +171,11 @@ class Model_KD31:
         inpaint_target = params["target"]
 
         image, mask = create_inpaint_targets(
-            pil_img, mask, output_size, inpaint_region, inpaint_target
+            pil_img,
+            mask,
+            output_size,
+            inpaint_region,
+            invert_mask=inpaint_target == "all but mask",
         )
 
         images = []

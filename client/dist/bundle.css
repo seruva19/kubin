@@ -208,7 +208,7 @@ body.gradio-full .gradio-container {
   display: inline;
 }
 
-.inpaint_params>.stretch:first-child>.block {
+.inpaint_params>.stretch>.block:not(.extension-container) {
   height: 600px !important;
 }
 html.has-lightbox {

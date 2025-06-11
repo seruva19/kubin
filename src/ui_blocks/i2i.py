@@ -395,7 +395,13 @@ def i2i_ui(generate_fn, shared: SharedUI, tabs, session):
                         "negative_prompt": "",
                     }
 
-                    shared.storage.save(block, params)
+                    saved_params = {
+                        k: v
+                        for k, v in params.items()
+                        if k not in ["init_image", "cnet_image"]
+                    }
+
+                    shared.storage.save(block, saved_params)
                     params = augmentations["exec"](params, injections)
 
                     yield generate_fn(params)
