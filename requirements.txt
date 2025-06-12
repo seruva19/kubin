@@ -15,6 +15,7 @@ gradio==3.50.2
 moviepy==1.0.3
 toolz==1.0.0
 psutil==5.9.5
+protobuf==5.29.4
 deepdiff==8.0.1
 torchsde==0.2.6
 dynamicprompts==0.31.0

@@ -1,13 +1,21 @@
 import os
-from huggingface_hub import hf_hub_url, hf_hub_download
+from huggingface_hub import hf_hub_download
 from copy import deepcopy
-from omegaconf.dictconfig import DictConfig
-from kandinsky2 import Kandinsky2
 
-from kandinsky2.configs import CONFIG_2_0, CONFIG_2_1
+from kandinsky2.configs import CONFIG_2_0
 from kandinsky2.kandinsky2_model import Kandinsky2
-from kandinsky2.kandinsky2_1_model import Kandinsky2_1
-from kandinsky2.kandinsky2_2_model import Kandinsky2_2
+import torch
+
+
+def patch_ae():
+    def patched_init_from_ckpt(self, path, ignore_keys=list()):
+        sd = torch.load(path, map_location="cpu", weights_only=False)["state_dict"]
+        self.load_state_dict(sd, strict=False)
+
+    from kandinsky2.vqgan.autoencoder import AutoencoderKL
+
+    AutoencoderKL.init_from_ckpt = patched_init_from_ckpt
+    print(f"ae was patched")
 
 
 def get_kandinsky2_0(
@@ -28,7 +36,6 @@ def get_kandinsky2_0(
 
     hf_hub_download(
         repo_id="ai-forever/Kandinsky_2.0",
-        # config_file_url,
         filename=model_name,
         local_dir=cache_dir,
         force_filename=model_name,
@@ -83,5 +90,6 @@ def get_kandinsky2_0(
     )
     unet_path = os.path.join(cache_dir, model_name)
 
+    patch_ae()
     model = Kandinsky2(config, unet_path, device, task_type)
     return model

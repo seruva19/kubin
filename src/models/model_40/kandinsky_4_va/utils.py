@@ -17,7 +17,7 @@ from PIL import Image
 from moviepy.editor import AudioFileClip, ImageSequenceClip
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from IPython.display import Video, clear_output, display
+# from IPython.display import Video, clear_output, display
 
 from .riffusion.spectrogram_image_converter import SpectrogramImageConverter
 from .riffusion.spectrogram_params import SpectrogramParams
@@ -81,8 +81,8 @@ def create_video(
 
         if display_video:
             video_with_new_audio.write_videofile("temp.mp4")
-            clear_output(wait=True)
-            display(Video("temp.mp4"))
+            # clear_output(wait=True)
+            # display(Video("temp.mp4"))
 
         os.remove(audio_temp_path)
     except Exception as ex:
