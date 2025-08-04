@@ -3,7 +3,7 @@ setuptools==69.5.1
 git+https://github.com/ai-forever/Kandinsky-2.git@33c3176
 git+https://github.com/openai/CLIP.git@a1d0717
 diffusers==0.30.3
-transformers==4.49.0
+transformers==4.54.1
 torchao==0.11.0
 optimum-quanto==0.2.6
 tokenizers==0.21.0
@@ -20,7 +20,7 @@ deepdiff==8.0.1
 torchsde==0.2.6
 dynamicprompts==0.31.0
 compel==2.0.3
-huggingface-hub==0.30.2
+huggingface-hub==0.34.3
 bitsandbytes==0.45.5
 triton-windows==3.2.0.post18; platform_system == "Windows"
 triton==3.2.0; platform_system != "Windows"

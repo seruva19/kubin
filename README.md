@@ -5,6 +5,11 @@
 
 Web-GUI for Kandinsky generative AI models ([Kandinsky2](https://github.com/ai-forever/Kandinsky-2/), [Kandinsky3](https://github.com/ai-forever/Kandinsky-3), [Kandinsky4](https://github.com/ai-forever/Kandinsky-4)).  
 
+
+## Note ⚡
+
+Since the company behind Kandinsky has stopped releasing new model weights (although they continue to contribute to open source in other areas), the future development of this application may be limited. However, the existing functionality remains available for users who find it valuable. This status may change if new models are released in the future. 
+
 ## Features
 
 | Model                                                                                        | 2.0 | 2.1 | 2.2 |3.0  |3.1  |4.0  |
