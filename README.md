@@ -8,7 +8,7 @@ Web-GUI for Kandinsky generative AI models ([Kandinsky2](https://github.com/ai-f
 
 ## Note ⚡
 
-Since the company behind Kandinsky has stopped releasing new model weights (although they continue to contribute to open source in other areas), the future development of this application may be limited. However, the existing functionality remains available for users who find it valuable. This status may change if new models are released in the future. 
+Since the company behind Kandinsky has stopped releasing new model weights (although they continue to contribute to open source in other areas), the future development of this application may be limited. However, the existing functionality remains available for users who find it valuable. This status may change if new open-weight models are released.
 
 ## Features
 
