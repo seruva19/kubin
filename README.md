@@ -3,7 +3,7 @@
 
 ## Description
 
-Web-GUI for Kandinsky generative AI models ([Kandinsky2](https://github.com/ai-forever/Kandinsky-2/), [Kandinsky3](https://github.com/ai-forever/Kandinsky-3), [Kandinsky4](https://github.com/ai-forever/Kandinsky-4)).  
+Web-GUI for Kandinsky generative AI models ([Kandinsky2](https://github.com/ai-forever/Kandinsky-2/), [Kandinsky3](https://github.com/ai-forever/Kandinsky-3), [Kandinsky4](https://github.com/ai-forever/Kandinsky-4), [Kandinsky5](https://github.com/ai-forever/Kandinsky-5)).  
 
 ## Features
 
@@ -11,7 +11,7 @@ Web-GUI for Kandinsky generative AI models ([Kandinsky2](https://github.com/ai-f
 | -------------------------------------------------------------------------------------------- | --- | --- | --- | --- | --- | --- |--- |
 | Txt2img                                                                                      | ✔   | ✔  |  ✔  | ✔  | ✔  |  ✔  |     |
 | Img2img                                                                                      | ✔   | ✔  |  ✔  | ✔  | 🕒 |      |     |
-| Txt2Video                                                                                    |     |     |      |    |    | ✔    | 🕒  |
+| Txt2Video                                                                                    |     |     |      |    |    | ✔    | ✔   |
 | Img2Video                                                                                    |     |     |      |    |    | 🕒   |     |
 | Video2Audio                                                                                  |     |     |      |    |    | ✔   |     |
 | Mixing                                                                                       |     | ✔  |  ✔  | 🕒 | 🕒 |       |     |
