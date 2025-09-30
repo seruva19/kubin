@@ -11,7 +11,8 @@ from ui_blocks.settings_system import system_ui
 from ui_blocks.extensions import extensions_ui
 from ui_blocks.shared.ui_shared import SharedUI
 from ui_blocks.t2i import t2i_ui
-from ui_blocks.t2v import t2v_ui
+from ui_blocks.t2v_kd4 import t2v_kd4_ui
+from ui_blocks.t2v_kd5 import t2v_kd5_ui
 from ui_blocks.shared.client import css_styles, js_loader
 from ui_blocks.v2a import v2a_ui
 
@@ -43,7 +44,7 @@ def gradio_ui(kubin: Kubin, start_fn):
         )
 
         with gr.Tabs(
-            selected=5 if kubin.params("general", "model_name").startswith("kd4") else 0
+            selected=5 if kubin.params("general", "model_name").startswith(("kd4", "kd5")) else 0
         ) as ui_tabs:
             with gr.TabItem("Text To Image", id=0) as t2i_tabitem:
                 t2i_ui(
@@ -86,12 +87,21 @@ def gradio_ui(kubin: Kubin, start_fn):
                 )
 
             with gr.TabItem("Text To Video", id=5) as t2v_tabitem:
-                t2v_ui(
-                    generate_fn=lambda params: kubin.model.t2v(params),
-                    shared=ui_shared,
-                    tabs=ui_tabs,
-                    session=session,
-                )
+                with gr.Column(elem_classes=["t2v-kd4-container", "unsupported_50"]) as t2v_kd4_block:
+                    t2v_kd4_ui(
+                        generate_fn=lambda params: kubin.model.t2v(params),
+                        shared=ui_shared,
+                        tabs=ui_tabs,
+                        session=session,
+                    )
+
+                with gr.Column(elem_classes=["t2v-kd5-container", "unsupported_20", "unsupported_21", "unsupported_d21", "unsupported_22", "unsupported_d22", "unsupported_30", "unsupported_d30", "unsupported_31", "unsupported_40"]) as t2v_kd5_block:
+                    t2v_kd5_ui(
+                        generate_fn=lambda params: kubin.model.t2v(params),
+                        shared=ui_shared,
+                        tabs=ui_tabs,
+                        session=session,
+                    )
 
             with gr.TabItem("Image To Video", id=6) as i2v_tabitem:
                 i2v_ui(

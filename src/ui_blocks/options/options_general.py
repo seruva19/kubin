@@ -10,9 +10,9 @@ def options_tab_general(kubin: Kubin):
     ) as general_options:
         model_name = gr.Radio(
             value=lambda: kubin.params("general", "model_name"),
-            choices=["kd20", "kd21", "kd22", "kd30", "kd31", "kd40"],
+            choices=["kd20", "kd21", "kd22", "kd30", "kd31", "kd40", "kd50"],
             info=kubin.ui.info(
-                "kd20: Kandinsky 2.0, kd21: Kandinsky 2.1, kd22: Kandinsky 2.2, kd30: Kandinsky 3.0, kd31: Kandinsky 3.1, kd40: Kandinsky 4.0"
+                "kd20: Kandinsky 2.0, kd21: Kandinsky 2.1, kd22: Kandinsky 2.2, kd30: Kandinsky 3.0, kd31: Kandinsky 3.1, kd40: Kandinsky 4.0, kd50: Kandinsky 5.0 T2V Lite"
             ),
             label="Base model",
         )

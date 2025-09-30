@@ -1,6 +1,7 @@
 .vscode
 .idea
 .local
+.claude
 /venv
 main.*
 **/__pycache__

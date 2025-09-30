@@ -38,6 +38,7 @@ def ckpt_selector20_classes():
         "unsupported_d21",
         "unsupported_22",
         "unsupported_40",
+        "unsupported_50",
     ]
 
 
@@ -47,6 +48,7 @@ def ckpt_selector21_classes():
         "unsupported_d21",
         "unsupported_22",
         "unsupported_40",
+        "unsupported_50",
     ]
 
 
@@ -57,6 +59,7 @@ def ckpt_selector21d_classes():
         "unsupported_22",
         "unsupported_d22",
         "unsupported_40",
+        "unsupported_50",
     ]
 
 
@@ -66,6 +69,7 @@ def ckpt_selector22_classes():
         "unsupported_21",
         "unsupported_d21",
         "unsupported_40",
+        "unsupported_50",
     ]
 
 
@@ -74,6 +78,7 @@ def ext_availability_classes(ext_augment):
     supports_pipeline_model = ext_augment.get(
         "supports",
         [
+            "native-kd50",
             "native-kd40",
             "native-kd31",
             "diffusers-kd30",
@@ -108,6 +113,9 @@ def ext_availability_classes(ext_augment):
     if "native-kd40" not in supports_pipeline_model:
         classes.append("unsupported_40")
 
+    if "native-kd50" not in supports_pipeline_model:
+        classes.append("unsupported_50")
+
     return classes
 
 
@@ -133,7 +141,8 @@ def generate_rules():
         body[class*="pipeline-native-kd30"] [class*="unsupported_30"],
         body[class*="pipeline-diffusers-kd30"] [class*="unsupported_d30"],
         body[class*="pipeline-native-kd31"] [class*="unsupported_31"],
-        body[class*="pipeline-native-kd40"] [class*="unsupported_40"] {
+        body[class*="pipeline-native-kd40"] [class*="unsupported_40"],
+        body[class*="pipeline-native-kd50"] [class*="unsupported_50"] {
             display: none;
         }
 
@@ -167,13 +176,22 @@ def generate_rules():
         body[class*="pipeline-native-kd40"] .ui-tabs>.tab-nav>button:nth-child(5) {
             display: none;
         }
-        
-        body:not([class$="-kd40"]) .ui-tabs>.tab-nav>button:nth-child(6),
-        body:not([class$="-kd40"]) .ui-tabs>.tab-nav>button:nth-child(7),
-        body:not([class$="-kd40"]) .ui-tabs>.tab-nav>button:nth-child(8) {
+
+        body[class*="pipeline-native-kd50"] .ui-tabs>.tab-nav>button:nth-child(1),
+        body[class*="pipeline-native-kd50"] .ui-tabs>.tab-nav>button:nth-child(2),
+        body[class*="pipeline-native-kd50"] .ui-tabs>.tab-nav>button:nth-child(3),
+        body[class*="pipeline-native-kd50"] .ui-tabs>.tab-nav>button:nth-child(4),
+        body[class*="pipeline-native-kd50"] .ui-tabs>.tab-nav>button:nth-child(5),
+        body[class*="pipeline-native-kd50"] .ui-tabs>.tab-nav>button:nth-child(8) {
             display: none;
         }
-        
+
+        body:not([class$="-kd40"]):not([class$="-kd50"]) .ui-tabs>.tab-nav>button:nth-child(6),
+        body:not([class$="-kd40"]):not([class$="-kd50"]) .ui-tabs>.tab-nav>button:nth-child(7),
+        body:not([class$="-kd40"]):not([class$="-kd50"]) .ui-tabs>.tab-nav>button:nth-child(8) {
+            display: none;
+        }
+
         .ui-tabs>.tab-nav>button:nth-child(7) {
             display: none !important;
         }
@@ -183,7 +201,8 @@ def generate_rules():
         body[class*="pipeline-"][class*="-kd22"] .settings-tabs>.tabs>.tab-nav>button:nth-child(2),
         body[class*="pipeline-"][class*="-kd30"] .settings-tabs>.tabs>.tab-nav>button:nth-child(2),
         body[class*="pipeline-"][class*="-kd31"] .settings-tabs>.tabs>.tab-nav>button:nth-child(2),
-        body[class*="pipeline-"][class*="-kd40"] .settings-tabs>.tabs>.tab-nav>button:nth-child(2) {
+        body[class*="pipeline-"][class*="-kd40"] .settings-tabs>.tabs>.tab-nav>button:nth-child(2),
+        body[class*="pipeline-"][class*="-kd50"] .settings-tabs>.tabs>.tab-nav>button:nth-child(2) {
             display: none;
         }
 

@@ -12,6 +12,7 @@ import os
 from params import KubinParams
 from utils.file_system import save_output
 from utils.logging import k_log
+from utils.env_data import load_env_value
 
 from models.model_40.kandinsky_4.pipelines import get_T2V_pipeline
 from models.model_40.kandinsky_4.t2v_pipeline import Kandinsky4T2VPipeline
@@ -39,6 +40,7 @@ class Model_KD40:
         assert task in ["text2video", "video2audio", "image2video"]
 
         shared_cache_dir = self.kparams("general", "cache_dir")
+        shared_cache_dir = load_env_value("KD40_CACHE_DIR", shared_cache_dir)
         cache_dir = os.path.join(shared_cache_dir, "kandinsky-4")
 
         device = self.kparams("general", "device")

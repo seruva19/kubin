@@ -14,7 +14,7 @@ from utils.text import generate_prompt_from_wildcard
 block = "t2v"
 
 
-def t2v_ui(generate_fn, shared: SharedUI, tabs, session):
+def t2v_kd4_ui(generate_fn, shared: SharedUI, tabs, session):
     augmentations = shared.create_ext_augment_blocks("t2v")
     value = lambda name, def_value: get_value(shared.storage, block, name, def_value)
 

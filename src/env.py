@@ -80,6 +80,11 @@ class Kubin:
 
             self.model = Model_KD40(self.params)
 
+        elif pipeline == "native" and model_name == "kd50":
+            from models.model_50.model_kd50 import Model_KD50
+
+            self.model = Model_KD50(self.params)
+
         elif pipeline == "native" and model_name == "kd21":
             from models.model_21.model_kd21 import Model_KD21
 
