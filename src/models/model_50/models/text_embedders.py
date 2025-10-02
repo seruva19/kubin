@@ -98,9 +98,6 @@ class Qwen2_5_VLTextEmbedder:
                 )
                 print("✓ Using Flash Attention 2 for text embedder")
             except (ImportError, ValueError) as e:
-                print(
-                    f"⚠️  Flash Attention 2 not available for text embedder, using eager attention"
-                )
                 print(f"   Error: {e}")
                 self.model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
                     checkpoint_path,

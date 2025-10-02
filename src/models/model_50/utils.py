@@ -7,6 +7,7 @@ The code has been adopted from Kandinsky-5
 
 
 import os
+import logging
 from typing import Optional, Union
 
 import torch
@@ -15,13 +16,6 @@ from torch.distributed.device_mesh import DeviceMesh, init_device_mesh
 from huggingface_hub import hf_hub_download, snapshot_download
 from omegaconf import OmegaConf
 from omegaconf.dictconfig import DictConfig
-
-from .models.dit import get_dit
-from .models.text_embedders import get_text_embedder
-from .models.vae import build_vae
-from .models.parallelize import parallelize_dit
-from .t2v_pipeline import Kandinsky5T2VPipeline
-from .magcache_utils import set_magcache_params
 
 from safetensors.torch import load_file
 
@@ -35,29 +29,36 @@ def get_T2V_pipeline(
     text_encoder2_path: str = None,
     vae_path: str = None,
     conf_path: str = None,
+    conf: DictConfig = None,
     offload: bool = False,
     magcache: bool = False,
     quantize_dit: bool = False,
     quantize_text_embedder: bool = False,
     use_torch_compile: bool = True,
     use_flash_attention: bool = True,
-) -> Kandinsky5T2VPipeline:
+) -> "Kandinsky5T2VPipeline":
     assert resolution in [512]
 
     # Set environment variable to disable torch.compile for KD5 only
+    # MUST be set BEFORE importing model modules so @kd5_compile decorators see it
     if not use_torch_compile:
         os.environ["KD5_DISABLE_COMPILE"] = "1"
-        # Also disable torch.compile completely to suppress autotuning messages
-        torch._dynamo.config.suppress_errors = True
-        torch._dynamo.config.verbose = False
-        import logging
-
-        logging.getLogger("torch._dynamo").setLevel(logging.ERROR)
-        logging.getLogger("torch._inductor").setLevel(logging.ERROR)
+        torch._dynamo.config.disable = True
     else:
         os.environ.pop("KD5_DISABLE_COMPILE", None)
         torch._dynamo.config.suppress_errors = True
-        torch._dynamo.config.verbose = False
+        # Disable verbose logging for Triton autotuning and inductor
+        os.environ["TRITON_PRINT_AUTOTUNING"] = "0"
+        logging.getLogger("torch._dynamo").setLevel(logging.WARNING)
+        logging.getLogger("torch._inductor").setLevel(logging.WARNING)
+        logging.getLogger("torch.fx").setLevel(logging.WARNING)
+
+    from .models.dit import get_dit
+    from .models.text_embedders import get_text_embedder
+    from .models.vae import build_vae
+    from .models.parallelize import parallelize_dit
+    from .t2v_pipeline import Kandinsky5T2VPipeline
+    from .magcache_utils import set_magcache_params
 
     # Set environment variable to control Flash Attention usage
     if use_flash_attention:
@@ -89,11 +90,12 @@ def get_T2V_pipeline(
 
     os.makedirs(cache_dir, exist_ok=True)
 
-    # Load config first to determine which model to download
-    if conf_path is not None:
-        conf = OmegaConf.load(conf_path)
-    else:
-        conf = None
+    # Load config: prioritize passed conf, then conf_path, then default
+    if conf is None:
+        if conf_path is not None:
+            conf = OmegaConf.load(conf_path)
+        else:
+            conf = None
 
     # Auto-download VAE if not provided
     if vae_path is None:
@@ -215,6 +217,11 @@ def get_T2V_pipeline(
             print(f"   → Has mag_ratios: {hasattr(conf.magcache, 'mag_ratios')}")
         print(f"   → Magcache is only available for SFT models with proper config")
         print(f"   → Try using Reset button to reload config with magcache parameters")
+    else:
+        # Ensure magcache is disabled if it was previously enabled
+        from .magcache_utils import disable_magcache
+
+        disable_magcache(dit)
 
     # Download DIT model if it's a Hugging Face repository
     # Check if it's a valid HF repo ID (contains "/" but doesn't look like a Windows path)

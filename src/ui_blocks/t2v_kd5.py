@@ -12,7 +12,6 @@ block = "t2v_kd5"
 
 
 def load_config_defaults(config_name, config_manager=None):
-    """Load config for a variant, preferring UI config if it exists."""
     try:
         if config_manager is None:
             config_manager = UIConfigManager()
@@ -23,11 +22,9 @@ def load_config_defaults(config_name, config_manager=None):
 
 
 def get_variant_defaults(config_defaults, variant):
-    """Extract defaults from config, including UI settings if saved."""
     cfg = config_defaults.get(variant)
 
     if cfg:
-        # Check if UI settings exist in config
         default_prompt = "A closeshot of beautiful blonde woman standing under the sun at the beach. Soft waves lapping at her feet and vibrant palm trees lining the distant coastline under a clear blue sky."
         default_negative = "Static, 2D cartoon, cartoon, 2d animation, paintings, images, worst quality, low quality, ugly, deformed, walking backwards"
 
@@ -210,7 +207,6 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
     augmentations = shared.create_ext_augment_blocks("t2v_kd5")
     value = lambda name, def_value: get_value(shared.storage, block, name, def_value)
 
-    # Initialize config manager
     config_manager = UIConfigManager()
 
     config_defaults = {}
@@ -239,14 +235,14 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
             with gr.Row():
                 config_variant = gr.Radio(
                     choices=[
-                        ("5s SFT", "5s_sft"),
-                        ("5s Pretrain", "5s_pretrain"),
-                        ("5s No CFG", "5s_nocfg"),
-                        ("5s Distilled", "5s_distil"),
-                        ("10s SFT", "10s_sft"),
-                        ("10s Pretrain", "10s_pretrain"),
-                        ("10s No CFG", "10s_nocfg"),
-                        ("10s Distilled", "10s_distil"),
+                        ("5s-SFT", "5s_sft"),
+                        ("5s-PT", "5s_pretrain"),
+                        ("5s-CFG-DSTL", "5s_nocfg"),
+                        ("5s-DSTL", "5s_distil"),
+                        ("10s-SFT", "10s_sft"),
+                        ("10s-PT", "10s_pretrain"),
+                        ("10s-CFG-DSTL", "10s_nocfg"),
+                        ("10s-DSTL", "10s_distil"),
                     ],
                     value=initial_variant,
                     label="Model Variant",
@@ -585,11 +581,8 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                         size="sm",
                     )
 
-                # Setup reset functionality
                 def reset_to_defaults(variant):
-                    """Reset to default config by removing UI config file"""
                     config_manager.reset_ui_config(variant)
-                    # Reload the default config
                     config_defaults[variant] = load_config_defaults(
                         variant, config_manager
                     )
@@ -706,7 +699,6 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                 )
 
                 def load_variant_params(variant):
-                    """Load variant parameters from config files (UI or default)"""
                     config_defaults[variant] = load_config_defaults(
                         variant, config_manager
                     )
@@ -828,20 +820,6 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                     ],
                 )
 
-                with gr.Column():
-                    with gr.Row():
-                        reload_model = gr.Button(
-                            "Force model reload",
-                            variant="secondary",
-                            elem_classes=["options-medium"],
-                        )
-                        reload_model.click(
-                            lambda: shared._kubin.model.flush(), queue=False
-                        ).then(
-                            fn=None,
-                            _js='_ => kubin.notify.success("Model reload forced")',
-                        )
-
             t2v_kd5_params.elem_classes = ["block-params", "t2v_kd5_params"]
 
         with gr.Column(
@@ -917,7 +895,6 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
             ):
                 text = generate_prompt_from_wildcard(text)
 
-                # Save all UI settings to config file before generating
                 config_data = config_manager.build_config_from_ui_params(
                     variant=variant,
                     prompt=text,

@@ -16,7 +16,6 @@ from utils.logging import k_log
 from utils.env_data import load_env_value
 
 
-# Set HF environment variables early to ensure consistent cache directory
 def set_kd50_cache_env():
     shared_cache_dir = load_env_value("KD50_CACHE_DIR", "./weights")
     os.environ["HF_HOME"] = shared_cache_dir
@@ -24,8 +23,11 @@ def set_kd50_cache_env():
     os.environ["TRANSFORMERS_CACHE"] = shared_cache_dir
 
 
-# Set environment variables on module import
 set_kd50_cache_env()
+
+if os.environ.get("KD5_DISABLE_COMPILE") == "1":
+    torch._dynamo.config.disable = True
+    torch._dynamo.config.suppress_errors = True
 
 from models.model_50.utils import get_T2V_pipeline
 from models.model_50.t2v_pipeline import Kandinsky5T2VPipeline
@@ -48,10 +50,8 @@ class Model_KD50:
 
         shared_cache_dir = self.kparams("general", "cache_dir")
         shared_cache_dir = load_env_value("KD50_CACHE_DIR", shared_cache_dir)
-        # Use the shared cache directory directly - HuggingFace will create proper model subdirectories
         cache_dir = shared_cache_dir
 
-        # Set HF environment variables to ensure consistent cache directory
         os.environ["HF_HOME"] = cache_dir
         os.environ["HUGGINGFACE_HUB_CACHE"] = cache_dir
         os.environ["TRANSFORMERS_CACHE"] = cache_dir
@@ -141,11 +141,9 @@ class Model_KD50:
                     )
                     k_log(f"using custom config from UI for {config_name}")
                 else:
-                    # Use UIConfigManager to load config (prefers UI config if exists)
                     conf = self.config_manager.load_config(config_name)
                     k_log(f"loaded config for {config_name} via UIConfigManager")
 
-                    # Check if UI settings exist in the loaded config
                     if hasattr(conf, "ui_settings"):
                         use_offload = getattr(
                             conf.ui_settings,
@@ -172,7 +170,6 @@ class Model_KD50:
                         )
                         k_log(f"using UI settings from saved config for {config_name}")
                     else:
-                        # Use environment defaults when no UI settings
                         use_dit_int8_ao_quantization = (
                             environment.use_dit_int8_ao_quantization
                         )
@@ -187,14 +184,12 @@ class Model_KD50:
                     f"offload={use_offload}, magcache={use_magcache}, dit_int8_quantization={use_dit_int8_ao_quantization}, save_quantized={use_save_quantized_weights}, text_embedder_int8_quantization={use_text_embedder_int8_ao_quantization}"
                 )
 
-                # Quantization + offloading is now supported via manual parameter transfer
                 if use_offload and (
                     use_dit_int8_ao_quantization
                     or use_text_embedder_int8_ao_quantization
                 ):
                     k_log("ℹ️  Quantization + Offloading enabled")
 
-                # Get optimization settings from config
                 use_torch_compile = (
                     getattr(conf.optimizations, "use_torch_compile", True)
                     if hasattr(conf, "optimizations")
@@ -207,11 +202,9 @@ class Model_KD50:
                 )
 
                 if not use_torch_compile:
-                    k_log(
-                        "⚙️  torch.compile disabled (avoids recompilation with quantization)"
-                    )
+                    k_log("⚙️  torch.compile disabled")
                 if not use_flash_attention:
-                    k_log("⚙️  Flash Attention disabled (using PyTorch native SDPA)")
+                    k_log("⚙️  Flash Attention disabled, using PyTorch native SDPA")
 
                 self.t2v_pipe = get_T2V_pipeline(
                     device_map=device_map,
@@ -237,7 +230,7 @@ class Model_KD50:
                         if hasattr(conf.model, "vae")
                         else None
                     ),
-                    conf_path=None,  # We're passing the conf object directly through the pipeline
+                    conf=conf,  # Pass the conf object directly so magcache settings are preserved
                     offload=use_offload,
                     magcache=use_magcache,
                     quantize_dit=use_dit_int8_ao_quantization,
@@ -246,7 +239,6 @@ class Model_KD50:
                     use_flash_attention=use_flash_attention,
                 )
 
-                # Override the pipeline's conf with our custom one
                 self.t2v_pipe.conf = conf
                 self.t2v_pipe.num_steps = conf.model.num_steps
                 self.t2v_pipe.guidance_weight = conf.model.guidance_weight
@@ -273,14 +265,11 @@ class Model_KD50:
             },
         }
 
-        # Add magcache section for SFT models
         if "sft" in config_name.lower():
-            # Load the base config to get magcache parameters
             base_config_path = self._get_config_path(config_name)
             if os.path.exists(base_config_path):
                 base_conf = OmegaConf.load(base_config_path)
                 if hasattr(base_conf, "magcache"):
-                    # Convert to container to preserve in dict
                     conf_dict["magcache"] = OmegaConf.to_container(
                         base_conf.magcache, resolve=True
                     )
@@ -331,7 +320,6 @@ class Model_KD50:
         if generate_image:
             time_length = 0
 
-        # Always use config files (new system) - deprecated old custom config dict
         use_custom_config = False  # Old system disabled, use YAML configs only
         self.prepare_model(task, config_name, kd50_conf, use_custom_config)
 
@@ -361,19 +349,22 @@ class Model_KD50:
             progress=True,
         )
 
+        # Extract expanded prompt from result if available
+        expanded_prompt = result.get("expanded_prompt") if isinstance(result, dict) else None
+
         if generate_image:
             save_image_path = save_images(self.kparams, params, task, result)
             save_video_path = None
         else:
-            # Embed metadata into MP4 file
             if save_video_path and os.path.exists(save_video_path):
                 try:
                     from mutagen.mp4 import MP4, MP4Tags
 
                     video = MP4(save_video_path)
 
-                    # Build metadata string
                     metadata_str = f"Prompt: {prompt}\n"
+                    if expanded_prompt:
+                        metadata_str += f"Expanded Prompt: {expanded_prompt}\n"
                     metadata_str += f"Negative Prompt: {negative_prompt}\n"
                     metadata_str += f"Model: {config_name}\n"
                     metadata_str += f"Resolution: {width}x{height}\n"
@@ -384,9 +375,8 @@ class Model_KD50:
                     metadata_str += f"Expand Prompts: {expand_prompts}\n"
                     metadata_str += f"Generated: {timestamp}"
 
-                    # Set metadata tags
                     video["\xa9cmt"] = metadata_str  # Comment field
-                    video["\xa9des"] = prompt  # Description field
+                    video["\xa9des"] = expanded_prompt if expanded_prompt else prompt  # Description field
                     video.save()
 
                     k_log(f"Embedded metadata into {save_video_path}")
@@ -394,10 +384,10 @@ class Model_KD50:
                     k_log(
                         "mutagen not installed - saving metadata to JSON file instead"
                     )
-                    # Fallback to JSON sidecar
                     metadata_path = save_video_path.replace(".mp4", ".json")
                     metadata = {
                         "prompt": prompt,
+                        "expanded_prompt": expanded_prompt,
                         "negative_prompt": negative_prompt,
                         "config_variant": config_name,
                         "width": width,
@@ -419,15 +409,11 @@ class Model_KD50:
 
         k_log("text2video task: done")
 
-        # Return appropriate format for Gradio
-        # If only video, return just the path (not a tuple)
-        # If only image, return just the path
         if save_video_path and not save_image_path:
             return save_video_path
         elif save_image_path and not save_video_path:
             return save_image_path
         else:
-            # Both or neither - return tuple
             return save_video_path, save_image_path
 
     def flush(self, task=None):
@@ -436,18 +422,15 @@ class Model_KD50:
         if self.t2v_pipe is not None:
             k_log("flushing K5.0 pipeline")
 
-            # Move components to CPU and delete references
             for component in ["text_embedder", "dit", "vae"]:
                 comp = getattr(self.t2v_pipe, component, None)
                 if comp is not None:
                     try:
                         comp.to("cpu")
-                        # Clear the component from GPU memory
                         torch.cuda.empty_cache()
                     except Exception as e:
                         k_log(f"Could not move {component} to CPU: {e}")
 
-                    # Delete the reference
                     try:
                         setattr(self.t2v_pipe, component, None)
                     except Exception as e:

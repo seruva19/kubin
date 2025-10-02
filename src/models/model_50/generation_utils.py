@@ -184,28 +184,38 @@ def generate_sample(
 
     if offload:
         if text_embedder_is_quantized:
-            print("Sequential offload: Phase 1 complete - Moving quantized text embedder to CPU")
+            print(
+                "Sequential offload: Phase 1 complete - Moving quantized text embedder to CPU"
+            )
             print(f"  → Using .to() method to preserve quantization state")
             try:
-                # Text embedder has nested wrappers - move all inner models using .to()
-                if hasattr(text_embedder, 'embedder') and hasattr(text_embedder.embedder, 'model'):
-                    # Move Qwen model
-                    text_embedder.embedder.model = text_embedder.embedder.model.to("cpu")
-                if hasattr(text_embedder, 'clip_embedder') and hasattr(text_embedder.clip_embedder, 'model'):
-                    # Move CLIP model
-                    text_embedder.clip_embedder.model = text_embedder.clip_embedder.model.to("cpu")
+                if hasattr(text_embedder, "embedder") and hasattr(
+                    text_embedder.embedder, "model"
+                ):
+                    text_embedder.embedder.model = text_embedder.embedder.model.to(
+                        "cpu"
+                    )
+                if hasattr(text_embedder, "clip_embedder") and hasattr(
+                    text_embedder.clip_embedder, "model"
+                ):
+                    text_embedder.clip_embedder.model = (
+                        text_embedder.clip_embedder.model.to("cpu")
+                    )
                 print(f"  → Quantized text embedder moved to CPU")
             except Exception as e:
                 print(f"  ⚠️  ERROR moving quantized text embedder: {e}")
             torch.cuda.empty_cache()
             import gc
+
             gc.collect()
         else:
-            print("Sequential offload: Phase 1 complete - Moving text embedder to CPU (text processing done)")
-            # Use the custom .to() method which handles the wrapper structure
+            print(
+                "Sequential offload: Phase 1 complete - Moving text embedder to CPU (text processing done)"
+            )
             text_embedder.to("cpu")
             torch.cuda.empty_cache()
             import gc
+
             gc.collect()
 
     for key in bs_text_embed:
@@ -225,47 +235,62 @@ def generate_sample(
     current_device = next(dit.parameters()).device
 
     if dit_is_quantized and offload and current_device.type == "cpu":
-        print(f"Sequential offload: Phase 2 - Moving quantized DIT from CPU to {device}")
+        print(
+            f"Sequential offload: Phase 2 - Moving quantized DIT from CPU to {device}"
+        )
         print(f"  → Using .to() method to preserve quantization state")
         try:
-            # Use .to() method to move the entire quantized model
             dit = dit.to(device)
             actual_device = next(dit.parameters()).device
             print(f"  → DIT now on: {actual_device}")
-            print(f"  ✓ Quantized DIT successfully moved to GPU!")
         except Exception as e:
             print(f"  ⚠️  ERROR moving quantized DIT: {e}")
     elif dit_is_quantized and offload:
-        print(f"Sequential offload: Phase 2 - Quantized DIT already on {current_device} (ready)")
+        print(
+            f"Sequential offload: Phase 2 - Quantized DIT already on {current_device} (ready)"
+        )
     elif offload and current_device.type == "cpu":
-        print(f"Sequential offload: Phase 2 - Moving DIT from CPU to {device} for latent generation")
+        print(
+            f"Sequential offload: Phase 2 - Moving DIT from CPU to {device} for latent generation"
+        )
         print(f"  → Target device: {device}, type: {device.type}")
         try:
             dit.to(device)  # This modifies in-place
             actual_device = next(dit.parameters()).device
             print(f"  → DIT now on: {actual_device} (type: {actual_device.type})")
             if actual_device.type != "cuda":
-                print(f"  ⚠️  WARNING: DIT failed to move to GPU! Still on {actual_device}")
-                print(f"  → This is why you see high CPU and low GPU usage!")
+                print(
+                    f"  ⚠️  WARNING: DIT failed to move to GPU! Still on {actual_device}"
+                )
             else:
-                print(f"  ✓ DIT successfully moved to GPU!")
                 print("  ✓ TEXT PROCESSING COMPLETE - Starting DIT LATENT GENERATION")
         except Exception as e:
             print(f"  ⚠️  ERROR moving DIT to GPU: {e}")
     elif offload and current_device.type == "cuda":
-        print(f"Sequential offload: Phase 2 - DIT already on {current_device} (ready for generation)")
+        print(
+            f"Sequential offload: Phase 2 - DIT already on {current_device} (ready for generation)"
+        )
     else:
-        print(f"Sequential offload: Phase 2 - DIT already on {current_device} (offload disabled)")
+        print(
+            f"Sequential offload: Phase 2 - DIT already on {current_device} (offload disabled)"
+        )
 
-    # Verify DIT device before generation
     dit_gen_device = next(dit.parameters()).device
-    print(f"Sequential offload: Phase 2 - Starting latent generation with DIT on: {dit_gen_device}")
+    print(
+        f"Sequential offload: Phase 2 - Starting latent generation with DIT on: {dit_gen_device}"
+    )
     if dit_gen_device.type == "cpu" and device.type == "cuda":
-        print("  ⚠️  CRITICAL: DIT is on CPU but should be on GPU! This will be VERY slow!")
+        print(
+            "  ⚠️  CRITICAL: DIT is on CPU but should be on GPU! This will be VERY slow!"
+        )
 
     with torch.no_grad():
         # Use autocast only if CUDA is available, otherwise run without it
-        autocast_context = torch.autocast(device_type="cuda", dtype=torch.bfloat16) if device.type == "cuda" else torch.no_grad()
+        autocast_context = (
+            torch.autocast(device_type="cuda", dtype=torch.bfloat16)
+            if device.type == "cuda"
+            else torch.no_grad()
+        )
         with autocast_context:
             latent_visual = generate(
                 dit,
@@ -286,7 +311,9 @@ def generate_sample(
 
     if offload:
         if dit_is_quantized:
-            print("Sequential offload: Phase 2 complete - Moving quantized DIT back to CPU")
+            print(
+                "Sequential offload: Phase 2 complete - Moving quantized DIT back to CPU"
+            )
             print(f"  → Using .to() method to preserve quantization state")
             try:
                 dit = dit.to("cpu")
@@ -301,12 +328,15 @@ def generate_sample(
             print(f"  → DIT moved back to: {dit_after}")
         torch.cuda.empty_cache()
         import gc
+
         gc.collect()
     else:
         torch.cuda.empty_cache()
 
     if offload:
-        print(f"Sequential offload: Phase 3 - Moving VAE to {vae_device} for video decoding")
+        print(
+            f"Sequential offload: Phase 3 - Moving VAE to {vae_device} for video decoding"
+        )
         vae.to(vae_device)
         vae_actual = next(vae.parameters()).device
         print(f"  → VAE now on: {vae_actual}")
@@ -314,7 +344,11 @@ def generate_sample(
     print("Sequential offload: Phase 3 - VAE decoding latents to final video...")
     with torch.no_grad():
         # Use autocast only if CUDA is available, otherwise run without it
-        autocast_context = torch.autocast(device_type="cuda", dtype=torch.bfloat16) if device.type == "cuda" else torch.no_grad()
+        autocast_context = (
+            torch.autocast(device_type="cuda", dtype=torch.bfloat16)
+            if device.type == "cuda"
+            else torch.no_grad()
+        )
         with autocast_context:
             images = latent_visual.reshape(
                 bs,
@@ -335,6 +369,7 @@ def generate_sample(
         print(f"  → VAE moved back to: {vae_after}")
         torch.cuda.empty_cache()
         import gc
+
         gc.collect()
     else:
         torch.cuda.empty_cache()

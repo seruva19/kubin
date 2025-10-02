@@ -173,9 +173,8 @@ class Kandinsky5T2VPipeline:
 
         # Text embedder is a multi-level wrapper - get all PyTorch modules
         def get_text_embedder_modules(text_embedder):
-            """Extract all PyTorch nn.Modules from text embedder wrappers."""
             modules = []
-            # Check for Kandinsky5TextEmbedder structure
+
             if hasattr(text_embedder, "embedder") and hasattr(
                 text_embedder.embedder, "model"
             ):
@@ -217,7 +216,6 @@ class Kandinsky5T2VPipeline:
             text_embedder_is_quantized=text_embedder_is_quantized,
         )
 
-        # Final cleanup after generation
         if self.offload:
             print("Pipeline: Ensuring all models are on CPU after generation")
             if hasattr(self.text_embedder, "to"):

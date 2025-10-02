@@ -112,6 +112,9 @@
     } else if (model_name == 'kd40' && pipeline == 'diffusers') {
       kubin.notify.error('You cannot use a 4.0 model with the diffusers pipeline! Native pipeline will be used')
       pipeline = 'native'
+    } else if (model_name == 'kd50' && pipeline == 'diffusers') {
+      kubin.notify.error('You cannot use a 5.0 model with the diffusers pipeline! Native pipeline will be used')
+      pipeline = 'native'
     }
 
     document.body.classList.add(`pipeline-${pipeline}-${model_name}`)

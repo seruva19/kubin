@@ -16,7 +16,6 @@ from torch.nn.attention.flex_attention import flex_attention
 from .utils import get_freqs, nablaT_v2
 
 
-# Conditional torch.compile wrapper for KD5
 def kd5_compile(*args, **kwargs):
     def decorator(fn):
         if os.environ.get("KD5_DISABLE_COMPILE") == "1":
@@ -42,13 +41,10 @@ else:
     except:
         FA = None
 
-# Print warning if Flash Attention is not available
 if FA is None:
-    print("⚠️  Flash Attention not found for DIT model")
+    print("⚠️  Flash Attention not found")
     print("   → Using PyTorch native SDPA")
     print("   → Install flash-attn for better performance: pip install flash-attn")
-else:
-    print("✓ Flash Attention available for DIT model")
 
 
 @kd5_compile()
@@ -302,12 +298,10 @@ class MultiheadSelfAttentionDec(nn.Module):
     def attention(self, query, key, value):
         use_fa = os.environ.get("KD5_USE_FLASH_ATTENTION", "1") == "1"
         if use_fa and FA is not None:
-            # Use Flash Attention (faster, less memory)
             out = FA(q=query.unsqueeze(0), k=key.unsqueeze(0), v=value.unsqueeze(0))[
                 0
             ].flatten(-2, -1)
         else:
-            # Use PyTorch native SDPA
             out = (
                 torch.nn.functional.scaled_dot_product_attention(
                     query.unsqueeze(0).transpose(1, 2),  # [B, heads, seq, dim]

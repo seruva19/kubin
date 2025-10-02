@@ -24,6 +24,9 @@ def nearest_interp(src_array, target_length):
 
 def set_magcache_params(dit, mag_ratios):
     print(f"using Magcache")
+    # Store original forward method if not already stored
+    if not hasattr(dit.__class__, "_original_forward"):
+        dit.__class__._original_forward = dit.__class__.forward
     dit.__class__.forward = magcache_forward
     dit.cnt = 0
     dit.num_steps = 50 * 2
@@ -35,6 +38,7 @@ def set_magcache_params(dit, mag_ratios):
     dit.retention_ratio = 0.2
     dit.residual_cache = [None, None]
     dit.mag_ratios = np.array([1.0] * 2 + mag_ratios)
+    dit._magcache_enabled = True
 
     if len(dit.mag_ratios) != 50 * 2:
         print(f"interpolate MAG RATIOS: curr len {len(dit.mag_ratios)}")
@@ -44,6 +48,13 @@ def set_magcache_params(dit, mag_ratios):
             [mag_ratio_con.reshape(-1, 1), mag_ratio_ucon.reshape(-1, 1)], axis=1
         ).reshape(-1)
         dit.mag_ratios = interpolated_mag_ratios
+
+
+def disable_magcache(dit):
+    if hasattr(dit.__class__, "_original_forward"):
+        dit.__class__.forward = dit.__class__._original_forward
+        dit._magcache_enabled = False
+        print("✓ Magcache disabled, restored original forward method")
 
 
 @kd5_compile(mode="max-autotune-no-cudagraphs")
@@ -58,6 +69,20 @@ def magcache_forward(
     scale_factor=(1.0, 1.0, 1.0),
     sparse_params=None,
 ):
+    if not getattr(self, "_magcache_enabled", False) or not hasattr(self, "cnt"):
+        if hasattr(self.__class__, "_original_forward"):
+            return self.__class__._original_forward(
+                self,
+                x,
+                text_embed,
+                pooled_text_embed,
+                time,
+                visual_rope_pos,
+                text_rope_pos,
+                scale_factor,
+                sparse_params,
+            )
+
     text_embed, time_embed, text_rope, visual_embed = (
         self.before_text_transformer_blocks(
             text_embed, time, pooled_text_embed, x, text_rope_pos
