@@ -138,37 +138,53 @@ class Kandinsky5T2VPipeline:
         num_frames = 1 if time_length == 0 else time_length * 24 // 4 + 1
 
         caption = text
+        expanded_prompt = None
         if expand_prompts:
             if self.local_dit_rank == 0:
                 if self.offload:
                     print(
-                        "Sequential offload: Moving text embedder to GPU for prompt expansion and encoding (flash attention requires CUDA)"
+                        "Offload: Moving text embedder to GPU for prompt expansion and encoding (flash attention requires CUDA)"
                     )
                     self.text_embedder = self.text_embedder.to(
                         self.device_map["text_embedder"]
                     )
                 caption = self.expand_prompt(caption)
+                expanded_prompt = caption  # Store the expanded prompt
+                print(f"\n{'='*80}")
+                print(f"Expanded prompt: {expanded_prompt}")
+                print(f"{'='*80}\n")
             if self.world_size > 1:
                 caption = [caption]
                 torch.distributed.broadcast_object_list(caption, 0)
                 caption = caption[0]
+                if (
+                    expanded_prompt is None
+                ):  # Non-rank-0 processes get the expanded prompt
+                    expanded_prompt = caption
         elif self.offload:
-            print("Sequential offload: Moving text embedder to GPU for encoding")
+            print("Offload: Moving text embedder to GPU for encoding")
             self.text_embedder = self.text_embedder.to(self.device_map["text_embedder"])
 
         shape = (1, num_frames, height // 8, width // 8, 16)
 
         # GENERATION
-        dit_device = next(self.dit.parameters()).device
-        print(f"Starting KD5 generation - DIT currently on: {dit_device}")
-        if self.offload and dit_device.type == "cpu":
-            print("DIT correctly on CPU - will move to GPU after text processing")
-        elif self.offload and dit_device.type == "cuda":
-            print("DIT already on GPU - ready for generation")
+        if self.dit is not None:
+            dit_device = next(self.dit.parameters()).device
+            print(f"Starting KD5 generation - DIT currently on: {dit_device}")
+            if self.offload and dit_device.type == "cpu":
+                print("DIT correctly on CPU - will move to GPU after text processing")
+            elif self.offload and dit_device.type == "cuda":
+                print("DIT already on GPU - ready for generation")
+        else:
+            print("Starting KD5 generation - DIT will be loaded during generation")
 
-        dit_is_quantized = any(
-            "QuantizedTensor" in str(type(p)) or "AffineQuantized" in str(type(p))
-            for p in self.dit.parameters()
+        dit_is_quantized = (
+            any(
+                "QuantizedTensor" in str(type(p)) or "AffineQuantized" in str(type(p))
+                for p in self.dit.parameters()
+            )
+            if self.dit is not None
+            else False
         )
 
         # Text embedder is a multi-level wrapper - get all PyTorch modules
@@ -195,7 +211,7 @@ class Kandinsky5T2VPipeline:
             for p in module.parameters()
         )
 
-        images = generate_sample(
+        result = generate_sample(
             shape,
             caption,
             self.dit,
@@ -214,7 +230,14 @@ class Kandinsky5T2VPipeline:
             offload=self.offload,
             dit_is_quantized=dit_is_quantized,
             text_embedder_is_quantized=text_embedder_is_quantized,
+            return_loaded_models=self.offload,
         )
+
+        # If offload mode, unpack the loaded models and store them
+        if self.offload:
+            images, self.dit, self.vae = result
+        else:
+            images = result
 
         if self.offload:
             print("Pipeline: Ensuring all models are on CPU after generation")
@@ -263,8 +286,10 @@ class Kandinsky5T2VPipeline:
                                 metadata = {
                                     "prompt": text,
                                     "expanded_prompt": (
-                                        caption
-                                        if expand_prompts and caption != text
+                                        expanded_prompt
+                                        if expand_prompts
+                                        and expanded_prompt
+                                        and expanded_prompt != text
                                         else None
                                     ),
                                     "negative_prompt": negative_caption,
@@ -286,8 +311,14 @@ class Kandinsky5T2VPipeline:
                                         json.dump(metadata, f, indent=2)
                                 except:
                                     pass  # Don't fail generation if metadata can't be saved
-                    # Return the first save path for Gradio video component
-                    return save_path[0] if save_path else None
+                    # Return dict with both path and expanded prompt
+                    return {
+                        "path": save_path[0] if save_path else None,
+                        "expanded_prompt": expanded_prompt if expand_prompts else None,
+                    }
                 else:
-                    # If no save path, return the raw video tensor (for preview)
-                    return images
+                    # If no save path, return dict with tensor and expanded prompt
+                    return {
+                        "video": images,
+                        "expanded_prompt": expanded_prompt if expand_prompts else None,
+                    }

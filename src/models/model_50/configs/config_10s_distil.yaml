@@ -6,8 +6,7 @@ metrics:
   - 2.0
   resolution: 512
 optimizations:
-  use_torch_compile: true
-  use_flash_attention: true
+  use_torch_compile: false
 model:
   checkpoint_path: ai-forever/Kandinsky-5.0-T2V-Lite-distilled16steps-10s
   num_steps: 16

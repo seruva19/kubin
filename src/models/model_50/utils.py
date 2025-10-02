@@ -136,6 +136,12 @@ def get_T2V_pipeline(
             dit_path, vae_path, text_encoder_path, text_encoder2_path
         )
 
+    # When offloading, only load text embedder first
+    # VAE and DIT will be loaded later when needed
+    if offload:
+        print("🔄 DEFERRED LOADING: Offload enabled - loading only text embedder initially")
+        print("   → VAE and DIT will be loaded when needed during generation")
+
     text_embedder = get_text_embedder(
         conf.model.text_embedder, use_torch_compile=use_torch_compile
     )
@@ -196,147 +202,144 @@ def get_T2V_pipeline(
         if not offload:
             text_embedder = text_embedder.to(device=device_map["text_embedder"])
 
-    vae = build_vae(conf.model.vae)
-    vae = vae.eval()
+    # Only build VAE and DIT if not offloading
+    # When offloading, these will be created lazily during generation
     if not offload:
+        vae_low_vram_mode = conf.model.vae.get("low_vram_mode", False)
+        vae = build_vae(conf.model.vae, low_vram_mode=vae_low_vram_mode)
+        vae = vae.eval()
         vae = vae.to(device=device_map["vae"])
-
-    dit = get_dit(conf.model.dit_params)
-
-    if magcache and hasattr(conf, "magcache") and hasattr(conf.magcache, "mag_ratios"):
-        set_magcache_params(dit, conf.magcache.mag_ratios)
-        mag_ratio_count = (
-            len(conf.magcache.mag_ratios) if hasattr(conf.magcache, "mag_ratios") else 0
-        )
-        print(f"✓ Magcache enabled with {mag_ratio_count} magnitude ratio parameters")
-    elif magcache:
-        print("⚠️  Magcache requested but config missing 'magcache.mag_ratios' section")
-        print(f"   → Config type: {type(conf)}")
-        print(f"   → Has magcache attr: {hasattr(conf, 'magcache')}")
-        if hasattr(conf, "magcache"):
-            print(f"   → Has mag_ratios: {hasattr(conf.magcache, 'mag_ratios')}")
-        print(f"   → Magcache is only available for SFT models with proper config")
-        print(f"   → Try using Reset button to reload config with magcache parameters")
+        dit = get_dit(conf.model.dit_params)
     else:
-        # Ensure magcache is disabled if it was previously enabled
-        from .magcache_utils import disable_magcache
+        vae = None
+        dit = None
 
-        disable_magcache(dit)
+    # Skip magcache and DIT loading/quantization if offload is enabled
+    # These will be done during generation
+    if not offload:
+        if magcache and hasattr(conf, "magcache") and hasattr(conf.magcache, "mag_ratios"):
+            set_magcache_params(dit, conf.magcache.mag_ratios)
+            mag_ratio_count = (
+                len(conf.magcache.mag_ratios) if hasattr(conf.magcache, "mag_ratios") else 0
+            )
+            print(f"✓ Magcache enabled with {mag_ratio_count} magnitude ratio parameters")
+        elif magcache:
+            print("⚠️  Magcache requested but config missing 'magcache.mag_ratios' section")
+            print(f"   → Config type: {type(conf)}")
+            print(f"   → Has magcache attr: {hasattr(conf, 'magcache')}")
+            if hasattr(conf, "magcache"):
+                print(f"   → Has mag_ratios: {hasattr(conf.magcache, 'mag_ratios')}")
+            print(f"   → Magcache is only available for SFT models with proper config")
+            print(f"   → Try using Reset button to reload config with magcache parameters")
+        else:
+            # Ensure magcache is disabled if it was previously enabled
+            from .magcache_utils import disable_magcache
 
-    # Download DIT model if it's a Hugging Face repository
-    # Check if it's a valid HF repo ID (contains "/" but doesn't look like a Windows path)
-    checkpoint_path = conf.model.checkpoint_path
-    is_windows_path = (
-        len(checkpoint_path) > 1 and checkpoint_path[1] == ":"
-    )  # Check for drive letter like "C:"
-    is_unix_path = checkpoint_path.startswith("/") or checkpoint_path.startswith("./")
-    is_hf_repo = "/" in checkpoint_path and not is_windows_path and not is_unix_path
+            disable_magcache(dit)
 
-    if is_hf_repo:
-        cache_dir = os.environ.get("KD50_CACHE_DIR", "./weights/")
-        cache_dir = os.path.abspath(
-            os.path.normpath(cache_dir)
-        )  # Ensure absolute normalized path
-        print(f"Downloading DIT model to: {cache_dir}")
-
-        # Set HF_HOME to ensure consistent cache directory
-        os.environ["HF_HOME"] = cache_dir
-        os.environ["HUGGINGFACE_HUB_CACHE"] = cache_dir
-
-        model_path = snapshot_download(
-            repo_id=conf.model.checkpoint_path,
-            cache_dir=cache_dir,
-        )
-        checkpoint_path = model_path
-        print(f"Model downloaded to: {checkpoint_path}")
-    else:
+        # Download DIT model if it's a Hugging Face repository
+        # Check if it's a valid HF repo ID (contains "/" but doesn't look like a Windows path)
         checkpoint_path = conf.model.checkpoint_path
-        checkpoint_path = os.path.abspath(checkpoint_path)  # Ensure absolute path
-        print(f"Using local checkpoint path: {checkpoint_path}")
+        is_windows_path = (
+            len(checkpoint_path) > 1 and checkpoint_path[1] == ":"
+        )  # Check for drive letter like "C:"
+        is_unix_path = checkpoint_path.startswith("/") or checkpoint_path.startswith("./")
+        is_hf_repo = "/" in checkpoint_path and not is_windows_path and not is_unix_path
 
-    possible_filenames = [
-        "model.safetensors",
-        "kandinsky5lite_t2v_distilled16steps_5s.safetensors",
-        "kandinsky5lite_t2v_distilled16steps_10s.safetensors",
-        "kandinsky5lite_t2v_sft_5s.safetensors",
-        "kandinsky5lite_t2v_pretrain_5s.safetensors",
-        "kandinsky5lite_t2v_distil_5s.safetensors",
-        "kandinsky5lite_t2v_nocfg_5s.safetensors",
-        "kandinsky5lite_t2v_sft_10s.safetensors",
-        "kandinsky5lite_t2v_pretrain_10s.safetensors",
-        "kandinsky5lite_t2v_distil_10s.safetensors",
-        "kandinsky5lite_t2v_nocfg_10s.safetensors",
-    ]
+        if is_hf_repo:
+            cache_dir = os.environ.get("KD50_CACHE_DIR", "./weights/")
+            cache_dir = os.path.abspath(
+                os.path.normpath(cache_dir)
+            )  # Ensure absolute normalized path
+            print(f"Downloading DIT model to: {cache_dir}")
 
-    full_model_path = None
-    for filename in possible_filenames:
-        test_path = os.path.join(checkpoint_path, filename)
-        if os.path.exists(test_path):
-            full_model_path = test_path
-            print(f"Found model file: {full_model_path}")
-            break
+            # Set HF_HOME to ensure consistent cache directory
+            os.environ["HF_HOME"] = cache_dir
+            os.environ["HUGGINGFACE_HUB_CACHE"] = cache_dir
 
-        test_path_in_model = os.path.join(checkpoint_path, "model", filename)
-        if os.path.exists(test_path_in_model):
-            full_model_path = test_path_in_model
-            print(f"Found model file in model subdirectory: {full_model_path}")
-            break
-
-    if full_model_path is None:
-        try:
-            if os.path.exists(checkpoint_path):
-                files = os.listdir(checkpoint_path)
-                print(f"Files available in {checkpoint_path}: {files}")
-                model_subdir = os.path.join(checkpoint_path, "model")
-                if os.path.exists(model_subdir):
-                    model_files = os.listdir(model_subdir)
-                    print(f"Files available in {model_subdir}: {model_files}")
-        except Exception as e:
-            print(f"Could not list files: {e}")
-        raise FileNotFoundError(
-            f"No model file found in {checkpoint_path}. Tried: {possible_filenames}"
-        )
-
-    state_dict = load_file(full_model_path)
-    dit.load_state_dict(state_dict, assign=True)
-
-    if quantize_dit:
-        from .model_kd50_env import quantize_with_torch_ao
-
-        print("🔧 QUANTIZATION: Applying torchao int8 quantization to DIT model...")
-        print(f"   DIT device before quantization: {next(dit.parameters()).device}")
-
-        dit = quantize_with_torch_ao(dit)
-
-        print(f"   DIT device after quantization: {next(dit.parameters()).device}")
-        print("✅ QUANTIZATION: DIT quantization process completed")
-
-        if offload:
-            print("   → Quantized DIT will stay on CPU initially")
-            print("   → Will be moved to GPU using .to() method during generation")
-        else:
-            print("   → Moving quantized DIT to GPU (offload disabled)")
-            target_device = device_map["dit"]
-
-            dit = dit.to(target_device)
-            print(f"   → Quantized DIT now on: {next(dit.parameters()).device}")
-    else:
-        print("ℹ️  QUANTIZATION: DIT model will use fp16 (int8 quantization disabled)")
-
-        if offload:
-            print(
-                "Offload enabled - DIT will stay on CPU until text processing is complete"
+            model_path = snapshot_download(
+                repo_id=conf.model.checkpoint_path,
+                cache_dir=cache_dir,
             )
-            print(
-                "DIT initially loaded on CPU - will move to GPU for latent generation phase"
-            )
+            checkpoint_path = model_path
+            print(f"Model downloaded to: {checkpoint_path}")
         else:
-            target_device = device_map["dit"]
-            print(f"Offload disabled - Moving DIT to: {target_device}")
-            dit = dit.to(target_device)
-            print(f"DIT successfully moved to: {next(dit.parameters()).device}")
+            checkpoint_path = conf.model.checkpoint_path
+            checkpoint_path = os.path.abspath(checkpoint_path)  # Ensure absolute path
+            print(f"Using local checkpoint path: {checkpoint_path}")
 
-    if world_size > 1:
+        possible_filenames = [
+            "model.safetensors",
+            "kandinsky5lite_t2v_distilled16steps_5s.safetensors",
+            "kandinsky5lite_t2v_distilled16steps_10s.safetensors",
+            "kandinsky5lite_t2v_sft_5s.safetensors",
+            "kandinsky5lite_t2v_pretrain_5s.safetensors",
+            "kandinsky5lite_t2v_distil_5s.safetensors",
+            "kandinsky5lite_t2v_nocfg_5s.safetensors",
+            "kandinsky5lite_t2v_sft_10s.safetensors",
+            "kandinsky5lite_t2v_pretrain_10s.safetensors",
+            "kandinsky5lite_t2v_distil_10s.safetensors",
+            "kandinsky5lite_t2v_nocfg_10s.safetensors",
+        ]
+
+        full_model_path = None
+        for filename in possible_filenames:
+            test_path = os.path.join(checkpoint_path, filename)
+            if os.path.exists(test_path):
+                full_model_path = test_path
+                print(f"Found model file: {full_model_path}")
+                break
+
+            test_path_in_model = os.path.join(checkpoint_path, "model", filename)
+            if os.path.exists(test_path_in_model):
+                full_model_path = test_path_in_model
+                print(f"Found model file in model subdirectory: {full_model_path}")
+                break
+
+        if full_model_path is None:
+            try:
+                if os.path.exists(checkpoint_path):
+                    files = os.listdir(checkpoint_path)
+                    print(f"Files available in {checkpoint_path}: {files}")
+                    model_subdir = os.path.join(checkpoint_path, "model")
+                    if os.path.exists(model_subdir):
+                        model_files = os.listdir(model_subdir)
+                        print(f"Files available in {model_subdir}: {model_files}")
+            except Exception as e:
+                print(f"Could not list files: {e}")
+            raise FileNotFoundError(
+                f"No model file found in {checkpoint_path}. Tried: {possible_filenames}"
+            )
+
+        # Load weights - for CUDA, load directly to GPU to save one copy operation
+        target_device = device_map["dit"]
+        if target_device.type == "cuda":
+            print(f"   → Loading DIT weights directly to {target_device}")
+            state_dict = load_file(full_model_path, device=str(target_device))
+            dit.load_state_dict(state_dict, assign=True)
+            # Parameters are now on GPU, but buffers are still on CPU
+            # .to() is smart - it only moves what's not already there
+            dit = dit.to(target_device)
+        else:
+            state_dict = load_file(full_model_path)
+            dit.load_state_dict(state_dict, assign=True)
+
+        if quantize_dit:
+            from .model_kd50_env import quantize_with_torch_ao
+
+            print("🔧 QUANTIZATION: Applying torchao int8 quantization to DIT model...")
+            print(f"   DIT device before quantization: {next(dit.parameters()).device}")
+
+            dit = quantize_with_torch_ao(dit)
+
+            print(f"   DIT device after quantization: {next(dit.parameters()).device}")
+            print("✅ QUANTIZATION: DIT quantization process completed")
+            print(f"   → Quantized DIT ready on: {next(dit.parameters()).device}")
+        else:
+            print("ℹ️  QUANTIZATION: DIT model will use fp16 (int8 quantization disabled)")
+            print(f"   → DIT ready on: {next(dit.parameters()).device}")
+
+    if world_size > 1 and not offload:
         dit = parallelize_dit(dit, device_mesh["tensor_parallel"])
 
     pipeline = Kandinsky5T2VPipeline(
@@ -350,6 +353,14 @@ def get_T2V_pipeline(
         conf=conf,
         offload=offload,
     )
+
+    # Store deferred loading parameters on the pipeline for use during generation
+    if offload:
+        pipeline._deferred_loading_params = {
+            'magcache': magcache,
+            'quantize_dit': quantize_dit,
+            'use_torch_compile': use_torch_compile,
+        }
 
     if not use_torch_compile:
         print("   → DIT model: torch.compile disabled")

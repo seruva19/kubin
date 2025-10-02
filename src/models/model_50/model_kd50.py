@@ -349,8 +349,16 @@ class Model_KD50:
             progress=True,
         )
 
-        # Extract expanded prompt from result if available
-        expanded_prompt = result.get("expanded_prompt") if isinstance(result, dict) else None
+        # Extract expanded prompt and actual result from dict
+        expanded_prompt = None
+        actual_result = result
+        if isinstance(result, dict):
+            expanded_prompt = result.get("expanded_prompt")
+            actual_result = result.get("path") or result.get("video")
+            if expanded_prompt:
+                k_log(f"Expanded prompt: {expanded_prompt}")
+
+        result = actual_result
 
         if generate_image:
             save_image_path = save_images(self.kparams, params, task, result)

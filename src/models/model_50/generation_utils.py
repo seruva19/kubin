@@ -10,20 +10,47 @@ import os
 os.environ["TOKENIZERS_PARALLELISM"] = "False"
 
 import torch
+import time
 from tqdm import tqdm
 
 from .models.utils import fast_sta_nabla
 
 
+def log_vram_usage(stage_name: str):
+    """Log current and peak VRAM usage for a specific stage."""
+    if torch.cuda.is_available():
+        current_vram = torch.cuda.memory_allocated() / (1024**3)  # GB
+        peak_vram = torch.cuda.max_memory_allocated() / (1024**3)  # GB
+        print(f"  {stage_name} VRAM - Current: {current_vram:.2f} GB | Peak: {peak_vram:.2f} GB")
+    else:
+        print(f"  {stage_name} - CUDA not available")
+
+
 def get_sparse_params(conf, batch_embeds, device):
     assert conf.model.dit_params.patch_size[0] == 1
     T, H, W, _ = batch_embeds["visual"].shape
+    print(f"\n{'='*80}")
+    print(f"GET_SPARSE_PARAMS - Computing sequence length:")
+    print(f"Visual embed shape (raw): {batch_embeds['visual'].shape} [T, H, W, C]")
+    print(f"Patch size: {conf.model.dit_params.patch_size}")
+
     T, H, W = (
         T // conf.model.dit_params.patch_size[0],
         H // conf.model.dit_params.patch_size[1],
         W // conf.model.dit_params.patch_size[2],
     )
+
+    print(f"After patching: T={T}, H={H}, W={W}")
+    print(f"Attention type: {conf.model.attention.type}")
+
     if conf.model.attention.type == "nabla":
+        print(f"Creating NABLA sparse params:")
+        print(f"  STA dimensions: T={T}, H//8={H//8}, W//8={W//8}")
+        print(f"  Sequence length will be: T*H*W = {T*H*W}")
+        print(
+            f"  Nabla params: P={conf.model.attention.P}, wT={conf.model.attention.wT}, wH={conf.model.attention.wH}, wW={conf.model.attention.wW}"
+        )
+
         sta_mask = fast_sta_nabla(
             T,
             H // 8,
@@ -33,6 +60,8 @@ def get_sparse_params(conf, batch_embeds, device):
             conf.model.attention.wW,
             device=device,
         )
+        print(f"  STA mask created with shape: {sta_mask.shape}")
+
         sparse_params = {
             "sta_mask": sta_mask.unsqueeze_(0).unsqueeze_(0),
             "attention_type": conf.model.attention.type,
@@ -45,7 +74,11 @@ def get_sparse_params(conf, batch_embeds, device):
             "visual_shape": (T, H, W),
             "method": getattr(conf.model.attention, "method", "topcdf"),
         }
+        print(f"  STA mask shape (after unsqueeze): {sparse_params['sta_mask'].shape}")
+        print(f"{'='*80}\n")
     else:
+        print(f"Using standard attention (no sparse params)")
+        print(f"{'='*80}\n")
         sparse_params = None
 
     return sparse_params
@@ -165,6 +198,7 @@ def generate_sample(
     offload=False,
     dit_is_quantized=False,
     text_embedder_is_quantized=False,
+    return_loaded_models=False,
 ):
     bs, duration, height, width, dim = shape
     if duration == 1:
@@ -172,8 +206,15 @@ def generate_sample(
     else:
         type_of_content = "video"
 
+    # Start total timing
+    total_start_time = time.time()
+
     # Text embedder should already be on GPU if offload is enabled (moved in pipeline)
-    print(f"Sequential offload: Phase 1 - Text encoding on {text_embedder_device}")
+    print(f"Offload: Phase 1 - Text encoding on {text_embedder_device}")
+    if offload:
+        torch.cuda.reset_peak_memory_stats()
+
+    phase1_start = time.time()
     with torch.no_grad():
         bs_text_embed, text_cu_seqlens = text_embedder.encode(
             [caption], type_of_content=type_of_content
@@ -182,11 +223,13 @@ def generate_sample(
             [negative_caption], type_of_content=type_of_content
         )
 
+    phase1_time = time.time() - phase1_start
+    print(f"  ⏱️  Phase 1 (Text Encoding) completed in {phase1_time:.2f}s")
+
     if offload:
+        log_vram_usage("Text Embedder")
         if text_embedder_is_quantized:
-            print(
-                "Sequential offload: Phase 1 complete - Moving quantized text embedder to CPU"
-            )
+            print("Offload: Phase 1 complete - Moving quantized text embedder to CPU")
             print(f"  → Using .to() method to preserve quantization state")
             try:
                 if hasattr(text_embedder, "embedder") and hasattr(
@@ -210,7 +253,7 @@ def generate_sample(
             gc.collect()
         else:
             print(
-                "Sequential offload: Phase 1 complete - Moving text embedder to CPU (text processing done)"
+                "Offload: Phase 1 complete - Moving text embedder to CPU (text processing done)"
             )
             text_embedder.to("cpu")
             torch.cuda.empty_cache()
@@ -232,12 +275,93 @@ def generate_sample(
     text_rope_pos = torch.arange(text_cu_seqlens)
     null_text_rope_pos = torch.arange(null_text_cu_seqlens)
 
+    # Load DIT if it wasn't loaded yet (deferred loading in offload mode)
+    if dit is None and offload:
+        print("DEFERRED LOADING: Loading DIT model now (after text processing)")
+        from .models.dit import get_dit
+        from .magcache_utils import set_magcache_params, disable_magcache
+        from safetensors.torch import load_file
+        import os
+
+        # Get deferred loading params from somewhere - they should be passed in
+        # For now we'll need to check a pipeline attribute or pass them as params
+        # This is a limitation we need to address
+        dit = get_dit(conf.model.dit_params)
+
+        # Load checkpoint
+        checkpoint_path = conf.model.checkpoint_path
+        is_windows_path = len(checkpoint_path) > 1 and checkpoint_path[1] == ":"
+        is_unix_path = checkpoint_path.startswith("/") or checkpoint_path.startswith(
+            "./"
+        )
+        is_hf_repo = "/" in checkpoint_path and not is_windows_path and not is_unix_path
+
+        if is_hf_repo:
+            from huggingface_hub import snapshot_download
+
+            cache_dir = os.environ.get("KD50_CACHE_DIR", "./weights/")
+            cache_dir = os.path.abspath(os.path.normpath(cache_dir))
+            model_path = snapshot_download(repo_id=checkpoint_path, cache_dir=cache_dir)
+            checkpoint_path = model_path
+        else:
+            checkpoint_path = os.path.abspath(checkpoint_path)
+
+        possible_filenames = [
+            "model.safetensors",
+            "kandinsky5lite_t2v_distilled16steps_5s.safetensors",
+            "kandinsky5lite_t2v_distilled16steps_10s.safetensors",
+            "kandinsky5lite_t2v_sft_5s.safetensors",
+            "kandinsky5lite_t2v_pretrain_5s.safetensors",
+            "kandinsky5lite_t2v_distil_5s.safetensors",
+            "kandinsky5lite_t2v_nocfg_5s.safetensors",
+            "kandinsky5lite_t2v_sft_10s.safetensors",
+            "kandinsky5lite_t2v_pretrain_10s.safetensors",
+            "kandinsky5lite_t2v_distil_10s.safetensors",
+            "kandinsky5lite_t2v_nocfg_10s.safetensors",
+        ]
+
+        full_model_path = None
+        for filename in possible_filenames:
+            test_path = os.path.join(checkpoint_path, filename)
+            if os.path.exists(test_path):
+                full_model_path = test_path
+                break
+            test_path_in_model = os.path.join(checkpoint_path, "model", filename)
+            if os.path.exists(test_path_in_model):
+                full_model_path = test_path_in_model
+                break
+
+        if full_model_path is None:
+            raise FileNotFoundError(f"No model file found in {checkpoint_path}")
+
+        print(f"   → Loading DIT weights from: {full_model_path}")
+
+        # Load weights - for CUDA, load directly to GPU to save one copy operation
+        if device.type == "cuda":
+            print(f"   → Loading weights directly to {device}")
+            state_dict = load_file(full_model_path, device=str(device))
+            dit.load_state_dict(state_dict, assign=True)
+            # Parameters are now on GPU, but buffers are still on CPU
+            # .to() is smart - it only moves what's not already there
+            dit = dit.to(device)
+            print(f"   → Model fully moved to {device}")
+        else:
+            state_dict = load_file(full_model_path)
+            dit.load_state_dict(state_dict, assign=True)
+
+        # Apply quantization if needed (passed via generate_sample params)
+        if dit_is_quantized:
+            from .model_kd50_env import quantize_with_torch_ao
+
+            print("   → Applying int8 quantization to DIT")
+            dit = quantize_with_torch_ao(dit)
+
+        print(f"   → DIT loaded and ready (weights on {next(dit.parameters()).device})")
+
     current_device = next(dit.parameters()).device
 
     if dit_is_quantized and offload and current_device.type == "cpu":
-        print(
-            f"Sequential offload: Phase 2 - Moving quantized DIT from CPU to {device}"
-        )
+        print(f"Offload: Phase 2 - Moving quantized DIT from CPU to {device}")
         print(f"  → Using .to() method to preserve quantization state")
         try:
             dit = dit.to(device)
@@ -246,12 +370,10 @@ def generate_sample(
         except Exception as e:
             print(f"  ⚠️  ERROR moving quantized DIT: {e}")
     elif dit_is_quantized and offload:
-        print(
-            f"Sequential offload: Phase 2 - Quantized DIT already on {current_device} (ready)"
-        )
+        print(f"Offload: Phase 2 - Quantized DIT already on {current_device} (ready)")
     elif offload and current_device.type == "cpu":
         print(
-            f"Sequential offload: Phase 2 - Moving DIT from CPU to {device} for latent generation"
+            f"Offload: Phase 2 - Moving DIT from CPU to {device} for latent generation"
         )
         print(f"  → Target device: {device}, type: {device.type}")
         try:
@@ -268,22 +390,24 @@ def generate_sample(
             print(f"  ⚠️  ERROR moving DIT to GPU: {e}")
     elif offload and current_device.type == "cuda":
         print(
-            f"Sequential offload: Phase 2 - DIT already on {current_device} (ready for generation)"
+            f"Offload: Phase 2 - DIT already on {current_device} (ready for generation)"
         )
     else:
-        print(
-            f"Sequential offload: Phase 2 - DIT already on {current_device} (offload disabled)"
-        )
+        print(f"Offload: Phase 2 - DIT already on {current_device} (offload disabled)")
 
     dit_gen_device = next(dit.parameters()).device
     print(
-        f"Sequential offload: Phase 2 - Starting latent generation with DIT on: {dit_gen_device}"
+        f"Offload: Phase 2 - Starting latent generation with DIT on: {dit_gen_device}"
     )
     if dit_gen_device.type == "cpu" and device.type == "cuda":
         print(
             "  ⚠️  CRITICAL: DIT is on CPU but should be on GPU! This will be VERY slow!"
         )
 
+    if offload:
+        torch.cuda.reset_peak_memory_stats()
+
+    phase2_start = time.time()
     with torch.no_grad():
         # Use autocast only if CUDA is available, otherwise run without it
         autocast_context = (
@@ -309,11 +433,13 @@ def generate_sample(
                 progress=progress,
             )
 
+    phase2_time = time.time() - phase2_start
+    print(f"  ⏱️  Phase 2 (DIT Latent Generation) completed in {phase2_time:.2f}s")
+
     if offload:
+        log_vram_usage("DIT")
         if dit_is_quantized:
-            print(
-                "Sequential offload: Phase 2 complete - Moving quantized DIT back to CPU"
-            )
+            print("Offload: Phase 2 complete - Moving quantized DIT back to CPU")
             print(f"  → Using .to() method to preserve quantization state")
             try:
                 dit = dit.to("cpu")
@@ -322,7 +448,7 @@ def generate_sample(
             except Exception as e:
                 print(f"  ⚠️  ERROR moving quantized DIT to CPU: {e}")
         else:
-            print("Sequential offload: Phase 2 complete - Moving DIT back to CPU")
+            print("Offload: Phase 2 complete - Moving DIT back to CPU")
             dit.to("cpu")
             dit_after = next(dit.parameters()).device
             print(f"  → DIT moved back to: {dit_after}")
@@ -333,15 +459,25 @@ def generate_sample(
     else:
         torch.cuda.empty_cache()
 
+    # Load VAE if it wasn't loaded yet (deferred loading in offload mode)
+    if vae is None and offload:
+        print("DEFERRED LOADING: Loading VAE model now (for video decoding)")
+        from .models.vae import build_vae
+
+        vae_low_vram_mode = conf.model.vae.get("low_vram_mode", False)
+        vae = build_vae(conf.model.vae, low_vram_mode=vae_low_vram_mode)
+        vae = vae.eval()
+        print(f"   → VAE loaded and ready")
+
     if offload:
-        print(
-            f"Sequential offload: Phase 3 - Moving VAE to {vae_device} for video decoding"
-        )
+        print(f"Offload: Phase 3 - Moving VAE to {vae_device} for video decoding")
         vae.to(vae_device)
         vae_actual = next(vae.parameters()).device
         print(f"  → VAE now on: {vae_actual}")
+        torch.cuda.reset_peak_memory_stats()
 
-    print("Sequential offload: Phase 3 - VAE decoding latents to final video...")
+    print("Offload: Phase 3 - VAE decoding latents to final video...")
+    phase3_start = time.time()
     with torch.no_grad():
         # Use autocast only if CUDA is available, otherwise run without it
         autocast_context = (
@@ -362,8 +498,12 @@ def generate_sample(
             images = vae.decode(images).sample
             images = ((images.clamp(-1.0, 1.0) + 1.0) * 127.5).to(torch.uint8)
 
+    phase3_time = time.time() - phase3_start
+    print(f"  ⏱️  Phase 3 (VAE Decoding) completed in {phase3_time:.2f}s")
+
     if offload:
-        print("Sequential offload: Phase 3 complete - Moving VAE back to CPU")
+        log_vram_usage("VAE")
+        print("Offload: Phase 3 complete - Moving VAE back to CPU")
         vae.to("cpu")
         vae_after = next(vae.parameters()).device
         print(f"  → VAE moved back to: {vae_after}")
@@ -373,6 +513,16 @@ def generate_sample(
         gc.collect()
     else:
         torch.cuda.empty_cache()
-    print("Sequential offload: All phases complete - Video generation finished!")
 
+    total_time = time.time() - total_start_time
+    print(f"\n{'='*60}")
+    print(f"⏱️  TOTAL GENERATION TIME: {total_time:.2f}s")
+    print(f"  Phase 1 (Text Encoding):     {phase1_time:.2f}s ({phase1_time/total_time*100:.1f}%)")
+    print(f"  Phase 2 (DIT Generation):    {phase2_time:.2f}s ({phase2_time/total_time*100:.1f}%)")
+    print(f"  Phase 3 (VAE Decoding):      {phase3_time:.2f}s ({phase3_time/total_time*100:.1f}%)")
+    print(f"{'='*60}\n")
+    print("Offload: All phases complete - Video generation finished!")
+
+    if return_loaded_models:
+        return images, dit, vae
     return images

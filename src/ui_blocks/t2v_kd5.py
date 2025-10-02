@@ -94,12 +94,6 @@ def get_variant_defaults(config_defaults, variant):
                 and hasattr(cfg.optimizations, "use_torch_compile")
                 else True
             ),
-            "use_flash_attention": (
-                cfg.optimizations.use_flash_attention
-                if hasattr(cfg, "optimizations")
-                and hasattr(cfg.optimizations, "use_flash_attention")
-                else True
-            ),
             "in_visual_dim": cfg.model.dit_params.in_visual_dim,
             "out_visual_dim": cfg.model.dit_params.out_visual_dim,
             "time_dim": cfg.model.dit_params.time_dim,
@@ -132,6 +126,7 @@ def get_variant_defaults(config_defaults, variant):
             "vae_checkpoint": cfg.model.vae.checkpoint_path,
             "vae_name": cfg.model.vae.name,
             "vae_tile_threshold": cfg.model.vae.get("tile_threshold", 450),
+            "vae_low_vram_mode": cfg.model.vae.get("low_vram_mode", False),
             "model_checkpoint": cfg.model.checkpoint_path,
         }
     else:
@@ -149,11 +144,11 @@ def get_variant_defaults(config_defaults, variant):
             "use_offload": True,
             "use_magcache": False,
             "vae_tile_threshold": 450,
+            "vae_low_vram_mode": False,
             "use_dit_int8_ao_quantization": False,
             "use_save_quantized_weights": False,
             "use_text_embedder_int8_ao_quantization": False,
             "use_torch_compile": True,
-            "use_flash_attention": True,
             "in_visual_dim": 16,
             "out_visual_dim": 16,
             "time_dim": 512,
@@ -325,40 +320,76 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
 
                 with gr.Accordion("Optimization Options", open=True):
                     with gr.Row():
-                        components["use_offload"] = gr.Checkbox(
-                            value=defaults["use_offload"],
-                            label="Use Offloading",
-                        )
-                        components["use_magcache"] = gr.Checkbox(
-                            value=defaults["use_magcache"],
-                            label="Use MagCache",
-                        )
-                        components["use_torch_compile"] = gr.Checkbox(
-                            value=defaults["use_torch_compile"],
-                            label="Use torch.compile",
-                        )
-                        components["use_flash_attention"] = gr.Checkbox(
-                            value=defaults["use_flash_attention"],
-                            label="Use Flash Attention",
-                        )
-
-                    with gr.Row():
-                        components["use_dit_int8_ao_quantization"] = gr.Checkbox(
-                            value=defaults["use_dit_int8_ao_quantization"],
-                            label="Use DiT INT8",
-                        )
-
-                        components["use_text_embedder_int8_ao_quantization"] = (
-                            gr.Checkbox(
-                                value=defaults[
-                                    "use_text_embedder_int8_ao_quantization"
-                                ],
-                                label="Use Embedder INT8",
+                        with gr.Column():
+                            components["use_offload"] = gr.Checkbox(
+                                value=defaults["use_offload"],
+                                label="Use Offloading",
                             )
+                            components["use_magcache"] = gr.Checkbox(
+                                value=defaults["use_magcache"],
+                                label="Use MagCache",
+                            )
+                            components["use_torch_compile"] = gr.Checkbox(
+                                value=defaults["use_torch_compile"],
+                                label="Use torch.compile",
+                            )
+                        with gr.Column():
+                            components["use_dit_int8_ao_quantization"] = gr.Checkbox(
+                                value=defaults["use_dit_int8_ao_quantization"],
+                                label="Use DiT INT8",
+                                interactive=False,
+                            )
+                            components["use_text_embedder_int8_ao_quantization"] = (
+                                gr.Checkbox(
+                                    value=defaults[
+                                        "use_text_embedder_int8_ao_quantization"
+                                    ],
+                                    label="Use Embedder INT8",
+                                    interactive=False,
+                                )
+                            )
+                            components["use_save_quantized_weights"] = gr.Checkbox(
+                                value=defaults["use_save_quantized_weights"],
+                                label="Save Quantized",
+                            )
+
+                with gr.Accordion("Attention Parameters", open=True):
+                    with gr.Row():
+                        if defaults["attention_type"] == "nabla":
+                            attention_impl_default = "nabla"
+                        else:
+                            # For flash/sdpa, default to flash_fa2 (matching reset behavior)
+                            attention_impl_default = "flash_fa2"
+
+                        components["attention_implementation"] = gr.Radio(
+                            choices=[
+                                ("Nabla", "nabla"),
+                                ("Flash", "flash_fa2"),
+                                ("SDPA", "sdpa"),
+                                ("Sage", "sage"),
+                            ],
+                            value=attention_impl_default,
+                            label="Attention Implementation",
+                            scale=2,
                         )
-                        components["use_save_quantized_weights"] = gr.Checkbox(
-                            value=defaults["use_save_quantized_weights"],
-                            label="Save Quantized",
+                        with gr.Column():
+                            components["attention_causal"] = gr.Checkbox(
+                                label="Causal",
+                                value=defaults["attention_causal"],
+                                interactive=False,
+                            )
+                            components["attention_local"] = gr.Checkbox(
+                                label="Local",
+                                value=defaults["attention_local"],
+                                interactive=False,
+                            )
+                            components["attention_glob"] = gr.Checkbox(
+                                label="Global",
+                                value=defaults["attention_glob"],
+                                interactive=False,
+                            )
+                        components["attention_window"] = gr.Number(
+                            label="Window Size", value=defaults["attention_window"]
                         )
 
                 with gr.Accordion("DiT Parameters", open=False):
@@ -438,33 +469,6 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                             precision=0,
                             label="Input Text Dimension 2 (CLIP)",
                             value=defaults["in_text_dim2"],
-                        )
-
-                with gr.Accordion("Attention Parameters", open=False):
-                    with gr.Row():
-                        components["attention_type"] = gr.Dropdown(
-                            interactive=True,
-                            label="Attention Type",
-                            value=defaults["attention_type"],
-                            choices=["flash", "nabla", "sdpa"],
-                        )
-                        components["attention_causal"] = gr.Checkbox(
-                            value=defaults["attention_causal"],
-                            label="Causal Attention",
-                        )
-                        components["attention_local"] = gr.Checkbox(
-                            value=defaults["attention_local"],
-                            label="Local Attention",
-                        )
-                        components["attention_glob"] = gr.Checkbox(
-                            value=defaults["attention_glob"],
-                            label="Global Attention",
-                        )
-                        components["attention_window"] = gr.Number(
-                            interactive=True,
-                            precision=0,
-                            label="Attention Window",
-                            value=defaults["attention_window"],
                         )
 
                 with gr.Accordion("Nabla Attention Parameters", open=False):
@@ -567,6 +571,11 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                             step=10,
                         )
                     with gr.Row():
+                        components["vae_low_vram_mode"] = gr.Checkbox(
+                            value=defaults.get("vae_low_vram_mode", False),
+                            label="VAE Low VRAM Mode",
+                        )
+                    with gr.Row():
                         components["model_checkpoint"] = gr.Textbox(
                             interactive=True,
                             max_lines=1,
@@ -576,7 +585,7 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
 
                 with gr.Row():
                     reset_config_btn = gr.Button(
-                        "Reset to Default Config (removes saved UI settings)",
+                        "Reset to default",
                         variant="secondary",
                         size="sm",
                     )
@@ -587,6 +596,14 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                         variant, config_manager
                     )
                     defaults = get_variant_defaults(config_defaults, variant)
+
+                    if defaults["attention_type"] == "nabla":
+                        attention_impl_value = "nabla"
+                    elif defaults["attention_type"] == "sage":
+                        attention_impl_value = "sage"
+                    else:
+                        # For flash/sdpa, default to flash_fa2 (matching initial load and reset)
+                        attention_impl_value = "flash_fa2"
 
                     return [
                         gr.update(value=defaults["prompt"]),
@@ -606,7 +623,7 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                             value=defaults["use_text_embedder_int8_ao_quantization"]
                         ),
                         gr.update(value=defaults["use_torch_compile"]),
-                        gr.update(value=defaults["use_flash_attention"]),
+                        gr.update(value=attention_impl_value),
                         gr.update(value=defaults["in_visual_dim"]),
                         gr.update(value=defaults["out_visual_dim"]),
                         gr.update(value=defaults["time_dim"]),
@@ -619,7 +636,6 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                         gr.update(value=defaults["visual_cond"]),
                         gr.update(value=defaults["in_text_dim"]),
                         gr.update(value=defaults["in_text_dim2"]),
-                        gr.update(value=defaults["attention_type"]),
                         gr.update(value=defaults["attention_causal"]),
                         gr.update(value=defaults["attention_local"]),
                         gr.update(value=defaults["attention_glob"]),
@@ -639,6 +655,7 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                         gr.update(value=defaults["vae_checkpoint"]),
                         gr.update(value=defaults["vae_name"]),
                         gr.update(value=defaults["vae_tile_threshold"]),
+                        gr.update(value=defaults.get("vae_low_vram_mode", False)),
                         gr.update(value=defaults["model_checkpoint"]),
                     ]
 
@@ -661,7 +678,7 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                         components["use_save_quantized_weights"],
                         components["use_text_embedder_int8_ao_quantization"],
                         components["use_torch_compile"],
-                        components["use_flash_attention"],
+                        components["attention_implementation"],
                         components["in_visual_dim"],
                         components["out_visual_dim"],
                         components["time_dim"],
@@ -674,7 +691,6 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                         components["visual_cond"],
                         components["in_text_dim"],
                         components["in_text_dim2"],
-                        components["attention_type"],
                         components["attention_causal"],
                         components["attention_local"],
                         components["attention_glob"],
@@ -694,6 +710,7 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                         components["vae_checkpoint"],
                         components["vae_name"],
                         components["vae_tile_threshold"],
+                        components["vae_low_vram_mode"],
                         components["model_checkpoint"],
                     ],
                 )
@@ -704,6 +721,15 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                     )
                     defaults = get_variant_defaults(config_defaults, variant)
                     supports_magcache = "sft" in variant.lower()
+
+                    # Convert attention_type to attention_implementation radio value
+                    if defaults["attention_type"] == "nabla":
+                        attention_impl_value = "nabla"
+                    elif defaults["attention_type"] == "sage":
+                        attention_impl_value = "sage"
+                    else:
+                        # For flash/sdpa, default to flash_fa2 (was the old default with use_flash_attention=True)
+                        attention_impl_value = "flash_fa2"
 
                     return [
                         gr.update(value=defaults["prompt"]),
@@ -728,7 +754,7 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                             value=defaults["use_text_embedder_int8_ao_quantization"]
                         ),
                         gr.update(value=defaults["use_torch_compile"]),
-                        gr.update(value=defaults["use_flash_attention"]),
+                        gr.update(value=attention_impl_value),
                         gr.update(value=defaults["in_visual_dim"]),
                         gr.update(value=defaults["out_visual_dim"]),
                         gr.update(value=defaults["time_dim"]),
@@ -741,7 +767,6 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                         gr.update(value=defaults["visual_cond"]),
                         gr.update(value=defaults["in_text_dim"]),
                         gr.update(value=defaults["in_text_dim2"]),
-                        gr.update(value=defaults["attention_type"]),
                         gr.update(value=defaults["attention_causal"]),
                         gr.update(value=defaults["attention_local"]),
                         gr.update(value=defaults["attention_glob"]),
@@ -761,6 +786,7 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                         gr.update(value=defaults["vae_checkpoint"]),
                         gr.update(value=defaults["vae_name"]),
                         gr.update(value=defaults["vae_tile_threshold"]),
+                        gr.update(value=defaults.get("vae_low_vram_mode", False)),
                         gr.update(value=defaults["model_checkpoint"]),
                     ]
 
@@ -783,7 +809,7 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                         components["use_save_quantized_weights"],
                         components["use_text_embedder_int8_ao_quantization"],
                         components["use_torch_compile"],
-                        components["use_flash_attention"],
+                        components["attention_implementation"],
                         components["in_visual_dim"],
                         components["out_visual_dim"],
                         components["time_dim"],
@@ -796,7 +822,6 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                         components["visual_cond"],
                         components["in_text_dim"],
                         components["in_text_dim2"],
-                        components["attention_type"],
                         components["attention_causal"],
                         components["attention_local"],
                         components["attention_glob"],
@@ -816,6 +841,7 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                         components["vae_checkpoint"],
                         components["vae_name"],
                         components["vae_tile_threshold"],
+                        components["vae_low_vram_mode"],
                         components["model_checkpoint"],
                     ],
                 )
@@ -857,7 +883,7 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                 use_save_quantized_weights,
                 use_text_embedder_int8_ao_quantization,
                 use_torch_compile,
-                use_flash_attention,
+                attention_implementation,
                 in_visual_dim,
                 out_visual_dim,
                 time_dim,
@@ -870,7 +896,6 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                 visual_cond,
                 in_text_dim,
                 in_text_dim2,
-                attention_type,
                 attention_causal,
                 attention_local,
                 attention_glob,
@@ -890,10 +915,31 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                 vae_checkpoint,
                 vae_name,
                 vae_tile_threshold,
+                vae_low_vram_mode,
                 model_checkpoint,
                 *injections,
             ):
                 text = generate_prompt_from_wildcard(text)
+
+                import os
+
+                if attention_implementation == "nabla":
+                    attention_type = "nabla"
+                    use_flash_attention = True  # Doesn't matter for nabla
+                    os.environ["KD5_ATTENTION_MODE"] = "flash"
+                elif attention_implementation == "flash_fa2":
+                    attention_type = "flash"
+                    use_flash_attention = True
+                    os.environ["KD5_ATTENTION_MODE"] = "flash"
+                elif attention_implementation == "sage":
+                    attention_type = "sage"  # Save sage as the attention type
+                    use_flash_attention = True  # Enable attention mode switching
+                    os.environ["KD5_ATTENTION_MODE"] = "sage"
+                    print(f"→ Set KD5_ATTENTION_MODE=sage")
+                else:  # flash_sdpa
+                    attention_type = "flash"
+                    use_flash_attention = False
+                    os.environ["KD5_ATTENTION_MODE"] = "flash"
 
                 config_data = config_manager.build_config_from_ui_params(
                     variant=variant,
@@ -912,7 +958,6 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                     use_save_quantized_weights=use_save_quantized_weights,
                     use_text_embedder_int8_ao_quantization=use_text_embedder_int8_ao_quantization,
                     use_torch_compile=use_torch_compile,
-                    use_flash_attention=use_flash_attention,
                     in_visual_dim=in_visual_dim,
                     out_visual_dim=out_visual_dim,
                     time_dim=time_dim,
@@ -945,73 +990,76 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                     vae_checkpoint=vae_checkpoint,
                     vae_name=vae_name,
                     vae_tile_threshold=vae_tile_threshold,
+                    vae_low_vram_mode=vae_low_vram_mode,
                     model_checkpoint=model_checkpoint,
                 )
                 config_manager.save_ui_config(variant, config_data)
 
                 while True:
                     variant_config = {
-                        "num_steps": num_steps,
-                        "guidance_weight": guidance_weight,
+                        "model": {
+                            "num_steps": num_steps,
+                            "guidance_weight": guidance_weight,
+                            "checkpoint_path": model_checkpoint,
+                            "dit_params": {
+                                "in_visual_dim": in_visual_dim,
+                                "out_visual_dim": out_visual_dim,
+                                "time_dim": time_dim,
+                                "model_dim": model_dim,
+                                "ff_dim": ff_dim,
+                                "num_text_blocks": num_text_blocks,
+                                "num_visual_blocks": num_visual_blocks,
+                                "patch_size": (
+                                    eval(patch_size)
+                                    if isinstance(patch_size, str)
+                                    else patch_size
+                                ),
+                                "axes_dims": (
+                                    eval(axes_dims)
+                                    if isinstance(axes_dims, str)
+                                    else axes_dims
+                                ),
+                                "visual_cond": visual_cond,
+                                "in_text_dim": in_text_dim,
+                                "in_text_dim2": in_text_dim2,
+                            },
+                            "attention": {
+                                "type": attention_type,
+                                "causal": attention_causal,
+                                "local": attention_local,
+                                "glob": attention_glob,
+                                "window": attention_window,
+                                "P": nabla_P,
+                                "wT": nabla_wT,
+                                "wW": nabla_wW,
+                                "wH": nabla_wH,
+                                "add_sta": nabla_add_sta,
+                                "method": nabla_method,
+                            },
+                            "text_embedder": {
+                                "qwen": {
+                                    "emb_size": qwen_emb_size,
+                                    "max_length": qwen_max_length,
+                                    "checkpoint_path": qwen_checkpoint,
+                                },
+                                "clip": {
+                                    "emb_size": clip_emb_size,
+                                    "max_length": clip_max_length,
+                                    "checkpoint_path": clip_checkpoint,
+                                },
+                            },
+                            "vae": {
+                                "checkpoint_path": vae_checkpoint,
+                                "name": vae_name,
+                                "tile_threshold": vae_tile_threshold,
+                            },
+                        },
                         "expand_prompts": expand_prompts,
                         "use_offload": use_offload,
                         "use_magcache": use_magcache,
                         "use_dit_int8_ao_quantization": use_dit_int8_ao_quantization,
                         "use_save_quantized_weights": use_save_quantized_weights,
                         "use_text_embedder_int8_ao_quantization": use_text_embedder_int8_ao_quantization,
-                        "dit_params": {
-                            "in_visual_dim": in_visual_dim,
-                            "out_visual_dim": out_visual_dim,
-                            "time_dim": time_dim,
-                            "model_dim": model_dim,
-                            "ff_dim": ff_dim,
-                            "num_text_blocks": num_text_blocks,
-                            "num_visual_blocks": num_visual_blocks,
-                            "patch_size": (
-                                eval(patch_size)
-                                if isinstance(patch_size, str)
-                                else patch_size
-                            ),
-                            "axes_dims": (
-                                eval(axes_dims)
-                                if isinstance(axes_dims, str)
-                                else axes_dims
-                            ),
-                            "visual_cond": visual_cond,
-                            "in_text_dim": in_text_dim,
-                            "in_text_dim2": in_text_dim2,
-                        },
-                        "attention": {
-                            "type": attention_type,
-                            "causal": attention_causal,
-                            "local": attention_local,
-                            "glob": attention_glob,
-                            "window": attention_window,
-                            "P": nabla_P,
-                            "wT": nabla_wT,
-                            "wW": nabla_wW,
-                            "wH": nabla_wH,
-                            "add_sta": nabla_add_sta,
-                            "method": nabla_method,
-                        },
-                        "text_embedder": {
-                            "qwen": {
-                                "emb_size": qwen_emb_size,
-                                "max_length": qwen_max_length,
-                                "checkpoint_path": qwen_checkpoint,
-                            },
-                            "clip": {
-                                "emb_size": clip_emb_size,
-                                "max_length": clip_max_length,
-                                "checkpoint_path": clip_checkpoint,
-                            },
-                        },
-                        "vae": {
-                            "checkpoint_path": vae_checkpoint,
-                            "name": vae_name,
-                            "tile_threshold": vae_tile_threshold,
-                        },
-                        "checkpoint_path": model_checkpoint,
                     }
 
                     params = {
@@ -1027,6 +1075,7 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                         "height": height,
                         "time_length": duration,
                         "seed": seed,
+                        "expand_prompts": expand_prompts,
                     }
 
                     params = augmentations["exec"](params, injections)
@@ -1063,7 +1112,7 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                     components["use_save_quantized_weights"],
                     components["use_text_embedder_int8_ao_quantization"],
                     components["use_torch_compile"],
-                    components["use_flash_attention"],
+                    components["attention_implementation"],
                     components["in_visual_dim"],
                     components["out_visual_dim"],
                     components["time_dim"],
@@ -1076,7 +1125,6 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                     components["visual_cond"],
                     components["in_text_dim"],
                     components["in_text_dim2"],
-                    components["attention_type"],
                     components["attention_causal"],
                     components["attention_local"],
                     components["attention_glob"],
@@ -1096,6 +1144,7 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                     components["vae_checkpoint"],
                     components["vae_name"],
                     components["vae_tile_threshold"],
+                    components["vae_low_vram_mode"],
                     components["model_checkpoint"],
                 ]
                 + augmentations["injections"],

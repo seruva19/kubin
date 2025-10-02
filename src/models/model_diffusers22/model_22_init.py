@@ -267,7 +267,7 @@ def prepare_weights_for_task(model, task):
     if sequential_prior_offload:
         if run_prior_on_cpu:
             k_log(
-                "sequential offload for prior won't be applied, because prior generation on CPU is enabled"
+                "Offload for prior won't be applied, because prior generation on CPU is enabled"
             )
         else:
             if not model.pipe_info["sequential_prior_offload"]:

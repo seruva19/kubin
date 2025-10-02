@@ -87,7 +87,6 @@ class UIConfigManager:
         use_save_quantized_weights: bool,
         use_text_embedder_int8_ao_quantization: bool,
         use_torch_compile: bool,
-        use_flash_attention: bool,
         in_visual_dim: int,
         out_visual_dim: int,
         time_dim: int,
@@ -120,6 +119,7 @@ class UIConfigManager:
         vae_checkpoint: str,
         vae_name: str,
         vae_tile_threshold: int,
+        vae_low_vram_mode: bool,
         model_checkpoint: str,
     ) -> Dict[str, Any]:
         patch_size_list = (
@@ -148,7 +148,6 @@ class UIConfigManager:
             },
             "optimizations": {
                 "use_torch_compile": use_torch_compile,
-                "use_flash_attention": use_flash_attention,
             },
             "model": {
                 "checkpoint_path": model_checkpoint,
@@ -186,6 +185,7 @@ class UIConfigManager:
                     "checkpoint_path": vae_checkpoint,
                     "name": vae_name,
                     "tile_threshold": vae_tile_threshold,
+                    "low_vram_mode": vae_low_vram_mode,
                 },
                 "text_embedder": {
                     "qwen": {

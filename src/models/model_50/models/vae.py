@@ -742,10 +742,12 @@ class AutoencoderKLHunyuanVideo(ModelMixin, ConfigMixin):
         temporal_compression_ratio: int = 4,
         mid_block_add_attention: bool = True,
         tile_threshold: int = 450,
+        low_vram_mode: bool = False,
     ) -> None:
         super().__init__()
 
         self.time_compression_ratio = temporal_compression_ratio
+        self.low_vram_mode = low_vram_mode
 
         self.encoder = HunyuanVideoEncoder3D(
             in_channels=in_channels,
@@ -791,13 +793,25 @@ class AutoencoderKLHunyuanVideo(ModelMixin, ConfigMixin):
         self.use_framewise_encoding = True
         self.use_framewise_decoding = True
 
-        self.tile_sample_min_height = 256
-        self.tile_sample_min_width = 256
-        self.tile_sample_min_num_frames = 16
+        # Adjust tile sizes based on VRAM mode
+        if low_vram_mode:
+            # Low VRAM mode: smaller tiles, less overlap for ~8GB VRAM
+            self.tile_sample_min_height = 128
+            self.tile_sample_min_width = 128
+            self.tile_sample_min_num_frames = 8
 
-        self.tile_sample_stride_height = 192
-        self.tile_sample_stride_width = 192
-        self.tile_sample_stride_num_frames = 12
+            self.tile_sample_stride_height = 96
+            self.tile_sample_stride_width = 96
+            self.tile_sample_stride_num_frames = 6
+        else:
+            # Default mode: larger tiles for better quality
+            self.tile_sample_min_height = 256
+            self.tile_sample_min_width = 256
+            self.tile_sample_min_num_frames = 16
+
+            self.tile_sample_stride_height = 192
+            self.tile_sample_stride_width = 192
+            self.tile_sample_stride_num_frames = 12
 
         self.tile_size = None
 
@@ -954,6 +968,8 @@ class AutoencoderKLHunyuanVideo(ModelMixin, ConfigMixin):
             `torch.Tensor`:
                 The latent representation of the encoded videos.
         """
+        import gc
+
         _, _, _, height, width = x.shape
         latent_height = height // self.spatial_compression_ratio
         latent_width = width // self.spatial_compression_ratio
@@ -989,10 +1005,21 @@ class AutoencoderKLHunyuanVideo(ModelMixin, ConfigMixin):
                     i : i + self.tile_sample_min_height,
                     j : j + self.tile_sample_min_width,
                 ]
-                tile = self.encoder(tile).clone()
+                tile = self.encoder(tile)
+                if not self.low_vram_mode:
+                    tile = tile.clone()
                 tile = self.quant_conv(tile)
                 row.append(tile)
+
+                # Free memory in low VRAM mode
+                if self.low_vram_mode and torch.cuda.is_available():
+                    torch.cuda.empty_cache()
             rows.append(row)
+
+            # Aggressive memory cleanup in low VRAM mode
+            if self.low_vram_mode and torch.cuda.is_available():
+                gc.collect()
+                torch.cuda.empty_cache()
 
         result_rows = []
         for i, row in enumerate(rows):
@@ -1055,6 +1082,8 @@ class AutoencoderKLHunyuanVideo(ModelMixin, ConfigMixin):
         blend_height = self.tile_sample_min_height - self.tile_sample_stride_height
         blend_width = self.tile_sample_min_width - self.tile_sample_stride_width
 
+        import gc
+
         rows = []
         for i in range(
             0, height - tile_latent_min_height + 1, tile_latent_stride_height
@@ -1071,9 +1100,20 @@ class AutoencoderKLHunyuanVideo(ModelMixin, ConfigMixin):
                     j : j + tile_latent_min_width,
                 ]
                 tile = self.post_quant_conv(tile)
-                decoded = self.decoder(tile).clone()
+                decoded = self.decoder(tile)
+                if not self.low_vram_mode:
+                    decoded = decoded.clone()
                 row.append(decoded)
+
+                # Free memory in low VRAM mode
+                if self.low_vram_mode and torch.cuda.is_available():
+                    torch.cuda.empty_cache()
             rows.append(row)
+
+            # Aggressive memory cleanup in low VRAM mode
+            if self.low_vram_mode and torch.cuda.is_available():
+                gc.collect()
+                torch.cuda.empty_cache()
 
         result_rows = []
         for i, row in enumerate(rows):
@@ -1103,6 +1143,8 @@ class AutoencoderKLHunyuanVideo(ModelMixin, ConfigMixin):
         return DecoderOutput(sample=dec)
 
     def _temporal_tiled_encode(self, x: torch.Tensor) -> AutoencoderKLOutput:
+        import gc
+
         _, _, num_frames, height, width = x.shape
         latent_num_frames = (num_frames - 1) // self.temporal_compression_ratio + 1
 
@@ -1128,11 +1170,18 @@ class AutoencoderKLHunyuanVideo(ModelMixin, ConfigMixin):
             ):
                 tile = self.tiled_encode(tile)
             else:
-                tile = self.encoder(tile).clone()
+                tile = self.encoder(tile)
+                if not self.low_vram_mode:
+                    tile = tile.clone()
                 tile = self.quant_conv(tile)
             if i > 0:
                 tile = tile[:, :, 1:, :, :]
             row.append(tile)
+
+            # Free memory in low VRAM mode
+            if self.low_vram_mode and torch.cuda.is_available():
+                gc.collect()
+                torch.cuda.empty_cache()
 
         result_row = []
         for i, tile in enumerate(row):
@@ -1153,6 +1202,8 @@ class AutoencoderKLHunyuanVideo(ModelMixin, ConfigMixin):
     def _temporal_tiled_decode(
         self, z: torch.Tensor, return_dict: bool = True
     ) -> Union[DecoderOutput, torch.Tensor]:
+        import gc
+
         _, _, num_frames, _, _ = z.shape
         num_sample_frames = (num_frames - 1) * self.temporal_compression_ratio + 1
 
@@ -1186,10 +1237,17 @@ class AutoencoderKLHunyuanVideo(ModelMixin, ConfigMixin):
                 decoded = self.tiled_decode(tile, return_dict=True).sample
             else:
                 tile = self.post_quant_conv(tile)
-                decoded = self.decoder(tile).clone()
+                decoded = self.decoder(tile)
+                if not self.low_vram_mode:
+                    decoded = decoded.clone()
             if i > 0:
                 decoded = decoded[:, :, 1:, :, :]
             row.append(decoded)
+
+            # Free memory in low VRAM mode
+            if self.low_vram_mode and torch.cuda.is_available():
+                gc.collect()
+                torch.cuda.empty_cache()
 
         result_row = []
         for i, tile in enumerate(row):
@@ -1236,6 +1294,38 @@ class AutoencoderKLHunyuanVideo(ModelMixin, ConfigMixin):
         dec = self.decode(z, return_dict=return_dict)
         return dec
 
+    def enable_low_vram_mode(self, enable: bool = True):
+        """
+        Enable or disable low VRAM mode.
+
+        Low VRAM mode uses smaller tiles and less overlap to reduce memory usage
+        to approximately 8GB, at the cost of potentially more visible tile seams.
+
+        Args:
+            enable (bool): Whether to enable low VRAM mode. Default: True.
+        """
+        self.low_vram_mode = enable
+
+        if enable:
+            # Low VRAM mode: smaller tiles, less overlap
+            self.tile_sample_min_height = 128
+            self.tile_sample_min_width = 128
+            self.tile_sample_min_num_frames = 8
+            self.tile_sample_stride_height = 96
+            self.tile_sample_stride_width = 96
+            self.tile_sample_stride_num_frames = 6
+        else:
+            # Default mode: larger tiles for better quality
+            self.tile_sample_min_height = 256
+            self.tile_sample_min_width = 256
+            self.tile_sample_min_num_frames = 16
+            self.tile_sample_stride_height = 192
+            self.tile_sample_stride_width = 192
+            self.tile_sample_stride_num_frames = 12
+
+        # Reset tile_size to force recalculation
+        self.tile_size = None
+
     def apply_tiling(
         self, tile: Tuple[int, int, int, int], stride: Tuple[int, int, int]
     ):
@@ -1257,17 +1347,27 @@ class AutoencoderKLHunyuanVideo(ModelMixin, ConfigMixin):
         """Returns optimal tiling for given shape."""
         _, _, num_frames, height, width = shape
 
-        if (sqrt(height * width) < self.config.tile_threshold) and (num_frames <= 97):
+        # In low VRAM mode, use more aggressive tiling
+        tile_threshold = self.config.tile_threshold if not self.low_vram_mode else 300
+
+        if (sqrt(height * width) < tile_threshold) and (num_frames <= 97):
             ft, fs = num_frames, num_frames
         else:
             ft = OPT_TEMPORAL_TILING[num_frames][0]
             fs = OPT_TEMPORAL_TILING[num_frames][1]
 
-        if sqrt(height * width) > self.config.tile_threshold:
+        if sqrt(height * width) > tile_threshold:
             ht = OPT_SPATIAL_TILING[height][0]
             hs = OPT_SPATIAL_TILING[height][1]
             wt = OPT_SPATIAL_TILING[width][0]
             ws = OPT_SPATIAL_TILING[width][1]
+
+            # In low VRAM mode, reduce tile sizes by ~50%
+            if self.low_vram_mode:
+                ht = max(128, ht // 2)
+                hs = max(96, hs // 2)
+                wt = max(128, wt // 2)
+                ws = max(96, ws // 2)
         else:
             ht, hs, wt, ws = height, height, width, width
 
@@ -1282,15 +1382,17 @@ class AutoencoderKLHunyuanVideo(ModelMixin, ConfigMixin):
         return self.get_enc_optimal_tiling(enc_inp_shape)
 
 
-def build_vae(conf):
+def build_vae(conf, low_vram_mode=False):
     if conf.name == "hunyuan":
         # Download VAE if it's a Hugging Face repository
         if "/" in conf.checkpoint_path and not conf.checkpoint_path.startswith("./"):
             from huggingface_hub import snapshot_download
             import os
 
-            cache_dir = os.environ.get('KD50_CACHE_DIR', './weights/')
-            cache_dir = os.path.abspath(os.path.normpath(cache_dir))  # Ensure absolute normalized path
+            cache_dir = os.environ.get("KD50_CACHE_DIR", "./weights/")
+            cache_dir = os.path.abspath(
+                os.path.normpath(cache_dir)
+            )  # Ensure absolute normalized path
             print(f"Downloading VAE to: {cache_dir}")
 
             model_path = snapshot_download(
@@ -1306,7 +1408,10 @@ def build_vae(conf):
             print(f"Using local VAE checkpoint path: {checkpoint_path}")
 
         return AutoencoderKLHunyuanVideo.from_pretrained(
-            checkpoint_path, subfolder="vae", torch_dtype=torch.float16
+            checkpoint_path,
+            subfolder="vae",
+            torch_dtype=torch.float16,
+            low_vram_mode=low_vram_mode,
         )
     else:
         assert False, f"unknown vae name {conf.name}"

@@ -49,7 +49,7 @@ def update_info():
     try:
         from sageattention import sageattn
 
-        sageattn_info = f"sageattn: {sageattention.__version__}\n"
+        sageattn_info = f"sageattn: installed\n"
     except:
         sageattn_info = f"sageattn: not installed\n"
 
@@ -99,6 +99,7 @@ def update_info():
         f"{xformers_info}"
         f"{triton_info}"
         f"{flash_attn_info}"
+        f"{sageattn_info}"
         f"{diffusers_info}"
         f"{transformers_info}"
         f"{accelerate_info}"

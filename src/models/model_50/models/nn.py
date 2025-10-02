@@ -18,7 +18,11 @@ from .utils import get_freqs, nablaT_v2
 
 def kd5_compile(*args, **kwargs):
     def decorator(fn):
+        # Check for global disable
         if os.environ.get("KD5_DISABLE_COMPILE") == "1":
+            return fn
+        # Check for nabla-specific disable (default: disabled for nabla to prevent OOM)
+        if fn.__name__ == "nabla" and os.environ.get("KD5_COMPILE_NABLA", "0") != "1":
             return fn
         return torch.compile(*args, **kwargs)(fn)
 
@@ -42,9 +46,15 @@ else:
         FA = None
 
 if FA is None:
-    print("⚠️  Flash Attention not found")
-    print("   → Using PyTorch native SDPA")
-    print("   → Install flash-attn for better performance: pip install flash-attn")
+    print("⚠️  Flash Attention not found - install with: pip install flash-attn")
+
+try:
+    from sageattention import sageattn
+
+    SAGE_ATTN = sageattn
+except ImportError:
+    SAGE_ATTN = None
+    print("⚠️  Sage Attention not found - install with: pip install sageattention")
 
 
 @kd5_compile()
@@ -226,8 +236,23 @@ class MultiheadSelfAttentionEnc(nn.Module):
 
     @kd5_compile()
     def scaled_dot_product_attention(self, query, key, value):
-        use_fa = os.environ.get("KD5_USE_FLASH_ATTENTION", "1") == "1"
-        if use_fa and FA is not None:
+        attn_mode = os.environ.get("KD5_ATTENTION_MODE", "flash")
+
+        if attn_mode == "sage" and SAGE_ATTN is not None:
+            # Use Sage Attention (plug-and-play replacement)
+            if not hasattr(self, "_sage_logged"):
+                print(f"→ Using Sage Attention (mode={attn_mode})")
+                self._sage_logged = True
+            out = (
+                SAGE_ATTN(
+                    query.unsqueeze(0).transpose(1, 2),  # [B, heads, seq, dim]
+                    key.unsqueeze(0).transpose(1, 2),
+                    value.unsqueeze(0).transpose(1, 2),
+                )
+                .transpose(1, 2)[0]
+                .flatten(-2, -1)
+            )
+        elif attn_mode == "flash" and FA is not None:
             # Use Flash Attention (faster, less memory)
             out = FA(q=query.unsqueeze(0), k=key.unsqueeze(0), v=value.unsqueeze(0))[
                 0
@@ -296,8 +321,20 @@ class MultiheadSelfAttentionDec(nn.Module):
 
     @kd5_compile()
     def attention(self, query, key, value):
-        use_fa = os.environ.get("KD5_USE_FLASH_ATTENTION", "1") == "1"
-        if use_fa and FA is not None:
+        attn_mode = os.environ.get("KD5_ATTENTION_MODE", "flash")
+
+        if attn_mode == "sage" and SAGE_ATTN is not None:
+            # Use Sage Attention (plug-and-play replacement)
+            out = (
+                SAGE_ATTN(
+                    query.unsqueeze(0).transpose(1, 2),  # [B, heads, seq, dim]
+                    key.unsqueeze(0).transpose(1, 2),
+                    value.unsqueeze(0).transpose(1, 2),
+                )
+                .transpose(1, 2)[0]
+                .flatten(-2, -1)
+            )
+        elif attn_mode == "flash" and FA is not None:
             out = FA(q=query.unsqueeze(0), k=key.unsqueeze(0), v=value.unsqueeze(0))[
                 0
             ].flatten(-2, -1)
@@ -313,11 +350,34 @@ class MultiheadSelfAttentionDec(nn.Module):
             )
         return out
 
+    # NOTE: torch.compile disabled for nabla by default (see kd5_compile decorator)
+    # This prevents FlexAttention from falling back to dense math_attention (OOM with 457GB allocation)
+    # Set KD5_COMPILE_NABLA=1 to enable torch.compile for nabla (experimental, may cause OOM)
     @kd5_compile(mode="max-autotune-no-cudagraphs", dynamic=True)
     def nabla(self, query, key, value, sparse_params=None):
+        print(f"\n{'='*80}")
+        print(f"NABLA ATTENTION CALLED")
+        print(f"Query shape (before): {query.shape}")
+        print(f"Key shape (before): {key.shape}")
+        print(f"Value shape (before): {value.shape}")
+
         query = query.unsqueeze(0).transpose(1, 2).contiguous()
         key = key.unsqueeze(0).transpose(1, 2).contiguous()
         value = value.unsqueeze(0).transpose(1, 2).contiguous()
+
+        print(f"Query shape (after reshape): {query.shape}  [B, heads, seq, dim]")
+        print(f"Key shape (after reshape): {key.shape}")
+        print(f"Value shape (after reshape): {value.shape}")
+        print(
+            f"STA mask shape: {sparse_params['sta_mask'].shape if sparse_params and 'sta_mask' in sparse_params else 'MISSING'}"
+        )
+        print(
+            f"Threshold P: {sparse_params.get('P', 'MISSING') if sparse_params else 'MISSING'}"
+        )
+        print(f"Sequence length S: {query.shape[2]}")
+        print(f"S // 64 = {query.shape[2] // 64} (must be > 0 for nabla to work)")
+        print(f"{'='*80}\n")
+
         block_mask = nablaT_v2(
             query,
             key,
@@ -387,8 +447,20 @@ class MultiheadCrossAttention(nn.Module):
 
     @kd5_compile()
     def attention(self, query, key, value):
-        use_fa = os.environ.get("KD5_USE_FLASH_ATTENTION", "1") == "1"
-        if use_fa and FA is not None:
+        attn_mode = os.environ.get("KD5_ATTENTION_MODE", "flash")
+
+        if attn_mode == "sage" and SAGE_ATTN is not None:
+            # Use Sage Attention (plug-and-play replacement)
+            out = (
+                SAGE_ATTN(
+                    query.unsqueeze(0).transpose(1, 2),  # [B, heads, seq, dim]
+                    key.unsqueeze(0).transpose(1, 2),
+                    value.unsqueeze(0).transpose(1, 2),
+                )
+                .transpose(1, 2)[0]
+                .flatten(-2, -1)
+            )
+        elif attn_mode == "flash" and FA is not None:
             out = FA(q=query.unsqueeze(0), k=key.unsqueeze(0), v=value.unsqueeze(0))[
                 0
             ].flatten(-2, -1)
