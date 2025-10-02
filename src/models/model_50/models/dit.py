@@ -9,6 +9,7 @@ import torch
 from torch import nn
 
 from .nn import (
+    kd5_compile,
     TimeEmbeddings,
     TextEmbeddings,
     VisualEmbeddings,
@@ -143,7 +144,7 @@ class DiffusionTransformer3D(nn.Module):
 
         self.out_layer = OutLayer(model_dim, time_dim, out_visual_dim, patch_size)
 
-    @torch.compile()
+    @kd5_compile()
     def before_text_transformer_blocks(
         self, text_embed, time, pooled_text_embed, x, text_rope_pos
     ):
@@ -154,7 +155,7 @@ class DiffusionTransformer3D(nn.Module):
         text_rope = self.text_rope_embeddings(text_rope_pos)
         return text_embed, time_embed, text_rope, visual_embed
 
-    @torch.compile()
+    @kd5_compile()
     def before_visual_transformer_blocks(
         self, visual_embed, visual_rope_pos, scale_factor, sparse_params
     ):
@@ -168,7 +169,7 @@ class DiffusionTransformer3D(nn.Module):
         )
         return visual_embed, visual_shape, to_fractal, visual_rope
 
-    @torch.compile()
+    @kd5_compile()
     def after_blocks(
         self, visual_embed, visual_shape, to_fractal, text_embed, time_embed
     ):
@@ -178,7 +179,7 @@ class DiffusionTransformer3D(nn.Module):
         x = self.out_layer(visual_embed, text_embed, time_embed)
         return x
 
-    @torch.compile(mode="max-autotune-no-cudagraphs")
+    @kd5_compile(mode="max-autotune-no-cudagraphs")
     def forward(
         self,
         x,

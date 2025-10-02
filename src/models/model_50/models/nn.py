@@ -7,12 +7,24 @@ The code has been adopted from Kandinsky-5
 
 
 import math
+import os
 
 import torch
 from torch import nn
 from torch.nn.attention.flex_attention import flex_attention
 
 from .utils import get_freqs, nablaT_v2
+
+
+# Conditional torch.compile wrapper for KD5
+def kd5_compile(*args, **kwargs):
+    def decorator(fn):
+        if os.environ.get("KD5_DISABLE_COMPILE") == "1":
+            return fn
+        return torch.compile(*args, **kwargs)(fn)
+
+    return decorator
+
 
 if torch.cuda.get_device_capability()[0] >= 9:
     try:
@@ -21,7 +33,7 @@ if torch.cuda.get_device_capability()[0] >= 9:
         FA = None
 
     try:
-        from flash_attn_interface import flash_attn_func as FA
+        from flash_attn_interface import flash_attn_func as FA  # type: ignore
     except:
         FA = FA
 else:
@@ -30,20 +42,28 @@ else:
     except:
         FA = None
 
+# Print warning if Flash Attention is not available
+if FA is None:
+    print("⚠️  Flash Attention not found for DIT model")
+    print("   → Using PyTorch native SDPA")
+    print("   → Install flash-attn for better performance: pip install flash-attn")
+else:
+    print("✓ Flash Attention available for DIT model")
 
-@torch.compile()
+
+@kd5_compile()
 @torch.autocast(device_type="cuda", dtype=torch.float32)
 def apply_scale_shift_norm(norm, x, scale, shift):
     return (norm(x) * (scale + 1.0) + shift).to(torch.bfloat16)
 
 
-@torch.compile()
+@kd5_compile()
 @torch.autocast(device_type="cuda", dtype=torch.float32)
 def apply_gate_sum(x, out, gate):
     return (x + gate * out).to(torch.bfloat16)
 
 
-@torch.compile()
+@kd5_compile()
 @torch.autocast(device_type="cuda", enabled=False)
 def apply_rotary(x, rope):
     x_ = x.reshape(*x.shape[:-1], -1, 1, 2).to(torch.float32)
@@ -169,7 +189,7 @@ class Modulation(nn.Module):
         self.out_layer.weight.data.zero_()
         self.out_layer.bias.data.zero_()
 
-    @torch.compile()
+    @kd5_compile()
     @torch.autocast(device_type="cuda", dtype=torch.float32)
     def forward(self, x):
         return self.out_layer(self.activation(x))
@@ -189,7 +209,7 @@ class MultiheadSelfAttentionEnc(nn.Module):
 
         self.out_layer = nn.Linear(num_channels, num_channels, bias=True)
 
-    @torch.compile()
+    @kd5_compile()
     def get_qkv(self, x):
         query = self.to_query(x)
         key = self.to_key(x)
@@ -202,20 +222,34 @@ class MultiheadSelfAttentionEnc(nn.Module):
 
         return query, key, value
 
-    @torch.compile()
+    @kd5_compile()
     def norm_qk(self, q, k):
         q = self.query_norm(q.float()).type_as(q)
         k = self.key_norm(k.float()).type_as(k)
         return q, k
 
-    @torch.compile()
+    @kd5_compile()
     def scaled_dot_product_attention(self, query, key, value):
-        out = FA(q=query.unsqueeze(0), k=key.unsqueeze(0), v=value.unsqueeze(0))[
-            0
-        ].flatten(-2, -1)
+        use_fa = os.environ.get("KD5_USE_FLASH_ATTENTION", "1") == "1"
+        if use_fa and FA is not None:
+            # Use Flash Attention (faster, less memory)
+            out = FA(q=query.unsqueeze(0), k=key.unsqueeze(0), v=value.unsqueeze(0))[
+                0
+            ].flatten(-2, -1)
+        else:
+            # Use PyTorch native SDPA
+            out = (
+                torch.nn.functional.scaled_dot_product_attention(
+                    query.unsqueeze(0).transpose(1, 2),  # [B, heads, seq, dim]
+                    key.unsqueeze(0).transpose(1, 2),
+                    value.unsqueeze(0).transpose(1, 2),
+                )
+                .transpose(1, 2)[0]
+                .flatten(-2, -1)
+            )
         return out
 
-    @torch.compile()
+    @kd5_compile()
     def out_l(self, x):
         return self.out_layer(x)
 
@@ -245,7 +279,7 @@ class MultiheadSelfAttentionDec(nn.Module):
 
         self.out_layer = nn.Linear(num_channels, num_channels, bias=True)
 
-    @torch.compile()
+    @kd5_compile()
     def get_qkv(self, x):
         query = self.to_query(x)
         key = self.to_key(x)
@@ -258,20 +292,34 @@ class MultiheadSelfAttentionDec(nn.Module):
 
         return query, key, value
 
-    @torch.compile()
+    @kd5_compile()
     def norm_qk(self, q, k):
         q = self.query_norm(q.float()).type_as(q)
         k = self.key_norm(k.float()).type_as(k)
         return q, k
 
-    @torch.compile()
+    @kd5_compile()
     def attention(self, query, key, value):
-        out = FA(q=query.unsqueeze(0), k=key.unsqueeze(0), v=value.unsqueeze(0))[
-            0
-        ].flatten(-2, -1)
+        use_fa = os.environ.get("KD5_USE_FLASH_ATTENTION", "1") == "1"
+        if use_fa and FA is not None:
+            # Use Flash Attention (faster, less memory)
+            out = FA(q=query.unsqueeze(0), k=key.unsqueeze(0), v=value.unsqueeze(0))[
+                0
+            ].flatten(-2, -1)
+        else:
+            # Use PyTorch native SDPA
+            out = (
+                torch.nn.functional.scaled_dot_product_attention(
+                    query.unsqueeze(0).transpose(1, 2),  # [B, heads, seq, dim]
+                    key.unsqueeze(0).transpose(1, 2),
+                    value.unsqueeze(0).transpose(1, 2),
+                )
+                .transpose(1, 2)[0]
+                .flatten(-2, -1)
+            )
         return out
 
-    @torch.compile(mode="max-autotune-no-cudagraphs", dynamic=True)
+    @kd5_compile(mode="max-autotune-no-cudagraphs", dynamic=True)
     def nabla(self, query, key, value, sparse_params=None):
         query = query.unsqueeze(0).transpose(1, 2).contiguous()
         key = key.unsqueeze(0).transpose(1, 2).contiguous()
@@ -291,7 +339,7 @@ class MultiheadSelfAttentionDec(nn.Module):
         out = out.flatten(-2, -1)
         return out
 
-    @torch.compile()
+    @kd5_compile()
     def out_l(self, x):
         return self.out_layer(x)
 
@@ -324,7 +372,7 @@ class MultiheadCrossAttention(nn.Module):
 
         self.out_layer = nn.Linear(num_channels, num_channels, bias=True)
 
-    @torch.compile()
+    @kd5_compile()
     def get_qkv(self, x, cond):
         query = self.to_query(x)
         key = self.to_key(cond)
@@ -337,20 +385,32 @@ class MultiheadCrossAttention(nn.Module):
 
         return query, key, value
 
-    @torch.compile()
+    @kd5_compile()
     def norm_qk(self, q, k):
         q = self.query_norm(q.float()).type_as(q)
         k = self.key_norm(k.float()).type_as(k)
         return q, k
 
-    @torch.compile()
+    @kd5_compile()
     def attention(self, query, key, value):
-        out = FA(q=query.unsqueeze(0), k=key.unsqueeze(0), v=value.unsqueeze(0))[
-            0
-        ].flatten(-2, -1)
+        use_fa = os.environ.get("KD5_USE_FLASH_ATTENTION", "1") == "1"
+        if use_fa and FA is not None:
+            out = FA(q=query.unsqueeze(0), k=key.unsqueeze(0), v=value.unsqueeze(0))[
+                0
+            ].flatten(-2, -1)
+        else:
+            out = (
+                torch.nn.functional.scaled_dot_product_attention(
+                    query.unsqueeze(0).transpose(1, 2),  # [B, heads, seq, dim]
+                    key.unsqueeze(0).transpose(1, 2),
+                    value.unsqueeze(0).transpose(1, 2),
+                )
+                .transpose(1, 2)[0]
+                .flatten(-2, -1)
+            )
         return out
 
-    @torch.compile()
+    @kd5_compile()
     def out_l(self, x):
         return self.out_layer(x)
 
@@ -370,7 +430,7 @@ class FeedForward(nn.Module):
         self.activation = nn.GELU()
         self.out_layer = nn.Linear(ff_dim, dim, bias=False)
 
-    @torch.compile()
+    @kd5_compile()
     def forward(self, x):
         return self.out_layer(self.activation(self.in_layer(x)))
 

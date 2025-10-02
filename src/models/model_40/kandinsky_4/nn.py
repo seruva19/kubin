@@ -40,7 +40,6 @@ def apply_rotary(x, rope):
 
 
 class TimeEmbeddings(nn.Module):
-
     def __init__(self, model_dim, time_dim, max_period=10000.0):
         super().__init__()
         assert model_dim % 2 == 0
@@ -57,7 +56,6 @@ class TimeEmbeddings(nn.Module):
 
 
 class TextEmbeddings(nn.Module):
-
     def __init__(self, text_dim, model_dim):
         super().__init__()
         self.in_layer = nn.Linear(text_dim, model_dim, bias=True)
@@ -67,7 +65,6 @@ class TextEmbeddings(nn.Module):
 
 
 class VisualEmbeddings(nn.Module):
-
     def __init__(self, visual_dim, model_dim, patch_size):
         super().__init__()
         self.patch_size = patch_size

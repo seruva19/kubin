@@ -741,6 +741,7 @@ class AutoencoderKLHunyuanVideo(ModelMixin, ConfigMixin):
         spatial_compression_ratio: int = 8,
         temporal_compression_ratio: int = 4,
         mid_block_add_attention: bool = True,
+        tile_threshold: int = 450,
     ) -> None:
         super().__init__()
 
@@ -1256,13 +1257,13 @@ class AutoencoderKLHunyuanVideo(ModelMixin, ConfigMixin):
         """Returns optimal tiling for given shape."""
         _, _, num_frames, height, width = shape
 
-        if (sqrt(height * width) < 450) and (num_frames <= 97):
+        if (sqrt(height * width) < self.config.tile_threshold) and (num_frames <= 97):
             ft, fs = num_frames, num_frames
         else:
             ft = OPT_TEMPORAL_TILING[num_frames][0]
             fs = OPT_TEMPORAL_TILING[num_frames][1]
 
-        if sqrt(height * width) > 900:
+        if sqrt(height * width) > self.config.tile_threshold:
             ht = OPT_SPATIAL_TILING[height][0]
             hs = OPT_SPATIAL_TILING[height][1]
             wt = OPT_SPATIAL_TILING[width][0]

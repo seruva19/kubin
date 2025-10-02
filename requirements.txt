@@ -20,6 +20,7 @@ deepdiff==8.0.1
 torchsde==0.2.6
 dynamicprompts==0.31.0
 compel==2.0.3
+mutagen==1.47.0
 huggingface-hub==0.34.3
 bitsandbytes==0.45.5
 triton-windows==3.2.0.post18; platform_system == "Windows"

@@ -9,6 +9,8 @@ The code has been adopted from Kandinsky-5
 import numpy as np
 import torch
 
+from .models.nn import kd5_compile
+
 
 def nearest_interp(src_array, target_length):
     src_length = len(src_array)
@@ -44,7 +46,7 @@ def set_magcache_params(dit, mag_ratios):
         dit.mag_ratios = interpolated_mag_ratios
 
 
-@torch.compile(mode="max-autotune-no-cudagraphs")
+@kd5_compile(mode="max-autotune-no-cudagraphs")
 def magcache_forward(
     self,
     x,

@@ -60,14 +60,13 @@ class Qwen2_5_VLTextEmbedder:
         "crop_start": {"video": 129, "image": 41},
     }
 
-    def __init__(self, conf, device):
-        # Use KD50_CACHE_DIR from environment (already loaded by kubin)
+    def __init__(self, conf, device, use_torch_compile=True):
         import os
-        cache_dir = os.environ.get('KD50_CACHE_DIR', './weights/')
-        cache_dir = os.path.abspath(os.path.normpath(cache_dir))  # Ensure absolute normalized path
+
+        cache_dir = os.environ.get("KD50_CACHE_DIR", "./weights/")
+        cache_dir = os.path.abspath(os.path.normpath(cache_dir))
         print(f"Using KD50 cache directory from env: {cache_dir}")
 
-        # Use snapshot_download to download from Hugging Face repo to proper cache directory
         if "/" in conf.checkpoint_path and not conf.checkpoint_path.startswith("./"):
             from huggingface_hub import snapshot_download
             import yaml
@@ -83,19 +82,44 @@ class Qwen2_5_VLTextEmbedder:
             checkpoint_path = conf.checkpoint_path
             checkpoint_path = os.path.abspath(checkpoint_path)  # Ensure absolute path
 
-        # Force Hugging Face to use our cache directory
-        os.environ['HF_HOME'] = cache_dir
-        os.environ['TRANSFORMERS_CACHE'] = cache_dir
+        os.environ["HF_HOME"] = cache_dir
+        os.environ["TRANSFORMERS_CACHE"] = cache_dir
 
-        self.model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
-            checkpoint_path,
-            dtype=torch.bfloat16,
-            attn_implementation="flash_attention_2",
-            device_map=device,
-            cache_dir=cache_dir,
-        )
+        use_fa = os.environ.get("KD5_USE_FLASH_ATTENTION", "1") == "1"
+
+        if use_fa:
+            try:
+                self.model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+                    checkpoint_path,
+                    dtype=torch.bfloat16,
+                    attn_implementation="flash_attention_2",
+                    device_map=device,
+                    cache_dir=cache_dir,
+                )
+                print("✓ Using Flash Attention 2 for text embedder")
+            except (ImportError, ValueError) as e:
+                print(
+                    f"⚠️  Flash Attention 2 not available for text embedder, using eager attention"
+                )
+                print(f"   Error: {e}")
+                self.model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+                    checkpoint_path,
+                    dtype=torch.bfloat16,
+                    attn_implementation="eager",
+                    device_map=device,
+                    cache_dir=cache_dir,
+                )
+        else:
+            self.model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+                checkpoint_path,
+                dtype=torch.bfloat16,
+                attn_implementation="eager",
+                device_map=device,
+                cache_dir=cache_dir,
+            )
         self.model = freeze(self.model)
-        self.model = torch.compile(self.model, dynamic=True)
+        if use_torch_compile:
+            self.model = torch.compile(self.model, dynamic=True)
         self.processor = AutoProcessor.from_pretrained(
             checkpoint_path, use_fast=True, cache_dir=cache_dir
         )
@@ -133,8 +157,8 @@ class Qwen2_5_VLTextEmbedder:
 
 
 class Kandinsky5TextEmbedder:
-    def __init__(self, conf, device="cpu"):
-        self.embedder = Qwen2_5_VLTextEmbedder(conf.qwen, device)
+    def __init__(self, conf, device="cpu", use_torch_compile=True):
+        self.embedder = Qwen2_5_VLTextEmbedder(conf.qwen, device, use_torch_compile)
         self.clip_embedder = ClipTextEmbedder(conf.clip, device)
         self.conf = conf
 
@@ -149,5 +173,5 @@ class Kandinsky5TextEmbedder:
         return self
 
 
-def get_text_embedder(conf, device="cpu"):
-    return Kandinsky5TextEmbedder(conf, device)
+def get_text_embedder(conf, device="cpu", use_torch_compile=True):
+    return Kandinsky5TextEmbedder(conf, device, use_torch_compile)

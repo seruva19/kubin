@@ -141,7 +141,9 @@ class Kandinsky5T2VPipeline:
         if expand_prompts:
             if self.local_dit_rank == 0:
                 if self.offload:
-                    print("Sequential offload: Moving text embedder to GPU for prompt expansion and encoding (flash attention requires CUDA)")
+                    print(
+                        "Sequential offload: Moving text embedder to GPU for prompt expansion and encoding (flash attention requires CUDA)"
+                    )
                     self.text_embedder = self.text_embedder.to(
                         self.device_map["text_embedder"]
                     )
@@ -151,11 +153,8 @@ class Kandinsky5T2VPipeline:
                 torch.distributed.broadcast_object_list(caption, 0)
                 caption = caption[0]
         elif self.offload:
-            # If no prompt expansion but offload is enabled, still need to move text embedder to GPU for encoding
-            print("Sequential offload: Moving text embedder to GPU for encoding (flash attention requires CUDA)")
-            self.text_embedder = self.text_embedder.to(
-                self.device_map["text_embedder"]
-            )
+            print("Sequential offload: Moving text embedder to GPU for encoding")
+            self.text_embedder = self.text_embedder.to(self.device_map["text_embedder"])
 
         shape = (1, num_frames, height // 8, width // 8, 16)
 
@@ -166,6 +165,36 @@ class Kandinsky5T2VPipeline:
             print("DIT correctly on CPU - will move to GPU after text processing")
         elif self.offload and dit_device.type == "cuda":
             print("DIT already on GPU - ready for generation")
+
+        dit_is_quantized = any(
+            "QuantizedTensor" in str(type(p)) or "AffineQuantized" in str(type(p))
+            for p in self.dit.parameters()
+        )
+
+        # Text embedder is a multi-level wrapper - get all PyTorch modules
+        def get_text_embedder_modules(text_embedder):
+            """Extract all PyTorch nn.Modules from text embedder wrappers."""
+            modules = []
+            # Check for Kandinsky5TextEmbedder structure
+            if hasattr(text_embedder, "embedder") and hasattr(
+                text_embedder.embedder, "model"
+            ):
+                modules.append(text_embedder.embedder.model)  # Qwen model
+            if hasattr(text_embedder, "clip_embedder") and hasattr(
+                text_embedder.clip_embedder, "model"
+            ):
+                modules.append(text_embedder.clip_embedder.model)  # CLIP model
+            # Fallback: if it's a direct nn.Module
+            if hasattr(text_embedder, "parameters"):
+                modules.append(text_embedder)
+            return modules
+
+        text_embedder_modules = get_text_embedder_modules(self.text_embedder)
+        text_embedder_is_quantized = any(
+            "QuantizedTensor" in str(type(p)) or "AffineQuantized" in str(type(p))
+            for module in text_embedder_modules
+            for p in module.parameters()
+        )
 
         images = generate_sample(
             shape,
@@ -184,8 +213,24 @@ class Kandinsky5T2VPipeline:
             text_embedder_device=self.device_map["text_embedder"],
             progress=progress,
             offload=self.offload,
+            dit_is_quantized=dit_is_quantized,
+            text_embedder_is_quantized=text_embedder_is_quantized,
         )
+
+        # Final cleanup after generation
+        if self.offload:
+            print("Pipeline: Ensuring all models are on CPU after generation")
+            if hasattr(self.text_embedder, "to"):
+                self.text_embedder.to("cpu")
+            if hasattr(self.dit, "to"):
+                self.dit.to("cpu")
+            if hasattr(self.vae, "to"):
+                self.vae.to("cpu")
+
         torch.cuda.empty_cache()
+        import gc
+
+        gc.collect()
 
         # RESULTS
         if self.local_dit_rank == 0:
@@ -212,6 +257,37 @@ class Kandinsky5T2VPipeline:
                                 fps=24,
                                 options={"crf": "5"},
                             )
+                            # Add metadata to the video file after saving
+                            try:
+                                import json
+                                from mutagen.mp4 import MP4
+
+                                metadata = {
+                                    "prompt": text,
+                                    "expanded_prompt": (
+                                        caption
+                                        if expand_prompts and caption != text
+                                        else None
+                                    ),
+                                    "negative_prompt": negative_caption,
+                                    "software": "Kubin v1.0.0",
+                                }
+
+                                video = MP4(path)
+                                video["\xa9cmt"] = json.dumps(metadata, indent=2)
+                                video.save()
+                            except Exception as e:
+                                print(f"⚠️  Could not save metadata to video: {e}")
+                                # Fallback: save to JSON file
+                                try:
+                                    import json
+
+                                    with open(
+                                        path.rsplit(".", 1)[0] + "_metadata.json", "w"
+                                    ) as f:
+                                        json.dump(metadata, f, indent=2)
+                                except:
+                                    pass  # Don't fail generation if metadata can't be saved
                     # Return the first save path for Gradio video component
                     return save_path[0] if save_path else None
                 else:

@@ -6,46 +6,103 @@ from ui_blocks.shared.ui_shared import SharedUI
 from utils.gradio_ui import click_and_disable
 from utils.storage import get_value
 from utils.text import generate_prompt_from_wildcard
+from models.model_50.ui_config_manager import UIConfigManager
 
 block = "t2v_kd5"
 
 
-def load_config_defaults(config_name):
-    """Load default values from config YAML file"""
+def load_config_defaults(config_name, config_manager=None):
+    """Load config for a variant, preferring UI config if it exists."""
     try:
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        config_path = os.path.join(
-            current_dir,
-            "..",
-            "models",
-            "model_50",
-            "configs",
-            f"config_{config_name}.yaml",
-        )
-        return OmegaConf.load(config_path)
+        if config_manager is None:
+            config_manager = UIConfigManager()
+        return config_manager.load_config(config_name)
     except Exception as e:
         print(f"Error loading config {config_name}: {e}")
         return None
 
 
 def get_variant_defaults(config_defaults, variant):
-    """Get default values for a specific variant"""
+    """Extract defaults from config, including UI settings if saved."""
     cfg = config_defaults.get(variant)
 
     if cfg:
+        # Check if UI settings exist in config
+        default_prompt = "A closeshot of beautiful blonde woman standing under the sun at the beach. Soft waves lapping at her feet and vibrant palm trees lining the distant coastline under a clear blue sky."
+        default_negative = "Static, 2D cartoon, cartoon, 2d animation, paintings, images, worst quality, low quality, ugly, deformed, walking backwards"
+
+        ui_settings = getattr(cfg, "ui_settings", None)
+
         return {
-            "prompt": "A closeshot of beautiful blonde woman standing under the sun at the beach. Soft waves lapping at her feet and vibrant palm trees lining the distant coastline under a clear blue sky.",
-            "width": 512,
-            "height": 512,
-            "duration": 5,
-            "seed": -1,
+            "prompt": (
+                ui_settings.prompt
+                if ui_settings and hasattr(ui_settings, "prompt")
+                else default_prompt
+            ),
+            "negative_prompt": (
+                ui_settings.negative_prompt
+                if ui_settings and hasattr(ui_settings, "negative_prompt")
+                else default_negative
+            ),
+            "width": (
+                ui_settings.width
+                if ui_settings and hasattr(ui_settings, "width")
+                else 512
+            ),
+            "height": (
+                ui_settings.height
+                if ui_settings and hasattr(ui_settings, "height")
+                else 512
+            ),
+            "duration": cfg.model.get("duration", 10 if "10s" in variant else 5),
+            "seed": (
+                ui_settings.seed if ui_settings and hasattr(ui_settings, "seed") else -1
+            ),
             "num_steps": cfg.model.num_steps,
             "guidance_weight": cfg.model.guidance_weight,
-            "expand_prompts": True,
-            "use_offload": True,
-            "use_magcache": False,
-            "use_dit_int8_ao_quantization": False,
-            "use_save_quantized_weights": False,
+            "expand_prompts": (
+                ui_settings.expand_prompts
+                if ui_settings and hasattr(ui_settings, "expand_prompts")
+                else False
+            ),
+            "use_offload": (
+                ui_settings.use_offload
+                if ui_settings and hasattr(ui_settings, "use_offload")
+                else True
+            ),
+            "use_magcache": (
+                ui_settings.use_magcache
+                if ui_settings and hasattr(ui_settings, "use_magcache")
+                else False
+            ),
+            "use_dit_int8_ao_quantization": (
+                ui_settings.use_dit_int8_ao_quantization
+                if ui_settings and hasattr(ui_settings, "use_dit_int8_ao_quantization")
+                else False
+            ),
+            "use_save_quantized_weights": (
+                ui_settings.use_save_quantized_weights
+                if ui_settings and hasattr(ui_settings, "use_save_quantized_weights")
+                else False
+            ),
+            "use_text_embedder_int8_ao_quantization": (
+                ui_settings.use_text_embedder_int8_ao_quantization
+                if ui_settings
+                and hasattr(ui_settings, "use_text_embedder_int8_ao_quantization")
+                else False
+            ),
+            "use_torch_compile": (
+                cfg.optimizations.use_torch_compile
+                if hasattr(cfg, "optimizations")
+                and hasattr(cfg.optimizations, "use_torch_compile")
+                else True
+            ),
+            "use_flash_attention": (
+                cfg.optimizations.use_flash_attention
+                if hasattr(cfg, "optimizations")
+                and hasattr(cfg.optimizations, "use_flash_attention")
+                else True
+            ),
             "in_visual_dim": cfg.model.dit_params.in_visual_dim,
             "out_visual_dim": cfg.model.dit_params.out_visual_dim,
             "time_dim": cfg.model.dit_params.time_dim,
@@ -77,24 +134,29 @@ def get_variant_defaults(config_defaults, variant):
             "clip_checkpoint": cfg.model.text_embedder.clip.checkpoint_path.strip("/"),
             "vae_checkpoint": cfg.model.vae.checkpoint_path,
             "vae_name": cfg.model.vae.name,
+            "vae_tile_threshold": cfg.model.vae.get("tile_threshold", 450),
             "model_checkpoint": cfg.model.checkpoint_path,
         }
     else:
-        # Fallback defaults
         is_10s = "10s" in variant
         return {
             "prompt": "A closeshot of beautiful blonde woman standing under the sun at the beach. Soft waves lapping at her feet and vibrant palm trees lining the distant coastline under a clear blue sky.",
+            "negative_prompt": "Static, 2D cartoon, cartoon, 2d animation, paintings, images, worst quality, low quality, ugly, deformed, walking backwards",
             "width": 512,
             "height": 512,
-            "duration": 5,
+            "duration": 10 if is_10s else 5,
             "seed": -1,
             "num_steps": 50,
             "guidance_weight": 5.0,
             "expand_prompts": True,
             "use_offload": True,
             "use_magcache": False,
+            "vae_tile_threshold": 450,
             "use_dit_int8_ao_quantization": False,
             "use_save_quantized_weights": False,
+            "use_text_embedder_int8_ao_quantization": False,
+            "use_torch_compile": True,
+            "use_flash_attention": True,
             "in_visual_dim": 16,
             "out_visual_dim": 16,
             "time_dim": 512,
@@ -131,7 +193,6 @@ def get_variant_defaults(config_defaults, variant):
 
 
 def get_model_name_from_variant(variant):
-    """Convert variant name to model repository name"""
     variant_map = {
         "5s_sft": "sft-5s",
         "5s_pretrain": "pretrain-5s",
@@ -149,7 +210,9 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
     augmentations = shared.create_ext_augment_blocks("t2v_kd5")
     value = lambda name, def_value: get_value(shared.storage, block, name, def_value)
 
-    # Load default configs from YAML files
+    # Initialize config manager
+    config_manager = UIConfigManager()
+
     config_defaults = {}
     variants = [
         "5s_sft",
@@ -162,9 +225,8 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
         "10s_distil",
     ]
     for variant in variants:
-        config_defaults[variant] = load_config_defaults(variant)
+        config_defaults[variant] = load_config_defaults(variant, config_manager)
 
-    # Get initial variant and its defaults
     initial_variant = value("config_variant", "5s_sft")
     defaults = get_variant_defaults(config_defaults, initial_variant)
 
@@ -174,7 +236,6 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
         with gr.Column(scale=2) as t2v_kd5_params:
             augmentations["ui_before_prompt"]()
 
-            # Variant selector
             with gr.Row():
                 config_variant = gr.Radio(
                     choices=[
@@ -189,7 +250,7 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                     ],
                     value=initial_variant,
                     label="Model Variant",
-                    info="Select which KD5 model variant to use. Settings are saved per variant when you press Generate.",
+                    info="Select model variant. All UI settings are saved per variant on Generate. Use Reset to restore defaults.",
                 )
 
             with gr.Row():
@@ -198,6 +259,17 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                     label="Prompt",
                     placeholder="",
                     lines=4,
+                )
+
+            with gr.Row():
+                negative_prompt = gr.TextArea(
+                    value=defaults.get(
+                        "negative_prompt",
+                        "Static, 2D cartoon, cartoon, 2d animation, paintings, images, worst quality, low quality, ugly, deformed, walking backwards",
+                    ),
+                    label="Negative Prompt",
+                    placeholder="",
+                    lines=2,
                 )
 
             augmentations["ui_before_params"]()
@@ -230,7 +302,6 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                     )
                     seed = gr.Number(value=defaults["seed"], label="Seed", precision=0)
 
-            # Single configuration panel
             with gr.Accordion("MODEL CONFIGURATION", open=True):
                 components = {}
 
@@ -253,7 +324,7 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                 with gr.Row():
                     components["expand_prompts"] = gr.Checkbox(
                         value=defaults["expand_prompts"],
-                        label="Expand Prompts (use Qwen to enhance)",
+                        label="Expand Prompts",
                     )
 
                 with gr.Accordion("Optimization Options", open=True):
@@ -266,13 +337,32 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                             value=defaults["use_magcache"],
                             label="Use MagCache",
                         )
+                        components["use_torch_compile"] = gr.Checkbox(
+                            value=defaults["use_torch_compile"],
+                            label="Use torch.compile",
+                        )
+                        components["use_flash_attention"] = gr.Checkbox(
+                            value=defaults["use_flash_attention"],
+                            label="Use Flash Attention",
+                        )
+
+                    with gr.Row():
                         components["use_dit_int8_ao_quantization"] = gr.Checkbox(
                             value=defaults["use_dit_int8_ao_quantization"],
-                            label="Use DiT INT8 Quantization",
+                            label="Use DiT INT8",
+                        )
+
+                        components["use_text_embedder_int8_ao_quantization"] = (
+                            gr.Checkbox(
+                                value=defaults[
+                                    "use_text_embedder_int8_ao_quantization"
+                                ],
+                                label="Use Embedder INT8",
+                            )
                         )
                         components["use_save_quantized_weights"] = gr.Checkbox(
                             value=defaults["use_save_quantized_weights"],
-                            label="Save Quantized Weights",
+                            label="Save Quantized",
                         )
 
                 with gr.Accordion("DiT Parameters", open=False):
@@ -381,10 +471,7 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                             value=defaults["attention_window"],
                         )
 
-                # Nabla-specific parameters (visible for 10s models)
-                with gr.Accordion(
-                    "Nabla Attention Parameters (for 10s models)", open=False
-                ):
+                with gr.Accordion("Nabla Attention Parameters", open=False):
                     with gr.Row():
                         components["nabla_P"] = gr.Number(
                             interactive=True,
@@ -476,6 +563,13 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                             label="VAE Name",
                             value=defaults["vae_name"],
                         )
+                        components["vae_tile_threshold"] = gr.Slider(
+                            minimum=0,
+                            maximum=1024,
+                            value=defaults["vae_tile_threshold"],
+                            label="VAE Tile Threshold",
+                            step=10,
+                        )
                     with gr.Row():
                         components["model_checkpoint"] = gr.Textbox(
                             interactive=True,
@@ -484,21 +578,26 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                             value=defaults["model_checkpoint"],
                         )
 
-                # Reset button
                 with gr.Row():
                     reset_config_btn = gr.Button(
-                        "Reset current variant to defaults",
+                        "Reset to Default Config (removes saved UI settings)",
                         variant="secondary",
                         size="sm",
                     )
 
                 # Setup reset functionality
                 def reset_to_defaults(variant):
-                    """Load defaults from YAML config for the selected variant"""
+                    """Reset to default config by removing UI config file"""
+                    config_manager.reset_ui_config(variant)
+                    # Reload the default config
+                    config_defaults[variant] = load_config_defaults(
+                        variant, config_manager
+                    )
                     defaults = get_variant_defaults(config_defaults, variant)
 
                     return [
                         gr.update(value=defaults["prompt"]),
+                        gr.update(value=defaults["negative_prompt"]),
                         gr.update(value=defaults["width"]),
                         gr.update(value=defaults["height"]),
                         gr.update(value=defaults["duration"]),
@@ -508,6 +607,13 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                         gr.update(value=defaults["expand_prompts"]),
                         gr.update(value=defaults["use_offload"]),
                         gr.update(value=defaults["use_magcache"]),
+                        gr.update(value=defaults["use_dit_int8_ao_quantization"]),
+                        gr.update(value=defaults["use_save_quantized_weights"]),
+                        gr.update(
+                            value=defaults["use_text_embedder_int8_ao_quantization"]
+                        ),
+                        gr.update(value=defaults["use_torch_compile"]),
+                        gr.update(value=defaults["use_flash_attention"]),
                         gr.update(value=defaults["in_visual_dim"]),
                         gr.update(value=defaults["out_visual_dim"]),
                         gr.update(value=defaults["time_dim"]),
@@ -539,6 +645,7 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                         gr.update(value=defaults["clip_checkpoint"]),
                         gr.update(value=defaults["vae_checkpoint"]),
                         gr.update(value=defaults["vae_name"]),
+                        gr.update(value=defaults["vae_tile_threshold"]),
                         gr.update(value=defaults["model_checkpoint"]),
                     ]
 
@@ -547,6 +654,7 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                     inputs=[config_variant],
                     outputs=[
                         prompt,
+                        negative_prompt,
                         width,
                         height,
                         duration,
@@ -558,6 +666,9 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                         components["use_magcache"],
                         components["use_dit_int8_ao_quantization"],
                         components["use_save_quantized_weights"],
+                        components["use_text_embedder_int8_ao_quantization"],
+                        components["use_torch_compile"],
+                        components["use_flash_attention"],
                         components["in_visual_dim"],
                         components["out_visual_dim"],
                         components["time_dim"],
@@ -589,215 +700,84 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                         components["clip_checkpoint"],
                         components["vae_checkpoint"],
                         components["vae_name"],
+                        components["vae_tile_threshold"],
                         components["model_checkpoint"],
                     ],
                 )
 
-                # Setup variant switching - load saved/default params when user switches variants
                 def load_variant_params(variant):
-                    """Load parameters for the selected variant from storage or defaults"""
+                    """Load variant parameters from config files (UI or default)"""
+                    config_defaults[variant] = load_config_defaults(
+                        variant, config_manager
+                    )
                     defaults = get_variant_defaults(config_defaults, variant)
-
-                    # Try to load saved values, fall back to defaults
-                    def get_saved(param_path, default_val):
-                        return get_value(
-                            shared.storage,
-                            block,
-                            f"configs.{variant}.{param_path}",
-                            default_val,
-                        )
+                    supports_magcache = "sft" in variant.lower()
 
                     return [
-                        gr.update(value=get_saved("prompt", defaults["prompt"])),
-                        gr.update(value=get_saved("width", defaults["width"])),
-                        gr.update(value=get_saved("height", defaults["height"])),
-                        gr.update(value=get_saved("duration", defaults["duration"])),
-                        gr.update(value=get_saved("seed", defaults["seed"])),
-                        gr.update(value=get_saved("num_steps", defaults["num_steps"])),
+                        gr.update(value=defaults["prompt"]),
+                        gr.update(value=defaults["negative_prompt"]),
+                        gr.update(value=defaults["width"]),
+                        gr.update(value=defaults["height"]),
+                        gr.update(value=defaults["duration"]),
+                        gr.update(value=defaults["seed"]),
+                        gr.update(value=defaults["num_steps"]),
+                        gr.update(value=defaults["guidance_weight"]),
+                        gr.update(value=defaults["expand_prompts"]),
+                        gr.update(value=defaults["use_offload"]),
                         gr.update(
-                            value=get_saved(
-                                "guidance_weight", defaults["guidance_weight"]
-                            )
+                            value=(
+                                defaults["use_magcache"] if supports_magcache else False
+                            ),
+                            interactive=supports_magcache,
                         ),
+                        gr.update(value=defaults["use_dit_int8_ao_quantization"]),
+                        gr.update(value=defaults["use_save_quantized_weights"]),
                         gr.update(
-                            value=get_saved(
-                                "expand_prompts", defaults["expand_prompts"]
-                            )
+                            value=defaults["use_text_embedder_int8_ao_quantization"]
                         ),
-                        gr.update(
-                            value=get_saved("use_offload", defaults["use_offload"])
-                        ),
-                        gr.update(
-                            value=get_saved("use_magcache", defaults["use_magcache"])
-                        ),
-                        gr.update(
-                            value=get_saved(
-                                "use_dit_int8_ao_quantization",
-                                defaults["use_dit_int8_ao_quantization"],
-                            )
-                        ),
-                        gr.update(
-                            value=get_saved(
-                                "use_save_quantized_weights",
-                                defaults["use_save_quantized_weights"],
-                            )
-                        ),
-                        gr.update(
-                            value=get_saved(
-                                "dit_params.in_visual_dim", defaults["in_visual_dim"]
-                            )
-                        ),
-                        gr.update(
-                            value=get_saved(
-                                "dit_params.out_visual_dim", defaults["out_visual_dim"]
-                            )
-                        ),
-                        gr.update(
-                            value=get_saved("dit_params.time_dim", defaults["time_dim"])
-                        ),
-                        gr.update(
-                            value=get_saved(
-                                "dit_params.model_dim", defaults["model_dim"]
-                            )
-                        ),
-                        gr.update(
-                            value=get_saved("dit_params.ff_dim", defaults["ff_dim"])
-                        ),
-                        gr.update(
-                            value=get_saved(
-                                "dit_params.num_text_blocks",
-                                defaults["num_text_blocks"],
-                            )
-                        ),
-                        gr.update(
-                            value=get_saved(
-                                "dit_params.num_visual_blocks",
-                                defaults["num_visual_blocks"],
-                            )
-                        ),
-                        gr.update(
-                            value=get_saved(
-                                "dit_params.patch_size", defaults["patch_size"]
-                            )
-                        ),
-                        gr.update(
-                            value=get_saved(
-                                "dit_params.axes_dims", defaults["axes_dims"]
-                            )
-                        ),
-                        gr.update(
-                            value=get_saved(
-                                "dit_params.visual_cond", defaults["visual_cond"]
-                            )
-                        ),
-                        gr.update(
-                            value=get_saved(
-                                "dit_params.in_text_dim", defaults["in_text_dim"]
-                            )
-                        ),
-                        gr.update(
-                            value=get_saved(
-                                "dit_params.in_text_dim2", defaults["in_text_dim2"]
-                            )
-                        ),
-                        gr.update(
-                            value=get_saved(
-                                "attention.type", defaults["attention_type"]
-                            )
-                        ),
-                        gr.update(
-                            value=get_saved(
-                                "attention.causal", defaults["attention_causal"]
-                            )
-                        ),
-                        gr.update(
-                            value=get_saved(
-                                "attention.local", defaults["attention_local"]
-                            )
-                        ),
-                        gr.update(
-                            value=get_saved(
-                                "attention.glob", defaults["attention_glob"]
-                            )
-                        ),
-                        gr.update(
-                            value=get_saved(
-                                "attention.window", defaults["attention_window"]
-                            )
-                        ),
-                        gr.update(value=get_saved("attention.P", defaults["nabla_P"])),
-                        gr.update(
-                            value=get_saved("attention.wT", defaults["nabla_wT"])
-                        ),
-                        gr.update(
-                            value=get_saved("attention.wW", defaults["nabla_wW"])
-                        ),
-                        gr.update(
-                            value=get_saved("attention.wH", defaults["nabla_wH"])
-                        ),
-                        gr.update(
-                            value=get_saved(
-                                "attention.add_sta", defaults["nabla_add_sta"]
-                            )
-                        ),
-                        gr.update(
-                            value=get_saved(
-                                "attention.method", defaults["nabla_method"]
-                            )
-                        ),
-                        gr.update(
-                            value=get_saved(
-                                "text_embedder.qwen.emb_size", defaults["qwen_emb_size"]
-                            )
-                        ),
-                        gr.update(
-                            value=get_saved(
-                                "text_embedder.qwen.max_length",
-                                defaults["qwen_max_length"],
-                            )
-                        ),
-                        gr.update(
-                            value=get_saved(
-                                "text_embedder.qwen.checkpoint_path",
-                                defaults["qwen_checkpoint"],
-                            )
-                        ),
-                        gr.update(
-                            value=get_saved(
-                                "text_embedder.clip.emb_size", defaults["clip_emb_size"]
-                            )
-                        ),
-                        gr.update(
-                            value=get_saved(
-                                "text_embedder.clip.max_length",
-                                defaults["clip_max_length"],
-                            )
-                        ),
-                        gr.update(
-                            value=get_saved(
-                                "text_embedder.clip.checkpoint_path",
-                                defaults["clip_checkpoint"],
-                            )
-                        ),
-                        gr.update(
-                            value=get_saved(
-                                "vae.checkpoint_path", defaults["vae_checkpoint"]
-                            )
-                        ),
-                        gr.update(value=get_saved("vae.name", defaults["vae_name"])),
-                        gr.update(
-                            value=get_saved(
-                                "checkpoint_path", defaults["model_checkpoint"]
-                            )
-                        ),
+                        gr.update(value=defaults["use_torch_compile"]),
+                        gr.update(value=defaults["use_flash_attention"]),
+                        gr.update(value=defaults["in_visual_dim"]),
+                        gr.update(value=defaults["out_visual_dim"]),
+                        gr.update(value=defaults["time_dim"]),
+                        gr.update(value=defaults["model_dim"]),
+                        gr.update(value=defaults["ff_dim"]),
+                        gr.update(value=defaults["num_text_blocks"]),
+                        gr.update(value=defaults["num_visual_blocks"]),
+                        gr.update(value=defaults["patch_size"]),
+                        gr.update(value=defaults["axes_dims"]),
+                        gr.update(value=defaults["visual_cond"]),
+                        gr.update(value=defaults["in_text_dim"]),
+                        gr.update(value=defaults["in_text_dim2"]),
+                        gr.update(value=defaults["attention_type"]),
+                        gr.update(value=defaults["attention_causal"]),
+                        gr.update(value=defaults["attention_local"]),
+                        gr.update(value=defaults["attention_glob"]),
+                        gr.update(value=defaults["attention_window"]),
+                        gr.update(value=defaults["nabla_P"]),
+                        gr.update(value=defaults["nabla_wT"]),
+                        gr.update(value=defaults["nabla_wW"]),
+                        gr.update(value=defaults["nabla_wH"]),
+                        gr.update(value=defaults["nabla_add_sta"]),
+                        gr.update(value=defaults["nabla_method"]),
+                        gr.update(value=defaults["qwen_emb_size"]),
+                        gr.update(value=defaults["qwen_max_length"]),
+                        gr.update(value=defaults["qwen_checkpoint"]),
+                        gr.update(value=defaults["clip_emb_size"]),
+                        gr.update(value=defaults["clip_max_length"]),
+                        gr.update(value=defaults["clip_checkpoint"]),
+                        gr.update(value=defaults["vae_checkpoint"]),
+                        gr.update(value=defaults["vae_name"]),
+                        gr.update(value=defaults["vae_tile_threshold"]),
+                        gr.update(value=defaults["model_checkpoint"]),
                     ]
 
-                # When variant changes, load its parameters
                 config_variant.change(
                     fn=load_variant_params,
                     inputs=[config_variant],
                     outputs=[
                         prompt,
+                        negative_prompt,
                         width,
                         height,
                         duration,
@@ -809,6 +789,9 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                         components["use_magcache"],
                         components["use_dit_int8_ao_quantization"],
                         components["use_save_quantized_weights"],
+                        components["use_text_embedder_int8_ao_quantization"],
+                        components["use_torch_compile"],
+                        components["use_flash_attention"],
                         components["in_visual_dim"],
                         components["out_visual_dim"],
                         components["time_dim"],
@@ -840,6 +823,7 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                         components["clip_checkpoint"],
                         components["vae_checkpoint"],
                         components["vae_name"],
+                        components["vae_tile_threshold"],
                         components["model_checkpoint"],
                     ],
                 )
@@ -880,6 +864,7 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
             async def generate(
                 session,
                 text,
+                negative_text,
                 variant,
                 width,
                 height,
@@ -892,6 +877,9 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                 use_magcache,
                 use_dit_int8_ao_quantization,
                 use_save_quantized_weights,
+                use_text_embedder_int8_ao_quantization,
+                use_torch_compile,
+                use_flash_attention,
                 in_visual_dim,
                 out_visual_dim,
                 time_dim,
@@ -923,13 +911,68 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                 clip_checkpoint,
                 vae_checkpoint,
                 vae_name,
+                vae_tile_threshold,
                 model_checkpoint,
                 *injections,
             ):
                 text = generate_prompt_from_wildcard(text)
 
+                # Save all UI settings to config file before generating
+                config_data = config_manager.build_config_from_ui_params(
+                    variant=variant,
+                    prompt=text,
+                    negative_prompt=negative_text,
+                    width=width,
+                    height=height,
+                    duration=duration,
+                    seed=seed,
+                    num_steps=num_steps,
+                    guidance_weight=guidance_weight,
+                    expand_prompts=expand_prompts,
+                    use_offload=use_offload,
+                    use_magcache=use_magcache,
+                    use_dit_int8_ao_quantization=use_dit_int8_ao_quantization,
+                    use_save_quantized_weights=use_save_quantized_weights,
+                    use_text_embedder_int8_ao_quantization=use_text_embedder_int8_ao_quantization,
+                    use_torch_compile=use_torch_compile,
+                    use_flash_attention=use_flash_attention,
+                    in_visual_dim=in_visual_dim,
+                    out_visual_dim=out_visual_dim,
+                    time_dim=time_dim,
+                    model_dim=model_dim,
+                    ff_dim=ff_dim,
+                    num_text_blocks=num_text_blocks,
+                    num_visual_blocks=num_visual_blocks,
+                    patch_size=patch_size,
+                    axes_dims=axes_dims,
+                    visual_cond=visual_cond,
+                    in_text_dim=in_text_dim,
+                    in_text_dim2=in_text_dim2,
+                    attention_type=attention_type,
+                    attention_causal=attention_causal,
+                    attention_local=attention_local,
+                    attention_glob=attention_glob,
+                    attention_window=attention_window,
+                    nabla_P=nabla_P,
+                    nabla_wT=nabla_wT,
+                    nabla_wW=nabla_wW,
+                    nabla_wH=nabla_wH,
+                    nabla_add_sta=nabla_add_sta,
+                    nabla_method=nabla_method,
+                    qwen_emb_size=qwen_emb_size,
+                    qwen_max_length=qwen_max_length,
+                    qwen_checkpoint=qwen_checkpoint,
+                    clip_emb_size=clip_emb_size,
+                    clip_max_length=clip_max_length,
+                    clip_checkpoint=clip_checkpoint,
+                    vae_checkpoint=vae_checkpoint,
+                    vae_name=vae_name,
+                    vae_tile_threshold=vae_tile_threshold,
+                    model_checkpoint=model_checkpoint,
+                )
+                config_manager.save_ui_config(variant, config_data)
+
                 while True:
-                    # Build config for the selected variant
                     variant_config = {
                         "num_steps": num_steps,
                         "guidance_weight": guidance_weight,
@@ -938,6 +981,7 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                         "use_magcache": use_magcache,
                         "use_dit_int8_ao_quantization": use_dit_int8_ao_quantization,
                         "use_save_quantized_weights": use_save_quantized_weights,
+                        "use_text_embedder_int8_ao_quantization": use_text_embedder_int8_ao_quantization,
                         "dit_params": {
                             "in_visual_dim": in_visual_dim,
                             "out_visual_dim": out_visual_dim,
@@ -946,8 +990,16 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                             "ff_dim": ff_dim,
                             "num_text_blocks": num_text_blocks,
                             "num_visual_blocks": num_visual_blocks,
-                            "patch_size": eval(patch_size),
-                            "axes_dims": eval(axes_dims),
+                            "patch_size": (
+                                eval(patch_size)
+                                if isinstance(patch_size, str)
+                                else patch_size
+                            ),
+                            "axes_dims": (
+                                eval(axes_dims)
+                                if isinstance(axes_dims, str)
+                                else axes_dims
+                            ),
                             "visual_cond": visual_cond,
                             "in_text_dim": in_text_dim,
                             "in_text_dim2": in_text_dim2,
@@ -980,6 +1032,7 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                         "vae": {
                             "checkpoint_path": vae_checkpoint,
                             "name": vae_name,
+                            "tile_threshold": vae_tile_threshold,
                         },
                         "checkpoint_path": model_checkpoint,
                     }
@@ -992,20 +1045,12 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                             "kd50_conf": {variant: variant_config},
                         },
                         "prompt": text,
+                        "negative_prompt": negative_text,
                         "width": width,
                         "height": height,
                         "time_length": duration,
                         "seed": seed,
-                        # Save variant-specific config and basic parameters
-                        f"configs.{variant}": variant_config,
-                        f"configs.{variant}.prompt": text,
-                        f"configs.{variant}.width": width,
-                        f"configs.{variant}.height": height,
-                        f"configs.{variant}.duration": duration,
-                        f"configs.{variant}.seed": seed,
                     }
-
-                    shared.storage.save(block, params)
 
                     params = augmentations["exec"](params, injections)
                     try:
@@ -1026,6 +1071,7 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                 inputs=[
                     session,
                     prompt,
+                    negative_prompt,
                     config_variant,
                     width,
                     height,
@@ -1038,6 +1084,9 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                     components["use_magcache"],
                     components["use_dit_int8_ao_quantization"],
                     components["use_save_quantized_weights"],
+                    components["use_text_embedder_int8_ao_quantization"],
+                    components["use_torch_compile"],
+                    components["use_flash_attention"],
                     components["in_visual_dim"],
                     components["out_visual_dim"],
                     components["time_dim"],
@@ -1069,6 +1118,7 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                     components["clip_checkpoint"],
                     components["vae_checkpoint"],
                     components["vae_name"],
+                    components["vae_tile_threshold"],
                     components["model_checkpoint"],
                 ]
                 + augmentations["injections"],

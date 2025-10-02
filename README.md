@@ -69,6 +69,10 @@ Web-GUI for Kandinsky generative AI models ([Kandinsky2](https://github.com/ai-f
 
 ![img](/sshots/screenshot_40.gif)
 
+### Kandinsky 5.0
+
+![img](/sshots/screenshot_50.gif)
+
 </details>
 
 ## Google Colab

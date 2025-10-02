@@ -25,8 +25,6 @@ from .magcache_utils import set_magcache_params
 
 from safetensors.torch import load_file
 
-torch._dynamo.config.suppress_errors = True
-
 
 def get_T2V_pipeline(
     device_map: Union[str, torch.device, dict],
@@ -40,8 +38,32 @@ def get_T2V_pipeline(
     offload: bool = False,
     magcache: bool = False,
     quantize_dit: bool = False,
+    quantize_text_embedder: bool = False,
+    use_torch_compile: bool = True,
+    use_flash_attention: bool = True,
 ) -> Kandinsky5T2VPipeline:
     assert resolution in [512]
+
+    # Set environment variable to disable torch.compile for KD5 only
+    if not use_torch_compile:
+        os.environ["KD5_DISABLE_COMPILE"] = "1"
+        # Also disable torch.compile completely to suppress autotuning messages
+        torch._dynamo.config.suppress_errors = True
+        torch._dynamo.config.verbose = False
+        import logging
+
+        logging.getLogger("torch._dynamo").setLevel(logging.ERROR)
+        logging.getLogger("torch._inductor").setLevel(logging.ERROR)
+    else:
+        os.environ.pop("KD5_DISABLE_COMPILE", None)
+        torch._dynamo.config.suppress_errors = True
+        torch._dynamo.config.verbose = False
+
+    # Set environment variable to control Flash Attention usage
+    if use_flash_attention:
+        os.environ["KD5_USE_FLASH_ATTENTION"] = "1"
+    else:
+        os.environ["KD5_USE_FLASH_ATTENTION"] = "0"
 
     if not isinstance(device_map, dict):
         device_map = {"dit": device_map, "vae": device_map, "text_embedder": device_map}
@@ -72,49 +94,6 @@ def get_T2V_pipeline(
         conf = OmegaConf.load(conf_path)
     else:
         conf = None
-
-    # Auto-download DiT model if not provided
-    if dit_path is None:
-        if conf is not None and hasattr(conf, 'model') and hasattr(conf.model, 'checkpoint_path'):
-            # Extract model info from config checkpoint path
-            checkpoint_filename = os.path.basename(conf.model.checkpoint_path)
-            # Map checkpoint filename to HuggingFace repo ID
-            model_map = {
-                "kandinsky5lite_t2v_sft_5s.safetensors": "ai-forever/Kandinsky-5.0-T2V-Lite-sft-5s",
-                "kandinsky5lite_t2v_sft_10s.safetensors": "ai-forever/Kandinsky-5.0-T2V-Lite-sft-10s",
-                "kandinsky5lite_t2v_pretrain_5s.safetensors": "ai-forever/Kandinsky-5.0-T2V-Lite-pretrain-5s",
-                "kandinsky5lite_t2v_pretrain_10s.safetensors": "ai-forever/Kandinsky-5.0-T2V-Lite-pretrain-10s",
-                "kandinsky5lite_t2v_nocfg_5s.safetensors": "ai-forever/Kandinsky-5.0-T2V-Lite-nocfg-5s",
-                "kandinsky5lite_t2v_nocfg_10s.safetensors": "ai-forever/Kandinsky-5.0-T2V-Lite-nocfg-10s",
-                "kandinsky5lite_t2v_distil_5s.safetensors": "ai-forever/Kandinsky-5.0-T2V-Lite-distilled16steps-5s",
-                "kandinsky5lite_t2v_distil_10s.safetensors": "ai-forever/Kandinsky-5.0-T2V-Lite-distilled16steps-10s",
-            }
-
-            repo_id = model_map.get(checkpoint_filename)
-            if repo_id:
-                model_path = os.path.join(cache_dir, "model", checkpoint_filename)
-                if not os.path.exists(model_path):
-                    print(f"Downloading {checkpoint_filename} from {repo_id}...")
-                    snapshot_download(
-                        repo_id=repo_id,
-                        allow_patterns="model/*",
-                        local_dir=cache_dir,
-                    )
-                dit_path = model_path
-            else:
-                print(f"Unknown model: {checkpoint_filename}, will try to use existing file")
-                dit_path = conf.model.checkpoint_path
-        else:
-            # Default to sft_5s if no config provided
-            print("Downloading Kandinsky 5.0 T2V Lite SFT 5s model (default)...")
-            model_path = os.path.join(cache_dir, "model", "kandinsky5lite_t2v_sft_5s.safetensors")
-            if not os.path.exists(model_path):
-                snapshot_download(
-                    repo_id="ai-forever/Kandinsky-5.0-T2V-Lite-sft-5s",
-                    allow_patterns="model/*",
-                    local_dir=cache_dir,
-                )
-            dit_path = model_path
 
     # Auto-download VAE if not provided
     if vae_path is None:
@@ -155,9 +134,65 @@ def get_T2V_pipeline(
             dit_path, vae_path, text_encoder_path, text_encoder2_path
         )
 
-    text_embedder = get_text_embedder(conf.model.text_embedder)
-    if not offload:
-        text_embedder = text_embedder.to(device=device_map["text_embedder"])
+    text_embedder = get_text_embedder(
+        conf.model.text_embedder, use_torch_compile=use_torch_compile
+    )
+
+    # Apply torchao quantization to text embedder if requested
+    if quantize_text_embedder:
+        from .model_kd50_env import quantize_with_torch_ao
+
+        print("🔧 QUANTIZATION: Applying torchao int8 quantization to Text Embedder...")
+        # Get the actual PyTorch models from the wrapper
+        qwen_model = text_embedder.embedder.model
+        clip_model = text_embedder.clip_embedder.model
+        print(
+            f"   Qwen model device before quantization: {next(qwen_model.parameters()).device}"
+        )
+        print(
+            f"   CLIP model device before quantization: {next(clip_model.parameters()).device}"
+        )
+
+        # Quantize both models on CPU
+        text_embedder.embedder.model = quantize_with_torch_ao(qwen_model)
+        text_embedder.clip_embedder.model = quantize_with_torch_ao(clip_model)
+
+        print(
+            f"   Qwen model device after quantization: {next(text_embedder.embedder.model.parameters()).device}"
+        )
+        print(
+            f"   CLIP model device after quantization: {next(text_embedder.clip_embedder.model.parameters()).device}"
+        )
+        print("✅ QUANTIZATION: Text Embedder quantization process completed")
+
+        if not offload:
+            print("   → Moving quantized text embedders to GPU (offload disabled)")
+            target_device = device_map["text_embedder"]
+            # Use .to() method to move the entire quantized models at once
+            # This preserves torchao's internal quantization state
+            text_embedder.embedder.model = text_embedder.embedder.model.to(
+                target_device
+            )
+            text_embedder.clip_embedder.model = text_embedder.clip_embedder.model.to(
+                target_device
+            )
+            print(
+                f"   → Quantized Qwen model now on: {next(text_embedder.embedder.model.parameters()).device}"
+            )
+            print(
+                f"   → Quantized CLIP model now on: {next(text_embedder.clip_embedder.model.parameters()).device}"
+            )
+        else:
+            print(
+                "   → Quantized text embedders will be moved to GPU during generation using .to() method"
+            )
+    else:
+        print(
+            "ℹ️  QUANTIZATION: Text Embedder will use fp16/bf16 (int8 quantization disabled)"
+        )
+
+        if not offload:
+            text_embedder = text_embedder.to(device=device_map["text_embedder"])
 
     vae = build_vae(conf.model.vae)
     vae = vae.eval()
@@ -166,18 +201,40 @@ def get_T2V_pipeline(
 
     dit = get_dit(conf.model.dit_params)
 
-    if magcache:
+    if magcache and hasattr(conf, "magcache") and hasattr(conf.magcache, "mag_ratios"):
         set_magcache_params(dit, conf.magcache.mag_ratios)
+        mag_ratio_count = (
+            len(conf.magcache.mag_ratios) if hasattr(conf.magcache, "mag_ratios") else 0
+        )
+        print(f"✓ Magcache enabled with {mag_ratio_count} magnitude ratio parameters")
+    elif magcache:
+        print("⚠️  Magcache requested but config missing 'magcache.mag_ratios' section")
+        print(f"   → Config type: {type(conf)}")
+        print(f"   → Has magcache attr: {hasattr(conf, 'magcache')}")
+        if hasattr(conf, "magcache"):
+            print(f"   → Has mag_ratios: {hasattr(conf.magcache, 'mag_ratios')}")
+        print(f"   → Magcache is only available for SFT models with proper config")
+        print(f"   → Try using Reset button to reload config with magcache parameters")
 
     # Download DIT model if it's a Hugging Face repository
-    if "/" in conf.model.checkpoint_path and not conf.model.checkpoint_path.startswith("./"):
-        cache_dir = os.environ.get('KD50_CACHE_DIR', './weights/')
-        cache_dir = os.path.abspath(os.path.normpath(cache_dir))  # Ensure absolute normalized path
+    # Check if it's a valid HF repo ID (contains "/" but doesn't look like a Windows path)
+    checkpoint_path = conf.model.checkpoint_path
+    is_windows_path = (
+        len(checkpoint_path) > 1 and checkpoint_path[1] == ":"
+    )  # Check for drive letter like "C:"
+    is_unix_path = checkpoint_path.startswith("/") or checkpoint_path.startswith("./")
+    is_hf_repo = "/" in checkpoint_path and not is_windows_path and not is_unix_path
+
+    if is_hf_repo:
+        cache_dir = os.environ.get("KD50_CACHE_DIR", "./weights/")
+        cache_dir = os.path.abspath(
+            os.path.normpath(cache_dir)
+        )  # Ensure absolute normalized path
         print(f"Downloading DIT model to: {cache_dir}")
 
         # Set HF_HOME to ensure consistent cache directory
-        os.environ['HF_HOME'] = cache_dir
-        os.environ['HUGGINGFACE_HUB_CACHE'] = cache_dir
+        os.environ["HF_HOME"] = cache_dir
+        os.environ["HUGGINGFACE_HUB_CACHE"] = cache_dir
 
         model_path = snapshot_download(
             repo_id=conf.model.checkpoint_path,
@@ -190,9 +247,10 @@ def get_T2V_pipeline(
         checkpoint_path = os.path.abspath(checkpoint_path)  # Ensure absolute path
         print(f"Using local checkpoint path: {checkpoint_path}")
 
-    # Try different possible model filenames
     possible_filenames = [
         "model.safetensors",
+        "kandinsky5lite_t2v_distilled16steps_5s.safetensors",
+        "kandinsky5lite_t2v_distilled16steps_10s.safetensors",
         "kandinsky5lite_t2v_sft_5s.safetensors",
         "kandinsky5lite_t2v_pretrain_5s.safetensors",
         "kandinsky5lite_t2v_distil_5s.safetensors",
@@ -200,7 +258,7 @@ def get_T2V_pipeline(
         "kandinsky5lite_t2v_sft_10s.safetensors",
         "kandinsky5lite_t2v_pretrain_10s.safetensors",
         "kandinsky5lite_t2v_distil_10s.safetensors",
-        "kandinsky5lite_t2v_nocfg_10s.safetensors"
+        "kandinsky5lite_t2v_nocfg_10s.safetensors",
     ]
 
     full_model_path = None
@@ -210,7 +268,7 @@ def get_T2V_pipeline(
             full_model_path = test_path
             print(f"Found model file: {full_model_path}")
             break
-        # Also check in a 'model' subdirectory
+
         test_path_in_model = os.path.join(checkpoint_path, "model", filename)
         if os.path.exists(test_path_in_model):
             full_model_path = test_path_in_model
@@ -218,7 +276,6 @@ def get_T2V_pipeline(
             break
 
     if full_model_path is None:
-        # List what files are actually available
         try:
             if os.path.exists(checkpoint_path):
                 files = os.listdir(checkpoint_path)
@@ -229,34 +286,53 @@ def get_T2V_pipeline(
                     print(f"Files available in {model_subdir}: {model_files}")
         except Exception as e:
             print(f"Could not list files: {e}")
-        raise FileNotFoundError(f"No model file found in {checkpoint_path}. Tried: {possible_filenames}")
+        raise FileNotFoundError(
+            f"No model file found in {checkpoint_path}. Tried: {possible_filenames}"
+        )
 
     state_dict = load_file(full_model_path)
     dit.load_state_dict(state_dict, assign=True)
 
-    # Apply torchao quantization to DIT if requested
     if quantize_dit:
         from .model_kd50_env import quantize_with_torch_ao
-        print("Quantizing DIT model with torchao int8...")
+
+        print("🔧 QUANTIZATION: Applying torchao int8 quantization to DIT model...")
+        print(f"   DIT device before quantization: {next(dit.parameters()).device}")
+
         dit = quantize_with_torch_ao(dit)
 
-    # DIT should stay on CPU initially when offload is enabled
-    # Only move to GPU when text processing is complete
-    if offload:
-        print("Offload enabled - DIT will stay on CPU until text processing is complete")
-        print("DIT initially loaded on CPU - will move to GPU for latent generation phase")
-        # DIT stays on CPU
+        print(f"   DIT device after quantization: {next(dit.parameters()).device}")
+        print("✅ QUANTIZATION: DIT quantization process completed")
+
+        if offload:
+            print("   → Quantized DIT will stay on CPU initially")
+            print("   → Will be moved to GPU using .to() method during generation")
+        else:
+            print("   → Moving quantized DIT to GPU (offload disabled)")
+            target_device = device_map["dit"]
+
+            dit = dit.to(target_device)
+            print(f"   → Quantized DIT now on: {next(dit.parameters()).device}")
     else:
-        # If offload is disabled, move DIT to GPU immediately
-        target_device = device_map["dit"]
-        print(f"Offload disabled - Moving DIT to: {target_device}")
-        dit = dit.to(target_device)
-        print(f"DIT successfully moved to: {next(dit.parameters()).device}")
+        print("ℹ️  QUANTIZATION: DIT model will use fp16 (int8 quantization disabled)")
+
+        if offload:
+            print(
+                "Offload enabled - DIT will stay on CPU until text processing is complete"
+            )
+            print(
+                "DIT initially loaded on CPU - will move to GPU for latent generation phase"
+            )
+        else:
+            target_device = device_map["dit"]
+            print(f"Offload disabled - Moving DIT to: {target_device}")
+            dit = dit.to(target_device)
+            print(f"DIT successfully moved to: {next(dit.parameters()).device}")
 
     if world_size > 1:
         dit = parallelize_dit(dit, device_mesh["tensor_parallel"])
 
-    return Kandinsky5T2VPipeline(
+    pipeline = Kandinsky5T2VPipeline(
         device_map=device_map,
         dit=dit,
         text_embedder=text_embedder,
@@ -267,6 +343,14 @@ def get_T2V_pipeline(
         conf=conf,
         offload=offload,
     )
+
+    if not use_torch_compile:
+        print("   → DIT model: torch.compile disabled")
+        print("   → Text embedder: torch.compile disabled")
+        print("   → Magcache: torch.compile disabled")
+        print("   → All NN layers: torch.compile disabled")
+
+    return pipeline
 
 
 def get_default_conf(

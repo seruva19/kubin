@@ -2,6 +2,8 @@ import gc
 import os
 import random
 import re
+import json
+from datetime import datetime
 
 import numpy as np
 import torch
@@ -13,13 +15,14 @@ from utils.file_system import save_output
 from utils.logging import k_log
 from utils.env_data import load_env_value
 
+
 # Set HF environment variables early to ensure consistent cache directory
 def set_kd50_cache_env():
     shared_cache_dir = load_env_value("KD50_CACHE_DIR", "./weights")
-    cache_dir = os.path.join(shared_cache_dir, "kandinsky-5")
-    os.environ['HF_HOME'] = cache_dir
-    os.environ['HUGGINGFACE_HUB_CACHE'] = cache_dir
-    os.environ['TRANSFORMERS_CACHE'] = cache_dir
+    os.environ["HF_HOME"] = shared_cache_dir
+    os.environ["HUGGINGFACE_HUB_CACHE"] = shared_cache_dir
+    os.environ["TRANSFORMERS_CACHE"] = shared_cache_dir
+
 
 # Set environment variables on module import
 set_kd50_cache_env()
@@ -27,6 +30,7 @@ set_kd50_cache_env()
 from models.model_50.utils import get_T2V_pipeline
 from models.model_50.t2v_pipeline import Kandinsky5T2VPipeline
 from models.model_50.model_kd50_env import Model_KD50_Environment
+from models.model_50.ui_config_manager import UIConfigManager
 
 
 class Model_KD50:
@@ -36,6 +40,7 @@ class Model_KD50:
         self.kparams = params
         self.t2v_pipe: Kandinsky5T2VPipeline | None = None
         self.current_config_name = None
+        self.config_manager = UIConfigManager()
 
     def prepare_model(self, task, config_name, kd50_conf, use_custom_config=False):
         k_log(f"task queued: {task}")
@@ -43,17 +48,16 @@ class Model_KD50:
 
         shared_cache_dir = self.kparams("general", "cache_dir")
         shared_cache_dir = load_env_value("KD50_CACHE_DIR", shared_cache_dir)
-        cache_dir = os.path.join(shared_cache_dir, "kandinsky-5")
+        # Use the shared cache directory directly - HuggingFace will create proper model subdirectories
+        cache_dir = shared_cache_dir
 
         # Set HF environment variables to ensure consistent cache directory
-        os.environ['HF_HOME'] = cache_dir
-        os.environ['HUGGINGFACE_HUB_CACHE'] = cache_dir
-        os.environ['TRANSFORMERS_CACHE'] = cache_dir
+        os.environ["HF_HOME"] = cache_dir
+        os.environ["HUGGINGFACE_HUB_CACHE"] = cache_dir
+        os.environ["TRANSFORMERS_CACHE"] = cache_dir
 
         device = self.kparams("general", "device")
 
-        # Enhanced device verification
-        print(f"=== KD50 Device Verification ===")
         print(f"Requested device from config: {device}")
         print(f"PyTorch version: {torch.__version__}")
         print(f"CUDA available: {torch.cuda.is_available()}")
@@ -64,32 +68,29 @@ class Model_KD50:
             print(f"Current CUDA device: {torch.cuda.current_device()}")
             print(f"CUDA device name: {torch.cuda.get_device_name()}")
 
-            # Test CUDA functionality
             try:
                 test_tensor = torch.randn(10, 10).cuda()
                 result = test_tensor @ test_tensor
-                print(f"CUDA test successful: {result.device}")
                 cuda_working = True
             except Exception as e:
-                print(f"CUDA test failed: {e}")
                 cuda_working = False
         else:
             cuda_working = False
 
-        # Check CUDA availability and adjust device accordingly
         if device == "cuda":
             if not torch.cuda.is_available():
                 print("ERROR: CUDA requested but not available!")
                 print("This likely means you're not using the virtual environment.")
-                print("Please run the application using start.bat or activate the venv first.")
+                print(
+                    "Please run the application using start.bat or activate the venv first."
+                )
                 device = "cpu"
             elif not cuda_working:
                 print("ERROR: CUDA available but not working!")
                 print("PyTorch CUDA installation may be corrupted.")
                 device = "cpu"
             else:
-                device = "cuda:0"  # Ensure we use a specific CUDA device
-                print("GPU verified and working!")
+                device = "cuda:0"
 
         environment = Model_KD50_Environment().from_config(self.kparams)
         environment.set_conf(kd50_conf)
@@ -100,10 +101,6 @@ class Model_KD50:
             "text_embedder": torch.device(device),
         }
 
-        print(f"Final device_map: {device_map}")
-        print(f"=== End Device Verification ===")
-
-        # Final verification - ensure all models will be on correct device
         if device_map["dit"].type == "cuda" and torch.cuda.is_available():
             print("✓ GPU acceleration enabled for KD50 models")
         else:
@@ -120,7 +117,9 @@ class Model_KD50:
 
                 if use_custom_config and config_name in kd50_conf:
                     config_data = kd50_conf[config_name]
-                    conf = self._build_config_from_ui(config_data, cache_dir)
+                    conf = self._build_config_from_ui(
+                        config_data, cache_dir, config_name
+                    )
 
                     use_offload = config_data.get(
                         "use_offload", environment.use_model_offload
@@ -128,13 +127,91 @@ class Model_KD50:
                     use_magcache = config_data.get(
                         "use_magcache", environment.use_magcache
                     )
+                    use_dit_int8_ao_quantization = config_data.get(
+                        "use_dit_int8_ao_quantization",
+                        environment.use_dit_int8_ao_quantization,
+                    )
+                    use_save_quantized_weights = config_data.get(
+                        "use_save_quantized_weights",
+                        environment.use_save_quantized_weights,
+                    )
+                    use_text_embedder_int8_ao_quantization = config_data.get(
+                        "use_text_embedder_int8_ao_quantization",
+                        environment.use_text_embedder_int8_ao_quantization,
+                    )
                     k_log(f"using custom config from UI for {config_name}")
                 else:
-                    config_path = self._get_config_path(config_name)
-                    conf = OmegaConf.load(config_path)
-                    k_log(f"loaded config from {config_path}")
+                    # Use UIConfigManager to load config (prefers UI config if exists)
+                    conf = self.config_manager.load_config(config_name)
+                    k_log(f"loaded config for {config_name} via UIConfigManager")
 
-                k_log(f"offload={use_offload}, magcache={use_magcache}")
+                    # Check if UI settings exist in the loaded config
+                    if hasattr(conf, "ui_settings"):
+                        use_offload = getattr(
+                            conf.ui_settings,
+                            "use_offload",
+                            environment.use_model_offload,
+                        )
+                        use_magcache = getattr(
+                            conf.ui_settings, "use_magcache", environment.use_magcache
+                        )
+                        use_dit_int8_ao_quantization = getattr(
+                            conf.ui_settings,
+                            "use_dit_int8_ao_quantization",
+                            environment.use_dit_int8_ao_quantization,
+                        )
+                        use_save_quantized_weights = getattr(
+                            conf.ui_settings,
+                            "use_save_quantized_weights",
+                            environment.use_save_quantized_weights,
+                        )
+                        use_text_embedder_int8_ao_quantization = getattr(
+                            conf.ui_settings,
+                            "use_text_embedder_int8_ao_quantization",
+                            environment.use_text_embedder_int8_ao_quantization,
+                        )
+                        k_log(f"using UI settings from saved config for {config_name}")
+                    else:
+                        # Use environment defaults when no UI settings
+                        use_dit_int8_ao_quantization = (
+                            environment.use_dit_int8_ao_quantization
+                        )
+                        use_save_quantized_weights = (
+                            environment.use_save_quantized_weights
+                        )
+                        use_text_embedder_int8_ao_quantization = (
+                            environment.use_text_embedder_int8_ao_quantization
+                        )
+
+                k_log(
+                    f"offload={use_offload}, magcache={use_magcache}, dit_int8_quantization={use_dit_int8_ao_quantization}, save_quantized={use_save_quantized_weights}, text_embedder_int8_quantization={use_text_embedder_int8_ao_quantization}"
+                )
+
+                # Quantization + offloading is now supported via manual parameter transfer
+                if use_offload and (
+                    use_dit_int8_ao_quantization
+                    or use_text_embedder_int8_ao_quantization
+                ):
+                    k_log("ℹ️  Quantization + Offloading enabled")
+
+                # Get optimization settings from config
+                use_torch_compile = (
+                    getattr(conf.optimizations, "use_torch_compile", True)
+                    if hasattr(conf, "optimizations")
+                    else True
+                )
+                use_flash_attention = (
+                    getattr(conf.optimizations, "use_flash_attention", True)
+                    if hasattr(conf, "optimizations")
+                    else True
+                )
+
+                if not use_torch_compile:
+                    k_log(
+                        "⚙️  torch.compile disabled (avoids recompilation with quantization)"
+                    )
+                if not use_flash_attention:
+                    k_log("⚙️  Flash Attention disabled (using PyTorch native SDPA)")
 
                 self.t2v_pipe = get_T2V_pipeline(
                     device_map=device_map,
@@ -163,7 +240,10 @@ class Model_KD50:
                     conf_path=None,  # We're passing the conf object directly through the pipeline
                     offload=use_offload,
                     magcache=use_magcache,
-                    quantize_dit=environment.use_dit_int8_ao_quantization,
+                    quantize_dit=use_dit_int8_ao_quantization,
+                    quantize_text_embedder=use_text_embedder_int8_ao_quantization,
+                    use_torch_compile=use_torch_compile,
+                    use_flash_attention=use_flash_attention,
                 )
 
                 # Override the pipeline's conf with our custom one
@@ -173,7 +253,7 @@ class Model_KD50:
 
                 self.current_config_name = config_name
 
-    def _build_config_from_ui(self, config_data, cache_dir):
+    def _build_config_from_ui(self, config_data, cache_dir, config_name):
         conf_dict = {
             "model": {
                 "checkpoint_path": config_data.get(
@@ -192,6 +272,18 @@ class Model_KD50:
                 "resolution": 512,
             },
         }
+
+        # Add magcache section for SFT models
+        if "sft" in config_name.lower():
+            # Load the base config to get magcache parameters
+            base_config_path = self._get_config_path(config_name)
+            if os.path.exists(base_config_path):
+                base_conf = OmegaConf.load(base_config_path)
+                if hasattr(base_conf, "magcache"):
+                    # Convert to container to preserve in dict
+                    conf_dict["magcache"] = OmegaConf.to_container(
+                        base_conf.magcache, resolve=True
+                    )
 
         return OmegaConf.create(conf_dict)
 
@@ -220,6 +312,10 @@ class Model_KD50:
         kd50_conf = params["pipeline_args"].get("kd50_conf", {})
 
         prompt = params["prompt"]
+        negative_prompt = params.get(
+            "negative_prompt",
+            "Static, 2D cartoon, cartoon, 2d animation, paintings, images, worst quality, low quality, ugly, deformed, walking backwards",
+        )
         time_length = params["time_length"]
 
         width = params.get("width", 512)
@@ -230,28 +326,30 @@ class Model_KD50:
 
         num_steps = params.get("num_steps", None)
         guidance_weight = params.get("guidance_weight", None)
-        expand_prompts = params.get("expand_prompts", True)
+        expand_prompts = params.get("expand_prompts", False)
 
         if generate_image:
             time_length = 0
 
-        # Check if we have custom config data from UI
-        use_custom_config = isinstance(kd50_conf, dict) and config_name in kd50_conf
+        # Always use config files (new system) - deprecated old custom config dict
+        use_custom_config = False  # Old system disabled, use YAML configs only
         self.prepare_model(task, config_name, kd50_conf, use_custom_config)
 
         save_image_path = None
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         save_video_path = os.path.join(
             params.get(
                 ".output_dir",
                 os.path.join(self.kparams("general", "output_dir"), task),
             ),
-            f"k5v-{config_name}-{'_'.join(prompt.split()[:5])}.mp4",
+            f"k5v-{config_name}-{timestamp}-{'_'.join(prompt.split()[:5])}.mp4",
         )
 
         os.makedirs(os.path.dirname(save_video_path), exist_ok=True)
 
         result = self.t2v_pipe(
             text=prompt,
+            negative_caption=negative_prompt,
             save_path=save_video_path if not generate_image else None,
             time_length=time_length,
             width=width,
@@ -266,6 +364,58 @@ class Model_KD50:
         if generate_image:
             save_image_path = save_images(self.kparams, params, task, result)
             save_video_path = None
+        else:
+            # Embed metadata into MP4 file
+            if save_video_path and os.path.exists(save_video_path):
+                try:
+                    from mutagen.mp4 import MP4, MP4Tags
+
+                    video = MP4(save_video_path)
+
+                    # Build metadata string
+                    metadata_str = f"Prompt: {prompt}\n"
+                    metadata_str += f"Negative Prompt: {negative_prompt}\n"
+                    metadata_str += f"Model: {config_name}\n"
+                    metadata_str += f"Resolution: {width}x{height}\n"
+                    metadata_str += f"Duration: {time_length}s\n"
+                    metadata_str += f"Seed: {seed if seed != -1 else 'random'}\n"
+                    metadata_str += f"Steps: {num_steps if num_steps else 'default'}\n"
+                    metadata_str += f"Guidance Weight: {guidance_weight if guidance_weight else 'default'}\n"
+                    metadata_str += f"Expand Prompts: {expand_prompts}\n"
+                    metadata_str += f"Generated: {timestamp}"
+
+                    # Set metadata tags
+                    video["\xa9cmt"] = metadata_str  # Comment field
+                    video["\xa9des"] = prompt  # Description field
+                    video.save()
+
+                    k_log(f"Embedded metadata into {save_video_path}")
+                except ImportError:
+                    k_log(
+                        "mutagen not installed - saving metadata to JSON file instead"
+                    )
+                    # Fallback to JSON sidecar
+                    metadata_path = save_video_path.replace(".mp4", ".json")
+                    metadata = {
+                        "prompt": prompt,
+                        "negative_prompt": negative_prompt,
+                        "config_variant": config_name,
+                        "width": width,
+                        "height": height,
+                        "duration": time_length,
+                        "seed": seed if seed != -1 else "random",
+                        "num_steps": num_steps if num_steps else "default",
+                        "guidance_weight": (
+                            guidance_weight if guidance_weight else "default"
+                        ),
+                        "expand_prompts": expand_prompts,
+                        "timestamp": timestamp,
+                    }
+                    with open(metadata_path, "w", encoding="utf-8") as f:
+                        json.dump(metadata, f, indent=2, ensure_ascii=False)
+                    k_log(f"Saved video metadata to {metadata_path}")
+                except Exception as e:
+                    k_log(f"Failed to save video metadata: {e}")
 
         k_log("text2video task: done")
 
@@ -286,25 +436,37 @@ class Model_KD50:
         if self.t2v_pipe is not None:
             k_log("flushing K5.0 pipeline")
 
-            # Move components to CPU
+            # Move components to CPU and delete references
             for component in ["text_embedder", "dit", "vae"]:
                 comp = getattr(self.t2v_pipe, component, None)
                 if comp is not None:
                     try:
                         comp.to("cpu")
+                        # Clear the component from GPU memory
+                        torch.cuda.empty_cache()
                     except Exception as e:
                         k_log(f"Could not move {component} to CPU: {e}")
+
+                    # Delete the reference
+                    try:
+                        setattr(self.t2v_pipe, component, None)
+                    except Exception as e:
+                        k_log(f"Could not clear {component} reference: {e}")
 
             self.t2v_pipe = None
             self.current_config_name = None
             cleared = True
 
         if cleared:
+            # Aggressive garbage collection
             gc.collect()
+            gc.collect()  # Run twice to clear circular references
+
             device = self.kparams("general", "device")
             if device.startswith("cuda") and torch.cuda.is_available():
                 with torch.cuda.device(device):
                     torch.cuda.empty_cache()
+                    torch.cuda.synchronize()
             k_log("K5.0 pipeline flushed")
 
 
