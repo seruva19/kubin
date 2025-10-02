@@ -1,7 +1,7 @@
 general:
   device: cuda
   cache_dir: models
-  model_name: kd40
+  model_name: kd50
   output_dir: output
   pipeline: native
   mock: false
