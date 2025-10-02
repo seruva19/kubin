@@ -24,7 +24,7 @@ Web-GUI for Kandinsky generative AI models ([Kandinsky2](https://github.com/ai-f
 | ext. [Image browser](https://github.com/seruva19/kubin-extensions#kd-image-browser)          | ✔   | ✔  |  ✔  |  ✔ | ✔  |  ✔   |     |
 | ext. [Image editor](https://github.com/seruva19/kubin-extensions#kd-image-editor)            | ✔   | ✔  |  ✔  |  ✔ | ✔  |  ✔   |     |
 | ext. [Fine-tuning](https://github.com/seruva19/kubin-extensions#kd-training)                 |     | ✔  |  🕒 |     |    |      |     |
-| ext. [LoRA training and inference](https://github.com/seruva19/kubin-extensions#kd-training) |     |     |  ✔  |     |    |  🕒 |     | 🕒
+| ext. [LoRA training and inference](https://github.com/seruva19/kubin-extensions#kd-training) |     |     |  ✔  |     |    |    |  🕒  | 
 | ext. [Style library](https://github.com/seruva19/kubin-extensions#kd-prompt-styles)          | ✔   | ✔  |  ✔  |  ✔ | ✔  |  ✔   |     |
 | ext. [Image upscaling](https://github.com/seruva19/kubin-extensions#kd-upscaler)             | ✔   | ✔  |  ✔  |  ✔ | ✔  |  ✔   |     |
 | ext. Video upscaling                                                                         |     |     |     |     |    |  🕒  | 🕒   |
@@ -35,7 +35,7 @@ Web-GUI for Kandinsky generative AI models ([Kandinsky2](https://github.com/ai-f
 | ext. [Deforum](https://github.com/seruva19/kubin-extensions#kd-animation)                    |     | 🕒  |  ✔  |    |    |      |     |
 | ext. [Animation](https://github.com/seruva19/kubin-extensions#kd-video)                      |     |     |     |  ✔ |  ✔ |      |
 | ext. [Background remover](https://github.com/seruva19/kubin-extensions#kd-bg-remover)        | ✔   | ✔  |  ✔  |  ✔ | ✔  |      |     |
-| ext. [LLM prompt enhancer](https://github.com/seruva19/kubin-extensions#kd-llm-enhancer)     | ✔   | ✔  |  ✔  |  ✔ | ✔  |  ✔   |     | ✔
+| ext. [LLM prompt enhancer](https://github.com/seruva19/kubin-extensions#kd-llm-enhancer)     | ✔   | ✔  |  ✔  |  ✔ | ✔  |  ✔   |   ✔  | ✔
 | Dynamic prompts                                                                              | ✔   | ✔   | ✔  |  ✔ |  ✔ |  ✔  |     |   
 | Prompt weighting                                                                             |     |     | 🕒  |    |     |      |     |
 | ext. Area composition                                                                        |     |     | 🕒  |    |     |      |     |
