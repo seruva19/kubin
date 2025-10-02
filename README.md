@@ -20,7 +20,7 @@ Web-GUI for Kandinsky generative AI models ([Kandinsky2](https://github.com/ai-f
 | ControlNet                                                                                   |     |     |  ✔  |    | 🕒  |      |     |
 | IpAdapter                                                                                    |     |     |      |    | 🕒 |      |     |
 | Diffusers pipeline                                                                           |     | ✔  |  ✔  |  ✔ | 🕒  |      |     |
-| Low-VRAM options                                                                             |     |     |  ✔  |  ✔ | ✔  |  ✔  |     |
+| Low-VRAM options                                                                             |     |     |  ✔  |  ✔ | ✔  |  ✔  |  ✔  |
 | ext. [Image browser](https://github.com/seruva19/kubin-extensions#kd-image-browser)          | ✔   | ✔  |  ✔  |  ✔ | ✔  |  ✔   |     |
 | ext. [Image editor](https://github.com/seruva19/kubin-extensions#kd-image-editor)            | ✔   | ✔  |  ✔  |  ✔ | ✔  |  ✔   |     |
 | ext. [Fine-tuning](https://github.com/seruva19/kubin-extensions#kd-training)                 |     | ✔  |  🕒 |     |    |      |     |
