@@ -209,12 +209,22 @@ def generate_sample(
     # Start total timing
     total_start_time = time.time()
 
+    # Log attention configuration
+    attn_mode = os.environ.get("KD5_ATTENTION_MODE", "flash").lower()
+    dit_arch = conf.model.attention.type.upper() if hasattr(conf.model.attention, 'type') else 'STANDARD'
+
+    print(f"\n{'='*80}")
+    print(f"🔧 ATTENTION CONFIGURATION:")
+    print(f"  Kernel (all models): {attn_mode.upper()}")
+    print(f"  DIT sparse pattern: {dit_arch}")
+    print(f"{'='*80}\n")
+
     # Text embedder should already be on GPU if offload is enabled (moved in pipeline)
     print(f"Offload: Phase 1 - Text encoding on {text_embedder_device}")
-    if offload:
-        torch.cuda.reset_peak_memory_stats()
 
     phase1_start = time.time()
+    if torch.cuda.is_available():
+        torch.cuda.reset_peak_memory_stats()
     with torch.no_grad():
         bs_text_embed, text_cu_seqlens = text_embedder.encode(
             [caption], type_of_content=type_of_content
@@ -281,7 +291,6 @@ def generate_sample(
         from .models.dit import get_dit
         from .magcache_utils import set_magcache_params, disable_magcache
         from safetensors.torch import load_file
-        import os
 
         # Get deferred loading params from somewhere - they should be passed in
         # For now we'll need to check a pipeline attribute or pass them as params
@@ -404,10 +413,9 @@ def generate_sample(
             "  ⚠️  CRITICAL: DIT is on CPU but should be on GPU! This will be VERY slow!"
         )
 
-    if offload:
-        torch.cuda.reset_peak_memory_stats()
-
     phase2_start = time.time()
+    if torch.cuda.is_available():
+        torch.cuda.reset_peak_memory_stats()
     with torch.no_grad():
         # Use autocast only if CUDA is available, otherwise run without it
         autocast_context = (
@@ -474,10 +482,11 @@ def generate_sample(
         vae.to(vae_device)
         vae_actual = next(vae.parameters()).device
         print(f"  → VAE now on: {vae_actual}")
-        torch.cuda.reset_peak_memory_stats()
 
     print("Offload: Phase 3 - VAE decoding latents to final video...")
     phase3_start = time.time()
+    if torch.cuda.is_available():
+        torch.cuda.reset_peak_memory_stats()
     with torch.no_grad():
         # Use autocast only if CUDA is available, otherwise run without it
         autocast_context = (

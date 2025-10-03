@@ -43,28 +43,41 @@ def _patch_sageattention(target_dtype: torch.dtype, source: str) -> None:
 
     cast_dtype = target_dtype if target_dtype in (torch.float16, torch.bfloat16) else torch.float16
 
+    # Store original SDPA to use as fallback
+    original_sdpa = F.scaled_dot_product_attention
+
     def _sage_with_cast(q, k, v, *args, **kwargs):
         original_dtype = q.dtype
-        if original_dtype not in (torch.float16, torch.bfloat16):
-            q_cast = q.to(cast_dtype)
-            k_cast = k.to(cast_dtype)
-            v_cast = v.to(cast_dtype)
-            result = sageattn(q_cast, k_cast, v_cast, *args, **kwargs)
-            if isinstance(result, tuple):
-                attn_output, *rest = result
-                attn_output = attn_output.to(original_dtype)
-                result = (attn_output, *rest)
-            else:
-                result = result.to(original_dtype)
-            if not getattr(_sage_with_cast, "_logged", False):
-                print(
-                    f"[warn] {source} cast SageAttention inputs from {original_dtype} to {cast_dtype}"
-                )
-                _sage_with_cast._logged = True
-            return result
-        return sageattn(q, k, v, *args, **kwargs)
+
+        # Try Sage Attention, fallback to PyTorch SDPA if it fails
+        try:
+            if original_dtype not in (torch.float16, torch.bfloat16):
+                q_cast = q.to(cast_dtype)
+                k_cast = k.to(cast_dtype)
+                v_cast = v.to(cast_dtype)
+                result = sageattn(q_cast, k_cast, v_cast, *args, **kwargs)
+                if isinstance(result, tuple):
+                    attn_output, *rest = result
+                    attn_output = attn_output.to(original_dtype)
+                    result = (attn_output, *rest)
+                else:
+                    result = result.to(original_dtype)
+                if not getattr(_sage_with_cast, "_logged", False):
+                    print(
+                        f"[warn] {source} cast SageAttention inputs from {original_dtype} to {cast_dtype}"
+                    )
+                    _sage_with_cast._logged = True
+                return result
+            return sageattn(q, k, v, *args, **kwargs)
+        except (ValueError, RuntimeError) as e:
+            # Sage doesn't support this configuration (e.g., head_dim=512), fallback to PyTorch SDPA
+            if not getattr(_sage_with_cast, "_fallback_logged", False):
+                print(f"[warn] Sage Attention failed ({e}), falling back to PyTorch SDPA")
+                _sage_with_cast._fallback_logged = True
+            return original_sdpa(q, k, v, *args, **kwargs)
 
     _sage_with_cast._logged = False
+    _sage_with_cast._fallback_logged = False
     F.scaled_dot_product_attention = _sage_with_cast  # type: ignore[assignment]
 
 
@@ -86,7 +99,8 @@ class ClipTextEmbedder:
                     attn_implementation="flash_attention_2",
                     **load_kwargs,
                 ).to(device)
-                print("[info] CLIP text embedder using Flash Attention 2")
+                if attn_mode != "sage":
+                    print("[info] CLIP text embedder: Flash Attention 2")
             except (ImportError, ValueError) as exc:
                 print(
                     f"[warn] Flash Attention 2 unavailable for CLIP text embedder: {exc}\n[warn] Falling back to eager attention"
@@ -108,14 +122,11 @@ class ClipTextEmbedder:
                 if device != "cpu":
                     converted = _ensure_module_dtype(self.model, torch.float16)
                 if converted:
-                    preview = ", ".join(converted[:5])
-                    if len(converted) > 5:
-                        preview += ", ..."
                     print(
-                        f"[warn] SageAttention forced float16 for CLIP tensors: {preview}"
+                        f"[info] CLIP text embedder: Sage Attention (converted {len(converted)} tensors to fp16)"
                     )
                 else:
-                    print("[info] CLIP model confirmed in float16 for Sage Attention")
+                    print("[info] CLIP text embedder: Sage Attention (fp16)")
             except ImportError:
                 print(
                     "[warn] Sage Attention not available for CLIP text embedder; using default attention"
@@ -208,7 +219,8 @@ class Qwen2_5_VLTextEmbedder:
                     attn_implementation="flash_attention_2",
                     **load_kwargs,
                 )
-                print("[info] Qwen2.5-VL text embedder using Flash Attention 2")
+                if attn_mode != "sage":
+                    print("[info] Qwen2.5-VL text embedder: Flash Attention 2")
             except (ImportError, ValueError) as exc:
                 print(
                     f"[warn] Flash Attention 2 unavailable for Qwen2.5-VL: {exc}\n[warn] Falling back to eager attention"
@@ -232,14 +244,11 @@ class Qwen2_5_VLTextEmbedder:
                 if device != "cpu":
                     converted = _ensure_module_dtype(self.model, dtype)
                 if converted:
-                    preview = ", ".join(converted[:5])
-                    if len(converted) > 5:
-                        preview += ", ..."
                     print(
-                        f"[warn] SageAttention forced dtype for Qwen tensors: {preview}"
+                        f"[info] Qwen2.5-VL text embedder: Sage Attention (converted {len(converted)} tensors to {dtype})"
                     )
                 else:
-                    print("[info] Qwen2.5-VL tensors already in expected dtype for Sage Attention")
+                    print(f"[info] Qwen2.5-VL text embedder: Sage Attention ({dtype})")
             except ImportError:
                 print(
                     "[warn] Sage Attention not available for Qwen2.5-VL; keeping default attention"

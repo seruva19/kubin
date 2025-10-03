@@ -13,6 +13,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from tqdm import tqdm
 
 from diffusers.configuration_utils import ConfigMixin, register_to_config
 from diffusers.utils.accelerate_utils import apply_forward_hook
@@ -1085,9 +1086,10 @@ class AutoencoderKLHunyuanVideo(ModelMixin, ConfigMixin):
         import gc
 
         rows = []
-        for i in range(
+        height_range = list(range(
             0, height - tile_latent_min_height + 1, tile_latent_stride_height
-        ):
+        ))
+        for i in tqdm(height_range, desc="VAE Spatial Decode", leave=False):
             row = []
             for j in range(
                 0, width - tile_latent_min_width + 1, tile_latent_stride_width
@@ -1224,11 +1226,12 @@ class AutoencoderKLHunyuanVideo(ModelMixin, ConfigMixin):
         )
 
         row = []
-        for i in range(
+        temporal_range = list(range(
             0,
             num_frames - tile_latent_min_num_frames + 1,
             tile_latent_stride_num_frames,
-        ):
+        ))
+        for i in tqdm(temporal_range, desc="VAE Temporal Decode", leave=False):
             tile = z[:, :, i : i + tile_latent_min_num_frames + 1, :, :]
             if self.use_tiling and (
                 tile.shape[-1] > tile_latent_min_width
@@ -1353,14 +1356,63 @@ class AutoencoderKLHunyuanVideo(ModelMixin, ConfigMixin):
         if (sqrt(height * width) < tile_threshold) and (num_frames <= 97):
             ft, fs = num_frames, num_frames
         else:
-            ft = OPT_TEMPORAL_TILING[num_frames][0]
-            fs = OPT_TEMPORAL_TILING[num_frames][1]
+            # Use direct lookup if available, otherwise calculate using 48-frame cycle pattern
+            if num_frames in OPT_TEMPORAL_TILING:
+                ft = OPT_TEMPORAL_TILING[num_frames][0]
+                fs = OPT_TEMPORAL_TILING[num_frames][1]
+            elif num_frames > 17:
+                print(
+                    f"Optimal tiling not found for {num_frames} frames. Falling back to 48-frame cycle pattern."
+                )
+                # Pattern: starts at 21, repeats every 4 frames, cycles every 48 frames
+                offset_from_21 = (num_frames - 21) % 48
+                base_frame = 21 + (offset_from_21 // 4) * 4
+                ft = OPT_TEMPORAL_TILING[base_frame][0]
+                fs = OPT_TEMPORAL_TILING[base_frame][1]
+            else:
+                # Fallback for edge cases
+                ft, fs = num_frames, num_frames
 
         if sqrt(height * width) > tile_threshold:
-            ht = OPT_SPATIAL_TILING[height][0]
-            hs = OPT_SPATIAL_TILING[height][1]
-            wt = OPT_SPATIAL_TILING[width][0]
-            ws = OPT_SPATIAL_TILING[width][1]
+            # Get spatial tiling with fallback to closest lower value
+            if height in OPT_SPATIAL_TILING:
+                ht = OPT_SPATIAL_TILING[height][0]
+                hs = OPT_SPATIAL_TILING[height][1]
+            else:
+                print(
+                    f"Optimal tiling not found for {height}x{width}. Falling back to closest lower value."
+                )
+                # Find closest lower height in the dictionary
+                available_heights = sorted(
+                    [h for h in OPT_SPATIAL_TILING.keys() if h <= height]
+                )
+                if available_heights:
+                    closest_height = available_heights[-1]
+                    ht = OPT_SPATIAL_TILING[closest_height][0]
+                    hs = OPT_SPATIAL_TILING[closest_height][1]
+                else:
+                    # Fallback to the minimum entry
+                    min_height = min(OPT_SPATIAL_TILING.keys())
+                    ht = OPT_SPATIAL_TILING[min_height][0]
+                    hs = OPT_SPATIAL_TILING[min_height][1]
+
+            if width in OPT_SPATIAL_TILING:
+                wt = OPT_SPATIAL_TILING[width][0]
+                ws = OPT_SPATIAL_TILING[width][1]
+            else:
+                # Find closest lower width in the dictionary
+                available_widths = sorted(
+                    [w for w in OPT_SPATIAL_TILING.keys() if w <= width]
+                )
+                if available_widths:
+                    closest_width = available_widths[-1]
+                    wt = OPT_SPATIAL_TILING[closest_width][0]
+                    ws = OPT_SPATIAL_TILING[closest_width][1]
+                else:
+                    # Fallback to the minimum entry
+                    min_width = min(OPT_SPATIAL_TILING.keys())
+                    wt = OPT_SPATIAL_TILING[min_width][0]
+                    ws = OPT_SPATIAL_TILING[min_width][1]
 
             # In low VRAM mode, reduce tile sizes by ~50%
             if self.low_vram_mode:

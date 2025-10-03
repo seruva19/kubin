@@ -286,10 +286,10 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                 with gr.Column():
                     duration = gr.Slider(
                         minimum=1,
-                        maximum=20,
+                        maximum=30,
                         value=defaults["duration"],
                         step=1,
-                        label="Duration (seconds)",
+                        label="Duration",
                     )
                     seed = gr.Number(value=defaults["seed"], label="Seed", precision=0)
 
