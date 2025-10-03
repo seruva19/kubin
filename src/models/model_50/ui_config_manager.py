@@ -35,7 +35,7 @@ class UIConfigManager:
             k_log(f"Loading UI config for {variant} from {ui_config_path}")
             ui_conf = OmegaConf.load(ui_config_path)
 
-            if "sft" in variant.lower() and not hasattr(ui_conf, "magcache"):
+            if ("sft" in variant.lower() or "nocfg" in variant.lower()) and not hasattr(ui_conf, "magcache"):
                 k_log(
                     f"UI config missing magcache section, loading from default config"
                 )
@@ -202,7 +202,7 @@ class UIConfigManager:
             },
         }
 
-        if "sft" in variant.lower():
+        if "sft" in variant.lower() or "nocfg" in variant.lower():
             try:
                 default_config_path = self.get_default_config_path(variant)
                 if os.path.exists(default_config_path):

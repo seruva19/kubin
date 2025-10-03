@@ -32,21 +32,28 @@ def kd5_compile(*args, **kwargs):
 if torch.cuda.get_device_capability()[0] >= 9:
     try:
         from flash_attn import flash_attn_func as FA
+
+        print("✓ FlashAttention 2 found")
     except:
         FA = None
 
     try:
         from flash_attn_interface import flash_attn_func as FA  # type: ignore
+
+        print("✓ FlashAttention 3 found (overriding FA2)")
     except:
         FA = FA
 else:
     try:
         from flash_attn import flash_attn_func as FA
+
+        print("✓ FlashAttention 2 found")
     except:
         FA = None
 
 if FA is None:
-    print("⚠️  Flash Attention not found - install with: pip install flash-attn")
+    print("⚠️  Flash Attention not found - will use PyTorch SDPA fallback")
+    print("   Install FlashAttention with: pip install flash-attn")
 
 try:
     from sageattention import sageattn
@@ -253,12 +260,26 @@ class MultiheadSelfAttentionEnc(nn.Module):
                 .flatten(-2, -1)
             )
         elif attn_mode == "flash" and FA is not None:
-            # Use Flash Attention (faster, less memory)
+            if not hasattr(self, "_flash_logged"):
+                print(f"→ Using Flash Attention (mode={attn_mode})")
+                self._flash_logged = True
             out = FA(q=query.unsqueeze(0), k=key.unsqueeze(0), v=value.unsqueeze(0))[
                 0
             ].flatten(-2, -1)
         else:
-            # Use PyTorch native SDPA
+            # Use PyTorch native SDPA (fallback)
+            if not hasattr(self, "_sdpa_logged"):
+                if attn_mode == "sage" and SAGE_ATTN is None:
+                    print(
+                        f"⚠️  Sage Attention requested but not found - falling back to PyTorch SDPA"
+                    )
+                elif attn_mode == "flash" and FA is None:
+                    print(
+                        f"⚠️  Flash Attention requested but not found - falling back to PyTorch SDPA"
+                    )
+                else:
+                    print(f"→ Using PyTorch SDPA (mode={attn_mode})")
+                self._sdpa_logged = True
             out = (
                 torch.nn.functional.scaled_dot_product_attention(
                     query.unsqueeze(0).transpose(1, 2),  # [B, heads, seq, dim]

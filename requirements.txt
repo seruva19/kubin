@@ -9,6 +9,7 @@ optimum-quanto==0.2.6
 tokenizers==0.21.0
 accelerate==1.0.1
 safetensors==0.4.5
+datasets==4.1.1
 opencv-python==4.8.0.74
 git+https://github.com/facebookresearch/pytorchvideo@ae9cfc6
 gradio==3.50.2

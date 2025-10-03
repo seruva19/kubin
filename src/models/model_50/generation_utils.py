@@ -21,7 +21,9 @@ def log_vram_usage(stage_name: str):
     if torch.cuda.is_available():
         current_vram = torch.cuda.memory_allocated() / (1024**3)  # GB
         peak_vram = torch.cuda.max_memory_allocated() / (1024**3)  # GB
-        print(f"  {stage_name} VRAM - Current: {current_vram:.2f} GB | Peak: {peak_vram:.2f} GB")
+        print(
+            f"  {stage_name} VRAM - Current: {current_vram:.2f} GB | Peak: {peak_vram:.2f} GB"
+        )
     else:
         print(f"  {stage_name} - CUDA not available")
 
@@ -199,6 +201,7 @@ def generate_sample(
     dit_is_quantized=False,
     text_embedder_is_quantized=False,
     return_loaded_models=False,
+    magcache=False,
 ):
     bs, duration, height, width, dim = shape
     if duration == 1:
@@ -211,7 +214,11 @@ def generate_sample(
 
     # Log attention configuration
     attn_mode = os.environ.get("KD5_ATTENTION_MODE", "flash").lower()
-    dit_arch = conf.model.attention.type.upper() if hasattr(conf.model.attention, 'type') else 'STANDARD'
+    dit_arch = (
+        conf.model.attention.type.upper()
+        if hasattr(conf.model.attention, "type")
+        else "STANDARD"
+    )
 
     print(f"\n{'='*80}")
     print(f"🔧 ATTENTION CONFIGURATION:")
@@ -365,6 +372,25 @@ def generate_sample(
             print("   → Applying int8 quantization to DIT")
             dit = quantize_with_torch_ao(dit)
 
+        # Apply magcache if needed (deferred loading during offload)
+        if (
+            magcache
+            and hasattr(conf, "magcache")
+            and hasattr(conf.magcache, "mag_ratios")
+        ):
+            print("   → Setting up Magcache (deferred)")
+            mag_ratios = conf.magcache.mag_ratios
+            no_cfg = abs(guidance_weight - 1.0) < 0.01
+            calibrate_mode = os.environ.get("MAGCACHE_CALIBRATE", "0") == "1"
+            set_magcache_params(
+                dit, mag_ratios, num_steps, no_cfg, calibrate=calibrate_mode
+            )
+        elif magcache:
+            print("   ⚠️  Magcache requested but config missing mag_ratios")
+        else:
+            # Ensure magcache is disabled
+            disable_magcache(dit)
+
         print(f"   → DIT loaded and ready (weights on {next(dit.parameters()).device})")
 
     current_device = next(dit.parameters()).device
@@ -412,6 +438,34 @@ def generate_sample(
         print(
             "  ⚠️  CRITICAL: DIT is on CPU but should be on GPU! This will be VERY slow!"
         )
+
+    # Handle magcache state: setup/reset if enabled, disable if not requested
+    from .magcache_utils import (
+        reset_magcache_state,
+        disable_magcache,
+        set_magcache_params,
+    )
+
+    if magcache:
+        # Check if magcache is already enabled, if not, set it up
+        if not (hasattr(dit, "_magcache_enabled") and dit._magcache_enabled):
+            # Magcache not enabled - set it up now
+            if hasattr(conf, "magcache") and hasattr(conf.magcache, "mag_ratios"):
+                print("   → Setting up Magcache (was disabled, now enabling)")
+                mag_ratios = conf.magcache.mag_ratios
+                no_cfg = abs(guidance_weight - 1.0) < 0.01
+                calibrate_mode = os.environ.get("MAGCACHE_CALIBRATE", "0") == "1"
+                set_magcache_params(
+                    dit, mag_ratios, num_steps, no_cfg, calibrate=calibrate_mode
+                )
+            else:
+                print("   ⚠️  Magcache requested but config missing mag_ratios")
+        else:
+            # Magcache already enabled - just reset state for new generation
+            reset_magcache_state(dit)
+    else:
+        # Disable magcache if it was previously enabled but now disabled in UI
+        disable_magcache(dit)
 
     phase2_start = time.time()
     if torch.cuda.is_available():
@@ -484,6 +538,7 @@ def generate_sample(
         print(f"  → VAE now on: {vae_actual}")
 
     print("Offload: Phase 3 - VAE decoding latents to final video...")
+
     phase3_start = time.time()
     if torch.cuda.is_available():
         torch.cuda.reset_peak_memory_stats()
@@ -526,9 +581,15 @@ def generate_sample(
     total_time = time.time() - total_start_time
     print(f"\n{'='*60}")
     print(f"⏱️  TOTAL GENERATION TIME: {total_time:.2f}s")
-    print(f"  Phase 1 (Text Encoding):     {phase1_time:.2f}s ({phase1_time/total_time*100:.1f}%)")
-    print(f"  Phase 2 (DIT Generation):    {phase2_time:.2f}s ({phase2_time/total_time*100:.1f}%)")
-    print(f"  Phase 3 (VAE Decoding):      {phase3_time:.2f}s ({phase3_time/total_time*100:.1f}%)")
+    print(
+        f"  Phase 1 (Text Encoding):     {phase1_time:.2f}s ({phase1_time/total_time*100:.1f}%)"
+    )
+    print(
+        f"  Phase 2 (DIT Generation):    {phase2_time:.2f}s ({phase2_time/total_time*100:.1f}%)"
+    )
+    print(
+        f"  Phase 3 (VAE Decoding):      {phase3_time:.2f}s ({phase3_time/total_time*100:.1f}%)"
+    )
     print(f"{'='*60}\n")
     print("Offload: All phases complete - Video generation finished!")
 

@@ -109,6 +109,7 @@ class Kandinsky5T2VPipeline:
         expand_prompts: bool = True,
         save_path: str = None,
         progress: bool = True,
+        magcache: bool = None,
     ):
         num_steps = self.num_steps if num_steps is None else num_steps
         guidance_weight = (
@@ -214,6 +215,14 @@ class Kandinsky5T2VPipeline:
             for p in module.parameters()
         )
 
+        # Get magcache setting from parameter, or fall back to deferred params for backward compatibility
+        if magcache is not None:
+            use_magcache = magcache
+        elif self.offload and hasattr(self, '_deferred_loading_params'):
+            use_magcache = self._deferred_loading_params.get('magcache', False)
+        else:
+            use_magcache = False
+
         result = generate_sample(
             shape,
             caption,
@@ -234,6 +243,7 @@ class Kandinsky5T2VPipeline:
             dit_is_quantized=dit_is_quantized,
             text_embedder_is_quantized=text_embedder_is_quantized,
             return_loaded_models=self.offload,
+            magcache=use_magcache,
         )
 
         # If offload mode, unpack the loaded models and store them

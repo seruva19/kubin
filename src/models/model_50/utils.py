@@ -36,7 +36,7 @@ def get_T2V_pipeline(
     quantize_text_embedder: bool = False,
     use_torch_compile: bool = True,
     use_flash_attention: bool = True,
-) -> "Kandinsky5T2VPipeline":
+) -> "Kandinsky5T2VPipeline":  # type: ignore
     assert resolution in [512]
 
     # Set environment variable to disable torch.compile for KD5 only
@@ -139,7 +139,9 @@ def get_T2V_pipeline(
     # When offloading, only load text embedder first
     # VAE and DIT will be loaded later when needed
     if offload:
-        print("🔄 DEFERRED LOADING: Offload enabled - loading only text embedder initially")
+        print(
+            "🔄 DEFERRED LOADING: Offload enabled - loading only text embedder initially"
+        )
         print("   → VAE and DIT will be loaded when needed during generation")
 
     text_embedder = get_text_embedder(
@@ -217,20 +219,45 @@ def get_T2V_pipeline(
     # Skip magcache and DIT loading/quantization if offload is enabled
     # These will be done during generation
     if not offload:
-        if magcache and hasattr(conf, "magcache") and hasattr(conf.magcache, "mag_ratios"):
-            set_magcache_params(dit, conf.magcache.mag_ratios)
-            mag_ratio_count = (
-                len(conf.magcache.mag_ratios) if hasattr(conf.magcache, "mag_ratios") else 0
+        if (
+            magcache
+            and hasattr(conf, "magcache")
+            and hasattr(conf.magcache, "mag_ratios")
+        ):
+            mag_ratios = conf.magcache.mag_ratios
+            num_steps = conf.model.num_steps
+            guidance_weight = conf.model.guidance_weight
+            # Detect no_cfg models: guidance_weight == 1.0
+            no_cfg = guidance_weight == 1.0
+
+            # Check if calibration mode is enabled via environment variable
+            calibrate_mode = os.environ.get("MAGCACHE_CALIBRATE", "0") == "1"
+
+            set_magcache_params(
+                dit, mag_ratios, num_steps, no_cfg, calibrate=calibrate_mode
             )
-            print(f"✓ Magcache enabled with {mag_ratio_count} magnitude ratio parameters")
+
+            if not calibrate_mode:
+                mag_ratio_count = (
+                    len(conf.magcache.mag_ratios)
+                    if hasattr(conf.magcache, "mag_ratios")
+                    else 0
+                )
+                print(f"✓ Magcache configuration complete")
+                print(f"   → Guidance weight: {guidance_weight}")
+                print(f"   → Mag ratios loaded: {mag_ratio_count}")
         elif magcache:
-            print("⚠️  Magcache requested but config missing 'magcache.mag_ratios' section")
+            print(
+                "⚠️  Magcache requested but config missing 'magcache.mag_ratios' section"
+            )
             print(f"   → Config type: {type(conf)}")
             print(f"   → Has magcache attr: {hasattr(conf, 'magcache')}")
             if hasattr(conf, "magcache"):
                 print(f"   → Has mag_ratios: {hasattr(conf.magcache, 'mag_ratios')}")
             print(f"   → Magcache is only available for SFT models with proper config")
-            print(f"   → Try using Reset button to reload config with magcache parameters")
+            print(
+                f"   → Try using Reset button to reload config with magcache parameters"
+            )
         else:
             # Ensure magcache is disabled if it was previously enabled
             from .magcache_utils import disable_magcache
@@ -243,7 +270,9 @@ def get_T2V_pipeline(
         is_windows_path = (
             len(checkpoint_path) > 1 and checkpoint_path[1] == ":"
         )  # Check for drive letter like "C:"
-        is_unix_path = checkpoint_path.startswith("/") or checkpoint_path.startswith("./")
+        is_unix_path = checkpoint_path.startswith("/") or checkpoint_path.startswith(
+            "./"
+        )
         is_hf_repo = "/" in checkpoint_path and not is_windows_path and not is_unix_path
 
         if is_hf_repo:
@@ -336,7 +365,9 @@ def get_T2V_pipeline(
             print("✅ QUANTIZATION: DIT quantization process completed")
             print(f"   → Quantized DIT ready on: {next(dit.parameters()).device}")
         else:
-            print("ℹ️  QUANTIZATION: DIT model will use fp16 (int8 quantization disabled)")
+            print(
+                "ℹ️  QUANTIZATION: DIT model will use fp16 (int8 quantization disabled)"
+            )
             print(f"   → DIT ready on: {next(dit.parameters()).device}")
 
     if world_size > 1 and not offload:
@@ -357,9 +388,9 @@ def get_T2V_pipeline(
     # Store deferred loading parameters on the pipeline for use during generation
     if offload:
         pipeline._deferred_loading_params = {
-            'magcache': magcache,
-            'quantize_dit': quantize_dit,
-            'use_torch_compile': use_torch_compile,
+            "magcache": magcache,
+            "quantize_dit": quantize_dit,
+            "use_torch_compile": use_torch_compile,
         }
 
     if not use_torch_compile:

@@ -720,7 +720,9 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                         variant, config_manager
                     )
                     defaults = get_variant_defaults(config_defaults, variant)
-                    supports_magcache = "sft" in variant.lower()
+                    supports_magcache = (
+                        "sft" in variant.lower() or "nocfg" in variant.lower()
+                    )
 
                     # Convert attention_type to attention_implementation radio value
                     if defaults["attention_type"] == "nabla":
@@ -853,7 +855,11 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
         ):
             augmentations["ui_before_generate"]()
 
-            generate_t2v_kd5 = gr.Button("Generate", variant="primary")
+            with gr.Row():
+                generate_t2v_kd5 = gr.Button("Generate", variant="primary", scale=2)
+                cancel_t2v_kd5 = gr.Button(
+                    "Cancel", variant="stop", scale=1, visible=False
+                )
 
             with gr.Column():
                 t2v_kd5_output = gr.Video(
@@ -920,8 +926,6 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                 *injections,
             ):
                 text = generate_prompt_from_wildcard(text)
-
-                import os
 
                 if attention_implementation == "nabla":
                     attention_type = "nabla"
@@ -1075,12 +1079,21 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                         "height": height,
                         "time_length": duration,
                         "seed": seed,
+                        "num_steps": num_steps,
+                        "guidance_weight": guidance_weight,
                         "expand_prompts": expand_prompts,
+                        "magcache": use_magcache,
                     }
 
                     params = augmentations["exec"](params, injections)
+
                     try:
                         yield generate_fn(params)
+                    except InterruptedError as e:
+                        # Handle cancellation specifically
+                        print(f"Generation cancelled: {e}")
+                        yield "Generation cancelled by user"
+                        break
                     except Exception as e:
                         import traceback
 
@@ -1091,7 +1104,7 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                     if not shared.check("LOOP_T2V_KD5", False):
                         break
 
-            click_and_disable(
+            generate_event = click_and_disable(
                 element=generate_t2v_kd5,
                 fn=generate,
                 inputs=[
@@ -1154,5 +1167,8 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                     "args => kubin.UI.taskFinished('Text To Video KD5')",
                 ],
             )
+
+            # Cancel button placeholder for future implementation
+            # cancel_t2v_kd5.click(...)
 
     return t2v_kd5_block

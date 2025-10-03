@@ -42,6 +42,7 @@ class Model_KD50:
         self.kparams = params
         self.t2v_pipe: Kandinsky5T2VPipeline | None = None
         self.current_config_name = None
+        self.current_torch_compile_state = None
         self.config_manager = UIConfigManager()
 
     def prepare_model(self, task, config_name, kd50_conf, use_custom_config=False):
@@ -107,7 +108,37 @@ class Model_KD50:
             print("⚠ Running on CPU - GPU performance not available")
 
         if task == "text2video":
-            if self.t2v_pipe is None or self.current_config_name != config_name:
+            # First, determine the torch_compile setting to check if it changed
+            check_torch_compile = None
+            if use_custom_config and config_name in kd50_conf:
+                config_data = kd50_conf[config_name]
+                # Get torch_compile from UI config
+                check_torch_compile = config_data.get("use_torch_compile", True)
+            else:
+                # Load config to check torch_compile setting
+                temp_conf = self.config_manager.load_config(config_name)
+                check_torch_compile = (
+                    getattr(temp_conf.optimizations, "use_torch_compile", True)
+                    if hasattr(temp_conf, "optimizations")
+                    else True
+                )
+
+            # Force reload if torch_compile state changed
+            torch_compile_changed = (
+                self.current_torch_compile_state is not None
+                and self.current_torch_compile_state != check_torch_compile
+            )
+
+            if torch_compile_changed:
+                k_log(
+                    f"⚠️  torch.compile setting changed from {self.current_torch_compile_state} to {check_torch_compile} - forcing model reload"
+                )
+
+            if (
+                self.t2v_pipe is None
+                or self.current_config_name != config_name
+                or torch_compile_changed
+            ):
                 self.flush(task)
 
                 k_log(f"preparing K5.0-T2V pipeline with config: {config_name}")
@@ -244,6 +275,7 @@ class Model_KD50:
                 self.t2v_pipe.guidance_weight = conf.model.guidance_weight
 
                 self.current_config_name = config_name
+                self.current_torch_compile_state = use_torch_compile
 
     def _build_config_from_ui(self, config_data, cache_dir, config_name):
         conf_dict = {
@@ -347,6 +379,7 @@ class Model_KD50:
             guidance_weight=guidance_weight,
             expand_prompts=expand_prompts,
             progress=True,
+            magcache=params.get("magcache", None),
         )
 
         # Extract expanded prompt and actual result from dict
@@ -384,7 +417,9 @@ class Model_KD50:
                     metadata_str += f"Generated: {timestamp}"
 
                     video["\xa9cmt"] = metadata_str  # Comment field
-                    video["\xa9des"] = expanded_prompt if expanded_prompt else prompt  # Description field
+                    video["\xa9des"] = (
+                        expanded_prompt if expanded_prompt else prompt
+                    )  # Description field
                     video.save()
 
                     k_log(f"Embedded metadata into {save_video_path}")
