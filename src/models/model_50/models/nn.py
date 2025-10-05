@@ -24,6 +24,33 @@ def kd5_compile(*args, **kwargs):
         # Check for nabla-specific disable (default: disabled for nabla to prevent OOM)
         if fn.__name__ == "nabla" and os.environ.get("KD5_COMPILE_NABLA", "0") != "1":
             return fn
+        # Check for VAE-specific disable (for VAE forward methods)
+        # VAE methods are in vae.py and include: forward methods of HunyuanVideoUpsampleCausal3D, HunyuanVideoResnetBlockCausal3D
+        if os.environ.get("KD5_DISABLE_COMPILE_VAE") == "1":
+            # Identify VAE methods by their module
+            module_name = fn.__module__ if hasattr(fn, '__module__') else ''
+            if 'vae' in module_name.lower() or fn.__name__ in ['forward', 'decode', 'encode']:
+                # More precise: check if function is defined in a VAE class
+                if hasattr(fn, '__qualname__'):
+                    qualname = fn.__qualname__
+                    if any(vae_class in qualname for vae_class in [
+                        'HunyuanVideo', 'AutoencoderKL', 'Encoder3D', 'Decoder3D',
+                        'UpsampleCausal3D', 'ResnetBlockCausal3D'
+                    ]):
+                        return fn
+        # Check for DiT-specific disable
+        if os.environ.get("KD5_DISABLE_COMPILE_DIT") == "1":
+            # DiT methods are everything NOT in VAE
+            module_name = fn.__module__ if hasattr(fn, '__module__') else ''
+            if 'vae' not in module_name.lower():
+                if hasattr(fn, '__qualname__'):
+                    qualname = fn.__qualname__
+                    # If it's not a VAE class, it's likely DiT-related
+                    if not any(vae_class in qualname for vae_class in [
+                        'HunyuanVideo', 'AutoencoderKL', 'Encoder3D', 'Decoder3D',
+                        'UpsampleCausal3D', 'ResnetBlockCausal3D'
+                    ]):
+                        return fn
         return torch.compile(*args, **kwargs)(fn)
 
     return decorator

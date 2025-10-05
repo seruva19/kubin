@@ -86,7 +86,8 @@ class UIConfigManager:
         use_dit_int8_ao_quantization: bool,
         use_save_quantized_weights: bool,
         use_text_embedder_int8_ao_quantization: bool,
-        use_torch_compile: bool,
+        use_torch_compile_dit: bool,
+        use_torch_compile_vae: bool,
         in_visual_dim: int,
         out_visual_dim: int,
         time_dim: int,
@@ -147,7 +148,8 @@ class UIConfigManager:
                 "use_text_embedder_int8_ao_quantization": use_text_embedder_int8_ao_quantization,
             },
             "optimizations": {
-                "use_torch_compile": use_torch_compile,
+                "use_torch_compile_dit": use_torch_compile_dit,
+                "use_torch_compile_vae": use_torch_compile_vae,
             },
             "model": {
                 "checkpoint_path": model_checkpoint,

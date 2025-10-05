@@ -108,20 +108,30 @@ class Model_KD50:
             print("⚠ Running on CPU - GPU performance not available")
 
         if task == "text2video":
-            # First, determine the torch_compile setting to check if it changed
-            check_torch_compile = None
+            # First, determine the torch_compile settings to check if they changed
+            check_torch_compile_dit = None
+            check_torch_compile_vae = None
             if use_custom_config and config_name in kd50_conf:
                 config_data = kd50_conf[config_name]
                 # Get torch_compile from UI config
-                check_torch_compile = config_data.get("use_torch_compile", True)
+                check_torch_compile_dit = config_data.get("use_torch_compile_dit", True)
+                check_torch_compile_vae = config_data.get("use_torch_compile_vae", True)
             else:
                 # Load config to check torch_compile setting
                 temp_conf = self.config_manager.load_config(config_name)
-                check_torch_compile = (
-                    getattr(temp_conf.optimizations, "use_torch_compile", True)
+                check_torch_compile_dit = (
+                    getattr(temp_conf.optimizations, "use_torch_compile_dit", True)
                     if hasattr(temp_conf, "optimizations")
                     else True
                 )
+                check_torch_compile_vae = (
+                    getattr(temp_conf.optimizations, "use_torch_compile_vae", True)
+                    if hasattr(temp_conf, "optimizations")
+                    else True
+                )
+
+            # Store as tuple for comparison
+            check_torch_compile = (check_torch_compile_dit, check_torch_compile_vae)
 
             # Force reload if torch_compile state changed
             torch_compile_changed = (
@@ -221,8 +231,13 @@ class Model_KD50:
                 ):
                     k_log("ℹ️  Quantization + Offloading enabled")
 
-                use_torch_compile = (
-                    getattr(conf.optimizations, "use_torch_compile", True)
+                use_torch_compile_dit = (
+                    getattr(conf.optimizations, "use_torch_compile_dit", True)
+                    if hasattr(conf, "optimizations")
+                    else True
+                )
+                use_torch_compile_vae = (
+                    getattr(conf.optimizations, "use_torch_compile_vae", True)
                     if hasattr(conf, "optimizations")
                     else True
                 )
@@ -232,8 +247,10 @@ class Model_KD50:
                     else True
                 )
 
-                if not use_torch_compile:
-                    k_log("⚙️  torch.compile disabled")
+                if not use_torch_compile_dit:
+                    k_log("⚙️  torch.compile (DiT) disabled")
+                if not use_torch_compile_vae:
+                    k_log("⚙️  torch.compile (VAE) disabled")
                 if not use_flash_attention:
                     k_log("⚙️  Flash Attention disabled, using PyTorch native SDPA")
 
@@ -266,7 +283,8 @@ class Model_KD50:
                     magcache=use_magcache,
                     quantize_dit=use_dit_int8_ao_quantization,
                     quantize_text_embedder=use_text_embedder_int8_ao_quantization,
-                    use_torch_compile=use_torch_compile,
+                    use_torch_compile_dit=use_torch_compile_dit,
+                    use_torch_compile_vae=use_torch_compile_vae,
                     use_flash_attention=use_flash_attention,
                 )
 
@@ -275,7 +293,7 @@ class Model_KD50:
                 self.t2v_pipe.guidance_weight = conf.model.guidance_weight
 
                 self.current_config_name = config_name
-                self.current_torch_compile_state = use_torch_compile
+                self.current_torch_compile_state = (use_torch_compile_dit, use_torch_compile_vae)
 
     def _build_config_from_ui(self, config_data, cache_dir, config_name):
         conf_dict = {

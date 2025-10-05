@@ -5,7 +5,8 @@ metrics:
   - 2.0
   resolution: 512
 optimizations:
-  use_torch_compile: false
+  use_torch_compile_dit: false
+  use_torch_compile_vae: false
 model:
   checkpoint_path: ai-forever/Kandinsky-5.0-T2V-Lite-nocfg-5s
   num_steps: 50

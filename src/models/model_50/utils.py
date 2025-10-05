@@ -34,14 +34,26 @@ def get_T2V_pipeline(
     magcache: bool = False,
     quantize_dit: bool = False,
     quantize_text_embedder: bool = False,
-    use_torch_compile: bool = True,
+    use_torch_compile_dit: bool = True,
+    use_torch_compile_vae: bool = True,
     use_flash_attention: bool = True,
 ) -> "Kandinsky5T2VPipeline":  # type: ignore
     assert resolution in [512]
 
-    # Set environment variable to disable torch.compile for KD5 only
+    # Set environment variables to control torch.compile for DiT and VAE separately
     # MUST be set BEFORE importing model modules so @kd5_compile decorators see it
-    if not use_torch_compile:
+    if not use_torch_compile_dit:
+        os.environ["KD5_DISABLE_COMPILE_DIT"] = "1"
+    else:
+        os.environ.pop("KD5_DISABLE_COMPILE_DIT", None)
+
+    if not use_torch_compile_vae:
+        os.environ["KD5_DISABLE_COMPILE_VAE"] = "1"
+    else:
+        os.environ.pop("KD5_DISABLE_COMPILE_VAE", None)
+
+    # Only fully disable torch.compile if both are disabled
+    if not use_torch_compile_dit and not use_torch_compile_vae:
         os.environ["KD5_DISABLE_COMPILE"] = "1"
         torch._dynamo.config.disable = True
     else:
@@ -145,7 +157,7 @@ def get_T2V_pipeline(
         print("   → VAE and DIT will be loaded when needed during generation")
 
     text_embedder = get_text_embedder(
-        conf.model.text_embedder, use_torch_compile=use_torch_compile
+        conf.model.text_embedder, use_torch_compile=use_torch_compile_dit
     )
 
     # Apply torchao quantization to text embedder if requested
@@ -390,14 +402,18 @@ def get_T2V_pipeline(
         pipeline._deferred_loading_params = {
             "magcache": magcache,
             "quantize_dit": quantize_dit,
-            "use_torch_compile": use_torch_compile,
+            "use_torch_compile_dit": use_torch_compile_dit,
+            "use_torch_compile_vae": use_torch_compile_vae,
         }
 
-    if not use_torch_compile:
+    if not use_torch_compile_dit:
         print("   → DIT model: torch.compile disabled")
         print("   → Text embedder: torch.compile disabled")
         print("   → Magcache: torch.compile disabled")
-        print("   → All NN layers: torch.compile disabled")
+        print("   → All DiT NN layers: torch.compile disabled")
+
+    if not use_torch_compile_vae:
+        print("   → VAE: torch.compile disabled")
 
     return pipeline
 

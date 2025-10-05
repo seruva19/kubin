@@ -88,10 +88,16 @@ def get_variant_defaults(config_defaults, variant):
                 and hasattr(ui_settings, "use_text_embedder_int8_ao_quantization")
                 else False
             ),
-            "use_torch_compile": (
-                cfg.optimizations.use_torch_compile
+            "use_torch_compile_dit": (
+                cfg.optimizations.use_torch_compile_dit
                 if hasattr(cfg, "optimizations")
-                and hasattr(cfg.optimizations, "use_torch_compile")
+                and hasattr(cfg.optimizations, "use_torch_compile_dit")
+                else True
+            ),
+            "use_torch_compile_vae": (
+                cfg.optimizations.use_torch_compile_vae
+                if hasattr(cfg, "optimizations")
+                and hasattr(cfg.optimizations, "use_torch_compile_vae")
                 else True
             ),
             "in_visual_dim": cfg.model.dit_params.in_visual_dim,
@@ -148,7 +154,8 @@ def get_variant_defaults(config_defaults, variant):
             "use_dit_int8_ao_quantization": False,
             "use_save_quantized_weights": False,
             "use_text_embedder_int8_ao_quantization": False,
-            "use_torch_compile": True,
+            "use_torch_compile_dit": True,
+            "use_torch_compile_vae": True,
             "in_visual_dim": 16,
             "out_visual_dim": 16,
             "time_dim": 512,
@@ -329,11 +336,16 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                                 value=defaults["use_magcache"],
                                 label="Use MagCache",
                             )
-                            components["use_torch_compile"] = gr.Checkbox(
-                                value=defaults["use_torch_compile"],
-                                label="Use torch.compile",
-                            )
                         with gr.Column():
+                            components["use_torch_compile_dit"] = gr.Checkbox(
+                                value=defaults["use_torch_compile_dit"],
+                                label="Use torch.compile (DiT)",
+                            )
+                            components["use_torch_compile_vae"] = gr.Checkbox(
+                                value=defaults["use_torch_compile_vae"],
+                                label="Use torch.compile (VAE)",
+                            )
+                        with gr.Column(visible=False):
                             components["use_dit_int8_ao_quantization"] = gr.Checkbox(
                                 value=defaults["use_dit_int8_ao_quantization"],
                                 label="Use DiT INT8",
@@ -622,7 +634,8 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                         gr.update(
                             value=defaults["use_text_embedder_int8_ao_quantization"]
                         ),
-                        gr.update(value=defaults["use_torch_compile"]),
+                        gr.update(value=defaults["use_torch_compile_dit"]),
+                        gr.update(value=defaults["use_torch_compile_vae"]),
                         gr.update(value=attention_impl_value),
                         gr.update(value=defaults["in_visual_dim"]),
                         gr.update(value=defaults["out_visual_dim"]),
@@ -677,7 +690,8 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                         components["use_dit_int8_ao_quantization"],
                         components["use_save_quantized_weights"],
                         components["use_text_embedder_int8_ao_quantization"],
-                        components["use_torch_compile"],
+                        components["use_torch_compile_dit"],
+                        components["use_torch_compile_vae"],
                         components["attention_implementation"],
                         components["in_visual_dim"],
                         components["out_visual_dim"],
@@ -755,7 +769,8 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                         gr.update(
                             value=defaults["use_text_embedder_int8_ao_quantization"]
                         ),
-                        gr.update(value=defaults["use_torch_compile"]),
+                        gr.update(value=defaults["use_torch_compile_dit"]),
+                        gr.update(value=defaults["use_torch_compile_vae"]),
                         gr.update(value=attention_impl_value),
                         gr.update(value=defaults["in_visual_dim"]),
                         gr.update(value=defaults["out_visual_dim"]),
@@ -810,7 +825,8 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                         components["use_dit_int8_ao_quantization"],
                         components["use_save_quantized_weights"],
                         components["use_text_embedder_int8_ao_quantization"],
-                        components["use_torch_compile"],
+                        components["use_torch_compile_dit"],
+                        components["use_torch_compile_vae"],
                         components["attention_implementation"],
                         components["in_visual_dim"],
                         components["out_visual_dim"],
@@ -888,7 +904,8 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                 use_dit_int8_ao_quantization,
                 use_save_quantized_weights,
                 use_text_embedder_int8_ao_quantization,
-                use_torch_compile,
+                use_torch_compile_dit,
+                use_torch_compile_vae,
                 attention_implementation,
                 in_visual_dim,
                 out_visual_dim,
@@ -961,7 +978,8 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                     use_dit_int8_ao_quantization=use_dit_int8_ao_quantization,
                     use_save_quantized_weights=use_save_quantized_weights,
                     use_text_embedder_int8_ao_quantization=use_text_embedder_int8_ao_quantization,
-                    use_torch_compile=use_torch_compile,
+                    use_torch_compile_dit=use_torch_compile_dit,
+                    use_torch_compile_vae=use_torch_compile_vae,
                     in_visual_dim=in_visual_dim,
                     out_visual_dim=out_visual_dim,
                     time_dim=time_dim,
@@ -1124,7 +1142,8 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                     components["use_dit_int8_ao_quantization"],
                     components["use_save_quantized_weights"],
                     components["use_text_embedder_int8_ao_quantization"],
-                    components["use_torch_compile"],
+                    components["use_torch_compile_dit"],
+                    components["use_torch_compile_vae"],
                     components["attention_implementation"],
                     components["in_visual_dim"],
                     components["out_visual_dim"],
