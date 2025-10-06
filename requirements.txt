@@ -3,7 +3,7 @@ setuptools==69.5.1
 git+https://github.com/ai-forever/Kandinsky-2.git@33c3176
 git+https://github.com/openai/CLIP.git@a1d0717
 diffusers==0.30.3
-transformers==4.54.1
+transformers==4.57.0
 torchao==0.11.0
 optimum-quanto==0.2.6
 tokenizers==0.21.0

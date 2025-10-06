@@ -14,6 +14,7 @@ from torch import nn
 from torch.nn.attention.flex_attention import flex_attention
 
 from .utils import get_freqs, nablaT_v2
+from ..enhance import compute_enhance_multiplier, is_enhance_enabled
 
 
 def kd5_compile(*args, **kwargs):
@@ -451,12 +452,20 @@ class MultiheadSelfAttentionDec(nn.Module):
         query = apply_rotary(query, rope).type_as(query)
         key = apply_rotary(key, rope).type_as(key)
 
+        enhance_multiplier = None
+        if is_enhance_enabled():
+            enhance_multiplier = compute_enhance_multiplier(query, key)
+
         if sparse_params is not None:
             out = self.nabla(query, key, value, sparse_params=sparse_params)
         else:
             out = self.attention(query, key, value)
 
         out = self.out_l(out)
+
+        if enhance_multiplier is not None:
+            out = out * enhance_multiplier.to(out.dtype)
+
         return out
 
 

@@ -26,6 +26,7 @@ from utils.image import composite_images, create_inpaint_targets
 from utils.logging import k_log
 
 from model_utils.diffusers_samplers import use_sampler
+from utils.env_data import load_env_value
 
 
 class Model_KD3:
@@ -46,6 +47,7 @@ class Model_KD3:
         assert task in ["text2img", "inpainting"]
 
         cache_dir = self.params("general", "cache_dir")
+        cache_dir = load_env_value("KD30_CACHE_DIR", cache_dir)
         device = self.params("general", "device")
         text_encoder_path = self.params("native", "text_encoder")
         environment = Model_KD3_Environment().from_config(self.params)

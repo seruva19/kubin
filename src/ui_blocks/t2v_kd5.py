@@ -100,6 +100,21 @@ def get_variant_defaults(config_defaults, variant):
                 and hasattr(cfg.optimizations, "use_torch_compile_vae")
                 else True
             ),
+            "enhance_enable": (
+                ui_settings.enhance_enable
+                if ui_settings and hasattr(ui_settings, "enhance_enable")
+                else False
+            ),
+            "enhance_weight": (
+                float(ui_settings.enhance_weight)
+                if ui_settings and hasattr(ui_settings, "enhance_weight")
+                else 8
+            ),
+            "enhance_max_tokens": (
+                int(ui_settings.enhance_max_tokens)
+                if ui_settings and hasattr(ui_settings, "enhance_max_tokens")
+                else 0
+            ),
             "in_visual_dim": cfg.model.dit_params.in_visual_dim,
             "out_visual_dim": cfg.model.dit_params.out_visual_dim,
             "time_dim": cfg.model.dit_params.time_dim,
@@ -156,6 +171,9 @@ def get_variant_defaults(config_defaults, variant):
             "use_text_embedder_int8_ao_quantization": False,
             "use_torch_compile_dit": True,
             "use_torch_compile_vae": True,
+            "enhance_enable": False,
+            "enhance_weight": 3.4,
+            "enhance_max_tokens": 256,
             "in_visual_dim": 16,
             "out_visual_dim": 16,
             "time_dim": 512,
@@ -595,6 +613,28 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                             value=defaults["model_checkpoint"],
                         )
 
+                with gr.Accordion("Enhance-A-Video", open=False):
+                    components["enhance_enable"] = gr.Checkbox(
+                        value=defaults["enhance_enable"],
+                        label="Enable Enhance-A-Video",
+                    )
+                    with gr.Row():
+                        components["enhance_weight"] = gr.Slider(
+                            minimum=0.0,
+                            maximum=10.0,
+                            step=0.1,
+                            value=float(defaults["enhance_weight"]),
+                            label="Enhance Weight",
+                            info="Strength of cross-frame boost.",
+                        )
+                        components["enhance_max_tokens"] = gr.Number(
+                            value=int(defaults["enhance_max_tokens"]),
+                            precision=0,
+                            minimum=0,
+                            label="Max Spatial Tokens per Frame",
+                            info="Down-samples per-frame tokens when >0 to limit memory (0 = auto).",
+                        )
+
                 with gr.Row():
                     reset_config_btn = gr.Button(
                         "Reset to default",
@@ -614,7 +654,6 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                     elif defaults["attention_type"] == "sage":
                         attention_impl_value = "sage"
                     else:
-                        # For flash/sdpa, default to flash_fa2 (matching initial load and reset)
                         attention_impl_value = "flash_fa2"
 
                     return [
@@ -636,6 +675,9 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                         ),
                         gr.update(value=defaults["use_torch_compile_dit"]),
                         gr.update(value=defaults["use_torch_compile_vae"]),
+                        gr.update(value=defaults["enhance_enable"]),
+                        gr.update(value=float(defaults["enhance_weight"])),
+                        gr.update(value=int(float(defaults["enhance_max_tokens"]))),
                         gr.update(value=attention_impl_value),
                         gr.update(value=defaults["in_visual_dim"]),
                         gr.update(value=defaults["out_visual_dim"]),
@@ -692,6 +734,9 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                         components["use_text_embedder_int8_ao_quantization"],
                         components["use_torch_compile_dit"],
                         components["use_torch_compile_vae"],
+                        components["enhance_enable"],
+                        components["enhance_weight"],
+                        components["enhance_max_tokens"],
                         components["attention_implementation"],
                         components["in_visual_dim"],
                         components["out_visual_dim"],
@@ -771,6 +816,9 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                         ),
                         gr.update(value=defaults["use_torch_compile_dit"]),
                         gr.update(value=defaults["use_torch_compile_vae"]),
+                        gr.update(value=defaults["enhance_enable"]),
+                        gr.update(value=float(defaults["enhance_weight"])),
+                        gr.update(value=int(float(defaults["enhance_max_tokens"]))),
                         gr.update(value=attention_impl_value),
                         gr.update(value=defaults["in_visual_dim"]),
                         gr.update(value=defaults["out_visual_dim"]),
@@ -827,6 +875,9 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                         components["use_text_embedder_int8_ao_quantization"],
                         components["use_torch_compile_dit"],
                         components["use_torch_compile_vae"],
+                        components["enhance_enable"],
+                        components["enhance_weight"],
+                        components["enhance_max_tokens"],
                         components["attention_implementation"],
                         components["in_visual_dim"],
                         components["out_visual_dim"],
@@ -906,6 +957,9 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                 use_text_embedder_int8_ao_quantization,
                 use_torch_compile_dit,
                 use_torch_compile_vae,
+                enhance_enable,
+                enhance_weight,
+                enhance_max_tokens,
                 attention_implementation,
                 in_visual_dim,
                 out_visual_dim,
@@ -962,6 +1016,17 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                     use_flash_attention = False
                     os.environ["KD5_ATTENTION_MODE"] = "flash"
 
+                try:
+                    enhance_weight = float(enhance_weight)
+                except (TypeError, ValueError):
+                    enhance_weight = 3.4
+                try:
+                    enhance_max_tokens = int(enhance_max_tokens)
+                except (TypeError, ValueError):
+                    enhance_max_tokens = 0
+                if enhance_max_tokens < 0:
+                    enhance_max_tokens = 0
+
                 config_data = config_manager.build_config_from_ui_params(
                     variant=variant,
                     prompt=text,
@@ -980,6 +1045,9 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                     use_text_embedder_int8_ao_quantization=use_text_embedder_int8_ao_quantization,
                     use_torch_compile_dit=use_torch_compile_dit,
                     use_torch_compile_vae=use_torch_compile_vae,
+                    enhance_enable=enhance_enable,
+                    enhance_weight=enhance_weight,
+                    enhance_max_tokens=enhance_max_tokens,
                     in_visual_dim=in_visual_dim,
                     out_visual_dim=out_visual_dim,
                     time_dim=time_dim,
@@ -1101,6 +1169,9 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                         "guidance_weight": guidance_weight,
                         "expand_prompts": expand_prompts,
                         "magcache": use_magcache,
+                        "enhance_enable": enhance_enable,
+                        "enhance_weight": enhance_weight,
+                        "enhance_max_tokens": enhance_max_tokens,
                     }
 
                     params = augmentations["exec"](params, injections)
@@ -1144,6 +1215,9 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                     components["use_text_embedder_int8_ao_quantization"],
                     components["use_torch_compile_dit"],
                     components["use_torch_compile_vae"],
+                    components["enhance_enable"],
+                    components["enhance_weight"],
+                    components["enhance_max_tokens"],
                     components["attention_implementation"],
                     components["in_visual_dim"],
                     components["out_visual_dim"],

@@ -13,6 +13,7 @@ import torchvision
 from torchvision.transforms import ToPILImage
 
 from .generation_utils import generate_sample
+from .enhance import clear_enhance, configure_enhance
 
 
 class Kandinsky5T2VPipeline:
@@ -110,6 +111,7 @@ class Kandinsky5T2VPipeline:
         save_path: str = None,
         progress: bool = True,
         magcache: bool = None,
+        enhance_options: dict | None = None,
     ):
         num_steps = self.num_steps if num_steps is None else num_steps
         guidance_weight = (
@@ -223,28 +225,62 @@ class Kandinsky5T2VPipeline:
         else:
             use_magcache = False
 
-        result = generate_sample(
-            shape,
-            caption,
-            self.dit,
-            self.vae,
-            self.conf,
-            text_embedder=self.text_embedder,
-            num_steps=num_steps,
-            guidance_weight=guidance_weight,
-            scheduler_scale=scheduler_scale,
-            negative_caption=negative_caption,
-            seed=seed,
-            device=self.device_map["dit"],
-            vae_device=self.device_map["vae"],
-            text_embedder_device=self.device_map["text_embedder"],
-            progress=progress,
-            offload=self.offload,
-            dit_is_quantized=dit_is_quantized,
-            text_embedder_is_quantized=text_embedder_is_quantized,
-            return_loaded_models=self.offload,
-            magcache=use_magcache,
+        enhance_cfg = enhance_options or {}
+        enable_enhance = bool(enhance_cfg.get('enabled'))
+        raw_weight = enhance_cfg.get('weight', 3.4)
+        try:
+            enhance_weight = float(raw_weight)
+        except (TypeError, ValueError):
+            print(f"Enhance-A-Video warning: invalid weight '{raw_weight}', using 3.4.")
+            enhance_weight = 3.4
+        max_tokens_value = enhance_cfg.get('max_tokens')
+        if isinstance(max_tokens_value, str):
+            token_str = max_tokens_value.strip()
+            if token_str:
+                try:
+                    max_tokens_value = int(float(token_str))
+                except ValueError:
+                    print(f"Enhance-A-Video warning: could not parse max tokens '{max_tokens_value}', falling back to auto.")
+                    max_tokens_value = None
+            else:
+                max_tokens_value = None
+        elif isinstance(max_tokens_value, float):
+            max_tokens_value = int(max_tokens_value)
+        if isinstance(max_tokens_value, int) and max_tokens_value <= 0:
+            max_tokens_value = None
+
+        configure_enhance(
+            enable=enable_enhance,
+            weight=enhance_weight,
+            num_frames=num_frames if enable_enhance else None,
+            max_tokens=max_tokens_value,
         )
+
+        try:
+            result = generate_sample(
+                shape,
+                caption,
+                self.dit,
+                self.vae,
+                self.conf,
+                text_embedder=self.text_embedder,
+                num_steps=num_steps,
+                guidance_weight=guidance_weight,
+                scheduler_scale=scheduler_scale,
+                negative_caption=negative_caption,
+                seed=seed,
+                device=self.device_map["dit"],
+                vae_device=self.device_map["vae"],
+                text_embedder_device=self.device_map["text_embedder"],
+                progress=progress,
+                offload=self.offload,
+                dit_is_quantized=dit_is_quantized,
+                text_embedder_is_quantized=text_embedder_is_quantized,
+                return_loaded_models=self.offload,
+                magcache=use_magcache,
+            )
+        finally:
+            clear_enhance()
 
         # If offload mode, unpack the loaded models and store them
         if self.offload:

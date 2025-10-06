@@ -293,7 +293,10 @@ class Model_KD50:
                 self.t2v_pipe.guidance_weight = conf.model.guidance_weight
 
                 self.current_config_name = config_name
-                self.current_torch_compile_state = (use_torch_compile_dit, use_torch_compile_vae)
+                self.current_torch_compile_state = (
+                    use_torch_compile_dit,
+                    use_torch_compile_vae,
+                )
 
     def _build_config_from_ui(self, config_data, cache_dir, config_name):
         conf_dict = {
@@ -367,8 +370,41 @@ class Model_KD50:
         guidance_weight = params.get("guidance_weight", None)
         expand_prompts = params.get("expand_prompts", False)
 
+        enhance_enable = params.get("enhance_enable", False)
+        enhance_weight = params.get("enhance_weight", 3.4)
+        enhance_max_tokens = params.get("enhance_max_tokens", 0)
+        try:
+            enhance_weight = float(enhance_weight)
+        except (TypeError, ValueError):
+            enhance_weight = 3.4
+        try:
+            enhance_max_tokens_int = int(enhance_max_tokens)
+        except (TypeError, ValueError):
+            enhance_max_tokens_int = 0
+        if enhance_max_tokens_int < 0:
+            enhance_max_tokens_int = 0
+        enhance_options = {
+            "enabled": bool(enhance_enable),
+            "weight": enhance_weight,
+            "max_tokens": (
+                enhance_max_tokens_int if enhance_max_tokens_int > 0 else None
+            ),
+        }
+        if not enhance_options["enabled"]:
+            enhance_options = None
+        elif enhance_options:
+            max_tokens_desc = (
+                enhance_options["max_tokens"]
+                if enhance_options["max_tokens"] is not None
+                else "auto"
+            )
+            k_log(
+                f"🪄 Enhance-A-Video enabled (weight={enhance_options['weight']:.2f}, max_tokens={max_tokens_desc})"
+            )
+
         if generate_image:
             time_length = 0
+            enhance_options = None
 
         use_custom_config = False  # Old system disabled, use YAML configs only
         self.prepare_model(task, config_name, kd50_conf, use_custom_config)
@@ -398,6 +434,7 @@ class Model_KD50:
             expand_prompts=expand_prompts,
             progress=True,
             magcache=params.get("magcache", None),
+            enhance_options=enhance_options,
         )
 
         # Extract expanded prompt and actual result from dict

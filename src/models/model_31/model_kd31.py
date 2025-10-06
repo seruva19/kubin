@@ -19,6 +19,7 @@ from params import KubinParams
 from utils.file_system import save_output
 from utils.image import composite_images, create_inpaint_targets
 from utils.logging import k_log
+from utils.env_data import load_env_value
 
 
 class Model_KD31:
@@ -38,6 +39,7 @@ class Model_KD31:
         assert task in ["text2img", "inpainting"]
 
         cache_dir = self.params("general", "cache_dir")
+        cache_dir = load_env_value("KD31_CACHE_DIR", cache_dir)
         device = self.params("general", "device")
 
         use_flash_pipeline_before = self.use_flash_pipeline
