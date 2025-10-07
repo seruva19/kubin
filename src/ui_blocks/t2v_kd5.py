@@ -1255,10 +1255,10 @@ def t2v_kd5_ui(generate_fn, shared: SharedUI, tabs, session):
                 ]
                 + augmentations["injections"],
                 outputs=[t2v_kd5_output],
-                js=[
-                    "args => kubin.UI.taskStarted('Text To Video KD5')",
-                    "args => kubin.UI.taskFinished('Text To Video KD5')",
-                ],
+                js=(
+                    "args => kubin.UI.taskStarted('Text To Video')",
+                    "args => kubin.UI.taskFinished('Text To Video')",
+                ),
             )
 
             # Cancel button placeholder for future implementation

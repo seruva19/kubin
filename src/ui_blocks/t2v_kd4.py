@@ -463,10 +463,10 @@ def t2v_kd4_ui(generate_fn, shared: SharedUI, tabs, session):
                 ]
                 + augmentations["injections"],
                 outputs=[t2v_output, t2v_image_output],
-                js=[
+                js=(
                     "args => kubin.UI.taskStarted('Text To Video')",
                     "args => kubin.UI.taskFinished('Text To Video')",
-                ],
+                ),
             )
 
     return t2v_block

@@ -92,9 +92,11 @@ There are two options to overcome this:
 
 Perhaps MPS users also might be able to run Kandinsky 3 thanks to unified memory (see https://github.com/huggingface/diffusers/issues/6028), but I haven't been able to try it out and confirm this. 
 
-### Kandinsky 4.0
+### Kandinsky 5.0
 
-Kandinsky 4.0 is currently the default model for new installations. To switch to Kandinsky-4 from old installations, go to "Settings" and select "kd40"/"native" pipeline. 
+Kandinsky 5.0-Lite is the default model for new installations.
+To switch to Kandinsky-5 on existing installations, open "Settings" and select the "kd50/native" pipeline.
+For usage on 8 GB VRAM GPUs, read [here](https://github.com/seruva19/kubin/issues/186).
 
 ### Models and pipelines
 

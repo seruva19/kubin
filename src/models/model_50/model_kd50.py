@@ -399,7 +399,7 @@ class Model_KD50:
                 else "auto"
             )
             k_log(
-                f"🪄 Enhance-A-Video enabled (weight={enhance_options['weight']:.2f}, max_tokens={max_tokens_desc})"
+                f"🪄  Enhance-A-Video enabled (weight={enhance_options['weight']:.2f}, max_tokens={max_tokens_desc})"
             )
 
         if generate_image:
