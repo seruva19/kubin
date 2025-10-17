@@ -5,11 +5,12 @@ If you have questions, please feel free to open an issue or start a discussion.
 
 ### Alternative solutions
 
-Other apps I am aware of that can be used to run Kandinsky locally:
+Other apps I am aware of that can be used to run various Kandinsky models locally:
 
 * AI Runner https://github.com/Capsize-Games/airunner
 * aiNodes Engine https://github.com/XmYx/ainodes-engine
 * biniou https://github.com/Woolverine94/biniou
+* ComfyUI nodes for Kandinsky 5 https://github.com/wildminder/ComfyUI-Kandinsky
 * Kandinsky plugin for ComfyUI https://github.com/vsevolod-oparin/comfyui-kandinsky22
 * Kandinsky extension for Automatic1111 https://github.com/MMqd/kandinsky-for-automatic1111
 * NeuroSandboxWebUI https://github.com/Dartvauder/NeuroSandboxWebUI
