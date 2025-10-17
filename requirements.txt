@@ -6,7 +6,7 @@ diffusers==0.30.3
 transformers==4.57.0
 torchao==0.11.0
 optimum-quanto==0.2.6
-tokenizers==0.21.0
+tokenizers==0.22.0
 accelerate==1.0.1
 safetensors==0.4.5
 datasets==4.1.1
