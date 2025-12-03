@@ -1,6 +1,10 @@
 
 # Kubin
 
+## Disclaimer
+
+After 2.5 years, Kandinsky models are finally [entering](https://github.com/comfyanonymous/ComfyUI/pull/10988) the mainstream generative AI ecosystem and starting to get the recognition they deserve. At this point, this project, its GUI and its overall approach to building ML tools, feels outdated and no longer reflects how this kind of software is typically built today. I may still push occasional updates, but no major development is planned here. The Kandinsky models themselves will for sure continue to appear in some of my other upcoming projects.
+
 ## Description
 
 Web-GUI for Kandinsky generative AI models ([Kandinsky2](https://github.com/ai-forever/Kandinsky-2/), [Kandinsky3](https://github.com/ai-forever/Kandinsky-3), [Kandinsky4](https://github.com/ai-forever/Kandinsky-4), [Kandinsky5](https://github.com/ai-forever/Kandinsky-5)).  
