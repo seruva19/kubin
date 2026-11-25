@@ -81,7 +81,7 @@ Web-GUI for Kandinsky generative AI models ([Kandinsky2](https://github.com/ai-f
 
 ## Google Colab
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1lx4lQS61hYb02BSoAoJUAVwPr7PhhkJt)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/seruva19/kubin/blob/main/notebooks/kubin-colab.ipynb)
 <br>
 
 ## Documentation
